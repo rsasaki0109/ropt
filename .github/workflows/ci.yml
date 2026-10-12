@@ -1,0 +1,20 @@
+name: Rust
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component clippy
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: cargo test --workspace --all-targets --locked
+      - run: cargo run -p ropt --example rosenbrock --locked
+      - run: cargo run -p ropt --example pose_graph_2d --locked
+      - run: cargo run -p ropt --example pose_graph_3d --locked
+      - run: cargo run -p ropt --example bundle_adjustment --locked
+      - run: cargo run -p ropt --example export_ba_trace --locked -- /tmp/ropt-ba-trace.json
+      - run: cargo test --workspace --doc --locked
+      - run: cargo doc --workspace --no-deps --locked
+        env:
+          RUSTDOCFLAGS: -D warnings
