@@ -1,0 +1,15 @@
+{
+  "eligible": true,
+  "timing_claim": false,
+  "frames": 300,
+  "before_after_full_means_costs_trials_damping_entries_exact": true,
+  "native_agreement": {
+    "max_world_pose_norm": 3.441758576847863e-08,
+    "max_cost_difference": 4.241051954068098e-14
+  },
+  "max_original_gradient": {
+    "before": 2.963925807564216e-07,
+    "after": 2.963925807564216e-07,
+    "native": 4.32838638708688e-07
+  }
+}

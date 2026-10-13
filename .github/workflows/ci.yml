@@ -10,9 +10,34 @@ jobs:
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo test --workspace --all-targets --locked
       - run: cargo run -p ropt --example rosenbrock --locked
+      - run: cargo run -p ropt --example ill_conditioned_qr --locked
       - run: cargo run -p ropt --example pose_graph_2d --locked
+      - run: cargo run -p ropt --example pose_graph_g2o --locked -- --input crates/ropt/tests/data/loop_se2.g2o
+      - run: cargo run -p ropt --example pose_graph_g2o --locked -- --input crates/ropt/tests/data/loop_se2.g2o --ldl
+      - run: cargo run -p ropt --example pose_graph_g2o --locked -- --input crates/ropt/tests/data/loop_se2.g2o --ldl --analytic --block-ordering --cost-tolerance 1e-15
+      - run: cargo run -p ropt --example sparse_ldl --locked -- crates/ropt/tests/data/loop_se2.g2o
       - run: cargo run -p ropt --example pose_graph_3d --locked
+      - run: cargo run -p ropt --example gnss_odometry --locked
+      - run: cargo run -p ropt --example fixed_lag_odometry --locked
+      - run: cargo run -p ropt --example isam_pose_graph --locked
+      - run: cargo run -p ropt --example validate_isam_se2 --release --locked -- 100
+      - run: cargo run -p ropt --example benchmark_cached_isam_se2 --release --locked -- 25 /tmp/ropt-cached-ci
+      - run: cargo run -p ropt --example block_jacobi --locked
+      - run: cargo build -p ropt --example benchmark_pose_graph --example profile_pose_graph --example profile_ldl --example profile_symbolic --example benchmark_isam --example benchmark_isam_se2 --example benchmark_restart_isam_se2 --example benchmark_warm_isam_se2 --release --locked
+      - run: python3 benchmarks/check_smoke.py target/release/examples/benchmark_pose_graph
+      - run: python3 benchmarks/check_isam_smoke.py target/release/examples/benchmark_isam
+      - run: python3 benchmarks/check_isam2_smoke.py target/release/examples/benchmark_isam_se2
+      - run: python3 benchmarks/check_isam2_smoke.py target/release/examples/benchmark_warm_isam_se2
+      - run: cargo run -p ropt --example profile_pose_graph --release --locked -- crates/ropt/tests/data/loop_se2.g2o
+      - run: cargo run -p ropt --example profile_ldl --release --locked -- crates/ropt/tests/data/loop_se2.g2o
+      - run: cargo run -p ropt --example profile_symbolic --release --locked -- crates/ropt/tests/data/loop_se2.g2o 1
+      - run: cargo run -p ropt --example profile_symbolic --release --locked -- reverse-star:96 1
+      - run: python3 -m unittest discover -s benchmarks -p 'test_*.py'
       - run: cargo run -p ropt --example bundle_adjustment --locked
+      - run: cargo run -p ropt --example bundle_adjustment --locked -- --autodiff
+      - run: cargo run -p ropt --example robust_bundle_adjustment --locked
+      - run: cargo run -p ropt --example calibration_bundle_adjustment --locked
+      - run: cargo run -p ropt --example dynamic_curve_fitting --locked
       - run: cargo run -p ropt --example export_ba_trace --locked -- /tmp/ropt-ba-trace.json
       - run: cargo test --workspace --doc --locked
       - run: cargo doc --workspace --no-deps --locked

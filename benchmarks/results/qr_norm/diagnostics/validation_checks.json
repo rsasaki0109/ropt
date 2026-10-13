@@ -1,0 +1,17 @@
+{
+  "purpose": "correctness and precision validation; no timing thresholds",
+  "source_sha256": "ca68bf2894fb27e4c1498ed3fd7c71990fb62772b9fb153ceb5952f11bd689fd",
+  "retained_prefix_regression_sha256": "1e31dd3ec8c827c40312cb829f51f6d5025054cb6694238d4b8eee9d8f4132b1",
+  "rust_unit_integration_tests_passed": 218,
+  "rust_doctests_passed": 18,
+  "latest_precision_tests_passed": 2,
+  "python_quality_tests_passed": 9,
+  "clippy_all_targets_deny_warnings": "passed",
+  "formatting": "passed",
+  "documentation_deny_warnings": "passed",
+  "rollback_source_stages_verified": 19,
+  "restored_predecessor_built_and_six_round_native_smoke_passed": true,
+  "primary_hashes_verified_after_documentation": true,
+  "stage_counters_and_own_primary_reports_verified": true,
+  "arithmetic_change": "QR reported costs may differ; original accuracy gates unchanged"
+}

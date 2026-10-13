@@ -1,0 +1,15 @@
+kind,count
+rotations,2998044
+equal_width,1654144
+aligned,1424980
+contiguous_aligned,382166
+gapped_aligned,1032842
+aligned_entries,19850690
+contiguous_entries,1172314
+original_index_comparisons,20538182
+proposed_index_comparisons,19846214
+first_mismatch,0
+last_mismatch,229164
+interior_mismatch,0
+single_matches,54822
+empty_matches,9972

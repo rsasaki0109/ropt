@@ -1,0 +1,176 @@
+{
+  "purpose": "fresh symbolic allocation traffic diagnostic, not primary timing or live/peak/RSS memory",
+  "repeats": 10,
+  "source_fingerprints": {
+    "before": "e8735c009834aad576680b9a329be720f3ba3ceed7ed2475bd814debf5717c38",
+    "after": "591d0b1d9b0d392550cca9f1e8725c1b7711cc51b02a8ed8a8b164392d386a19"
+  },
+  "executable_sha256": {
+    "before": "610e15909160ec323b1ada1c97244b289e62c77758e3f11599751c23eaa718cc",
+    "after": "368686958876d150686d6f39be0e02c213b4bad7a37b699bd3b16b8821f59e96"
+  },
+  "template_sha256": "86e921ed5efef41c8db9371903d431db79bbbb73e911b5aadd22ad38c5697c5b",
+  "cases": {
+    "pose300": {
+      "identity": {
+        "input_sha256": "5b91856683006b8204b0daba329eddc1ef613ce33342d169939a7ad51998b128",
+        "provenance": {
+          "source": "https://raw.githubusercontent.com/borglab/gtsam/4.2.1/examples/Data/w10000.graph",
+          "source_sha256": "1e88f220bd580a4c2b9fc065358608a53b26b1c30033405990b4cdc83236fc89",
+          "prefix_vertices": 300,
+          "retained_edges": 721,
+          "output_sha256": "5b91856683006b8204b0daba329eddc1ef613ce33342d169939a7ad51998b128",
+          "source_equivalence_records": 5875,
+          "omitted_equivalences_within_prefix": 94,
+          "complete_original_problem": false,
+          "transformation": "explicit between-only subgraph: IDs 0..N-1, keep EDGE2 within prefix, omit EQUIV, permute TORO information to g2o"
+        }
+      },
+      "rows": {
+        "before": {
+          "columns": 897,
+          "jacobian_entries": 8587,
+          "repeats": 10,
+          "elapsed_ns": 21275346,
+          "allocation_calls": 53530,
+          "requested_bytes": 20833230,
+          "normal_entries": 6750,
+          "factor_entries": 12548,
+          "assembly_entries": 23533,
+          "update_entries": 98224
+        },
+        "after": {
+          "columns": 897,
+          "jacobian_entries": 8587,
+          "repeats": 10,
+          "elapsed_ns": 19853971,
+          "allocation_calls": 40040,
+          "requested_bytes": 17321390,
+          "normal_entries": 6750,
+          "factor_entries": 12548,
+          "assembly_entries": 23533,
+          "update_entries": 98224
+        }
+      },
+      "permutation_sha256": "f8fd49c7150950268cb21ff6bb600613ef42c314723267a281a0b53471e8bb80"
+    },
+    "pose1000": {
+      "identity": {
+        "input_sha256": "64211be8374b942fedcaad47ac16d455f03e4c011a2a5027ed40c451c8efe7f8",
+        "provenance": {
+          "source": "https://raw.githubusercontent.com/borglab/gtsam/4.2.1/examples/Data/w10000.graph",
+          "source_sha256": "1e88f220bd580a4c2b9fc065358608a53b26b1c30033405990b4cdc83236fc89",
+          "prefix_vertices": 1000,
+          "retained_edges": 3747,
+          "output_sha256": "64211be8374b942fedcaad47ac16d455f03e4c011a2a5027ed40c451c8efe7f8",
+          "source_equivalence_records": 5875,
+          "omitted_equivalences_within_prefix": 410,
+          "complete_original_problem": false,
+          "transformation": "explicit between-only subgraph: IDs 0..N-1, keep EDGE2 within prefix, omit EQUIV, permute TORO information to g2o"
+        }
+      },
+      "rows": {
+        "before": {
+          "columns": 2997,
+          "jacobian_entries": 44899,
+          "repeats": 10,
+          "elapsed_ns": 187545251,
+          "allocation_calls": 236080,
+          "requested_bytes": 141544470,
+          "normal_entries": 32132,
+          "factor_entries": 65976,
+          "assembly_entries": 0,
+          "update_entries": 995785
+        },
+        "after": {
+          "columns": 2997,
+          "jacobian_entries": 44899,
+          "repeats": 10,
+          "elapsed_ns": 165263853,
+          "allocation_calls": 168200,
+          "requested_bytes": 128708070,
+          "normal_entries": 32132,
+          "factor_entries": 65976,
+          "assembly_entries": 0,
+          "update_entries": 995785
+        }
+      },
+      "permutation_sha256": "407f9450642ffb09e365a0d81c7d16ca64d1b3ef379e8ec9930f1fbd3d0f695a"
+    },
+    "pose3000": {
+      "identity": {
+        "input_sha256": "b9e62bab6b28d75b3fc845033cdd84496c5c81fdb7faca670896bcfc0da347c4",
+        "provenance": {
+          "source": "https://raw.githubusercontent.com/borglab/gtsam/4.2.1/examples/Data/w10000.graph",
+          "source_sha256": "1e88f220bd580a4c2b9fc065358608a53b26b1c30033405990b4cdc83236fc89",
+          "prefix_vertices": 3000,
+          "retained_edges": 16834,
+          "output_sha256": "b9e62bab6b28d75b3fc845033cdd84496c5c81fdb7faca670896bcfc0da347c4",
+          "source_equivalence_records": 5875,
+          "omitted_equivalences_within_prefix": 1684,
+          "complete_original_problem": false,
+          "transformation": "explicit between-only subgraph: IDs 0..N-1, keep EDGE2 within prefix, omit EQUIV, permute TORO information to g2o"
+        }
+      },
+      "rows": {
+        "before": {
+          "columns": 8997,
+          "jacobian_entries": 201943,
+          "repeats": 10,
+          "elapsed_ns": 977730013,
+          "allocation_calls": 997890,
+          "requested_bytes": 312984470,
+          "normal_entries": 135741,
+          "factor_entries": 322195,
+          "assembly_entries": 555262,
+          "update_entries": 0
+        },
+        "after": {
+          "columns": 8997,
+          "jacobian_entries": 201943,
+          "repeats": 10,
+          "elapsed_ns": 1001260533,
+          "allocation_calls": 783560,
+          "requested_bytes": 282036230,
+          "normal_entries": 135741,
+          "factor_entries": 322195,
+          "assembly_entries": 555262,
+          "update_entries": 0
+        }
+      },
+      "permutation_sha256": "11e16e04a8434b5e644750cfec23b034b06303a7bdd9d1eeb1fd311f20d3b209"
+    },
+    "reverse_star6000": {
+      "identity": {
+        "generator_argument": "reverse-star:6000"
+      },
+      "rows": {
+        "before": {
+          "columns": 6000,
+          "jacobian_entries": 11999,
+          "repeats": 10,
+          "elapsed_ns": 26993768,
+          "allocation_calls": 320090,
+          "requested_bytes": 39766960,
+          "normal_entries": 11999,
+          "factor_entries": 11999,
+          "assembly_entries": 17998,
+          "update_entries": 5999
+        },
+        "after": {
+          "columns": 6000,
+          "jacobian_entries": 11999,
+          "repeats": 10,
+          "elapsed_ns": 23466946,
+          "allocation_calls": 260100,
+          "requested_bytes": 28820160,
+          "normal_entries": 11999,
+          "factor_entries": 11999,
+          "assembly_entries": 17998,
+          "update_entries": 5999
+        }
+      },
+      "permutation_sha256": "d1e0738ed2c5c0cfb981e879318fd3a4b267fa9122c0e9bebbe12cf6ba2d10fb"
+    }
+  }
+}

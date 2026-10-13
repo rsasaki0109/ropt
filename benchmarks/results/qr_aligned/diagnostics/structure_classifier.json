@@ -1,0 +1,28 @@
+{
+  "purpose": "isolated warmed predecessor QR structure classifier; instrumented timings excluded",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "counts": {
+    "rotations": 2998044,
+    "empty_upper": 135450,
+    "prefix_pairs": 38695283,
+    "prefix_upper_only": 2457208,
+    "in_place": 2862594,
+    "fallback": 135450,
+    "aligned_suffix": 1424980,
+    "aligned_entries": 19850690
+  },
+  "means_match_primary_predecessor": true,
+  "means_sha256": "17138f42e5e723374c961d09e3624231c399bde0d60c94c03b9e7e81b3903733",
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "before": "a0448407832c4c7f9f61ae02c52f86533f9b99d9dc52bdfddc3e91a36c099909",
+    "instrumented": "2fa758fb346a8067f898febb8a5bd670de38bc6227dbf22ee633bb71a79d6460"
+  },
+  "executable_sha256": "d706a12c17e0b89f98398239e777b08b2935c9005e7f1b69ac90af7cf9d138f0",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "patch_sha256": "03b6e76469367699a720ed12640748a1432143dec47cc81c1cfcb10e2f730324",
+  "runner_sha256": "17364f6e11391380bbfb8a3fc8f20e6964cc850e7bfa3b05ffca95749ace5cbe",
+  "forward_patch_reproduces_kernel_and_runner": true
+}

@@ -14,6 +14,9 @@ pub fn scene() -> Result<Scene, Error> {
     scene_with_noise(0.0)
 }
 pub fn scene_with_noise(amplitude: f64) -> Result<Scene, Error> {
+    scene_with_autodiff(amplitude, false)
+}
+pub fn scene_with_autodiff(amplitude: f64, autodiff: bool) -> Result<Scene, Error> {
     if !amplitude.is_finite() || amplitude < 0.0 {
         return Err(Error::InvalidOptions);
     }
@@ -68,7 +71,12 @@ pub fn scene_with_noise(amplitude: f64) -> Result<Scene, Error> {
             let noise = Vector2::new(index.sin(), (index * 1.7).cos()) * amplitude;
             let pixel =
                 calibration.project(pose.rotation.0.inverse() * (p - pose.translation))? + noise;
-            add_reprojection_factor(
+            let register = if autodiff {
+                add_autodiff_reprojection_factor
+            } else {
+                add_reprojection_factor
+            };
+            register(
                 &mut graph,
                 cameras[camera],
                 points[point],

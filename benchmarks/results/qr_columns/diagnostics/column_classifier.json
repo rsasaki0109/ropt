@@ -1,0 +1,33 @@
+{
+  "purpose": "warmed predecessor structural classifier; instrumented timing excluded from primary comparison",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "counts": {
+    "rotations": 2998044,
+    "equal_width": 1654144,
+    "aligned": 1424980,
+    "contiguous_aligned": 382166,
+    "gapped_aligned": 1032842,
+    "aligned_entries": 19850690,
+    "contiguous_entries": 1172314,
+    "original_index_comparisons": 20538182,
+    "proposed_index_comparisons": 19846214,
+    "first_mismatch": 0,
+    "last_mismatch": 229164,
+    "interior_mismatch": 0,
+    "single_matches": 54822,
+    "empty_matches": 9972
+  },
+  "avoided_index_comparisons_percent": 3.369178440428666,
+  "proposed_and_original_alignment_equal_for_all_equal_width_suffixes": true,
+  "means_and_nontiming_reports_match_primary": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "primary": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b",
+    "instrumented": "a2ab339c4be96249156ae20bb47d0b09d1b8a8b86fc4aadc3fe9c2e23a3b0f80"
+  },
+  "executable_sha256": "bfe51b7561bdb56f921287de8cc6359aa4366555642f793f29397d118dfd7c17",
+  "patch_sha256": "10fd73ed083c569daf90c6a0952fa2271c131f0e2a83b56cc7494fede27ee7f2",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678"
+}

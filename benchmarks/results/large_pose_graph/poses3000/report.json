@@ -1,0 +1,286 @@
+{
+  "created_utc": "2026-10-12T15:03:02Z",
+  "dataset": {
+    "sha256": "b9e62bab6b28d75b3fc845033cdd84496c5c81fdb7faca670896bcfc0da347c4",
+    "derived": true,
+    "provenance": {
+      "source": "https://raw.githubusercontent.com/borglab/gtsam/4.2.1/examples/Data/w10000.graph",
+      "source_sha256": "1e88f220bd580a4c2b9fc065358608a53b26b1c30033405990b4cdc83236fc89",
+      "prefix_vertices": 3000,
+      "retained_edges": 16834,
+      "output_sha256": "b9e62bab6b28d75b3fc845033cdd84496c5c81fdb7faca670896bcfc0da347c4",
+      "source_equivalence_records": 5875,
+      "omitted_equivalences_within_prefix": 1684,
+      "complete_original_problem": false,
+      "transformation": "explicit between-only subgraph: IDs 0..N-1, keep EDGE2 within prefix, omit EQUIV, permute TORO information to g2o"
+    },
+    "poses": 3000,
+    "edges": 16834
+  },
+  "source_fingerprints": {
+    "before": "ae86a4746e860279c1ec5baf9483bb11b119595d560b2139e322372c1f5a9e4a",
+    "after": "6a77f7827cd50db5ddfce106bcb51ae0628f63bec9ada95dd28454cc69fd965d"
+  },
+  "executables": {
+    "before": "0219057e61b72b4b5c2ca24d1a6880f5b5ae6c5e95b9ea8ad65439dc9c6b1b50",
+    "after": "54da54c85606d8e093f230e90e7fdb6736f213467b252d8a107389d3ce9bf25a",
+    "gtsam": "f4ef8a9a89cfdcab1fef67c254113119bd29ad3baf72539267fa7812addf08cc"
+  },
+  "gtsam_build": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "executable_sha256": "f4ef8a9a89cfdcab1fef67c254113119bd29ad3baf72539267fa7812addf08cc",
+    "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "benchmark.cpp": "e80228e1493b82eda4e99832c2686e99174fa861ef07f0319a7ec29da3979007",
+      "CMakeLists.txt": "28860f46fcabb1e19b97cbeee6cc80348a2d11a37e6c56cd0741c546f0cf06b5"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0"
+  },
+  "rollback_patch_sha256": "3f4d175095786e6077561a34e9505377a112f76604b58fe92f89b7ae6c1733e9",
+  "quality_thresholds": {
+    "relative_cost": 1e-09,
+    "gradient_inf": 1e-05,
+    "pose_delta": 1e-06
+  },
+  "cases": {
+    "before": {
+      "returncode": 1,
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/tmp/ropt-refinement-reproduced/target/release/examples/benchmark_pose_graph",
+        "--input",
+        "/tmp/ropt-w10000-prefix3000.g2o",
+        "--output",
+        "/tmp/ropt-large-diagnostics3000/before",
+        "--backends",
+        "sparse_ldl_block",
+        "--pose-jacobians",
+        "analytic",
+        "--repeats",
+        "1",
+        "--warmup",
+        "0"
+      ],
+      "stdout": "",
+      "stderr": "Error: LinearResidualTooLarge { residual_norm: 2.118235684869705e-12, tolerance: 1e-12 }\n",
+      "timing_eligible": false
+    },
+    "refined_default": {
+      "returncode": 0,
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/workspace/ropt/target/release/examples/benchmark_pose_graph",
+        "--input",
+        "/tmp/ropt-w10000-prefix3000.g2o",
+        "--output",
+        "/tmp/ropt-large-diagnostics3000/refined_default",
+        "--backends",
+        "sparse_ldl_block",
+        "--pose-jacobians",
+        "analytic",
+        "--repeats",
+        "1",
+        "--warmup",
+        "0",
+        "--max-iterations",
+        "300"
+      ],
+      "stdout": "Saved 1 timed solves and 1 checked solutions to /tmp/ropt-large-diagnostics3000/refined_default\n",
+      "stderr": "",
+      "timing_eligible": false,
+      "quality": {
+        "eligible": false,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": false
+        },
+        "independent_cost": 36.75010834401441,
+        "stored_gradient_inf": 6.1999017031411086e-09,
+        "max_pose_difference_to_native_qr": 9.104901247663085e-06
+      }
+    },
+    "refined_tight14": {
+      "returncode": 0,
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/workspace/ropt/target/release/examples/benchmark_pose_graph",
+        "--input",
+        "/tmp/ropt-w10000-prefix3000.g2o",
+        "--output",
+        "/tmp/ropt-large-diagnostics3000/refined_tight14",
+        "--backends",
+        "sparse_ldl_block",
+        "--pose-jacobians",
+        "analytic",
+        "--repeats",
+        "1",
+        "--warmup",
+        "0",
+        "--cost-tolerance",
+        "1e-14",
+        "--max-iterations",
+        "300"
+      ],
+      "stdout": "Saved 1 timed solves and 1 checked solutions to /tmp/ropt-large-diagnostics3000/refined_tight14\n",
+      "stderr": "",
+      "timing_eligible": false,
+      "quality": {
+        "eligible": false,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": false
+        },
+        "independent_cost": 36.75010834401441,
+        "stored_gradient_inf": 6.1999017031411086e-09,
+        "max_pose_difference_to_native_qr": 9.104901247663085e-06
+      }
+    },
+    "refined_tight15": {
+      "returncode": 1,
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/workspace/ropt/target/release/examples/benchmark_pose_graph",
+        "--input",
+        "/tmp/ropt-w10000-prefix3000.g2o",
+        "--output",
+        "/tmp/ropt-large-diagnostics3000/refined_tight15",
+        "--backends",
+        "sparse_ldl_block",
+        "--pose-jacobians",
+        "analytic",
+        "--repeats",
+        "1",
+        "--warmup",
+        "0",
+        "--cost-tolerance",
+        "1e-15",
+        "--max-iterations",
+        "300"
+      ],
+      "stdout": "",
+      "stderr": "Error: \"nonconverged or inconsistent final cost\"\n",
+      "timing_eligible": false
+    },
+    "gtsam_cholesky_100": {
+      "quality": {
+        "eligible": false,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": false,
+          "gradient": true,
+          "pose_agreement": false,
+          "iteration_limit_not_reached": false
+        },
+        "independent_cost": 36.75013966082766,
+        "stored_gradient_inf": 8.162956421919887e-06,
+        "max_pose_difference_to_native_qr": 6.000329422144832
+      },
+      "timing_eligible": false,
+      "iteration_limit": 100,
+      "optimizer_iterations": 100,
+      "build_manifest": {
+        "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+        "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+        "exact_between": true,
+        "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+        "executable_sha256": "b4d601d6cd6d17658d048ee39ef6c99f8f54d414f50e15cee01efb8dd6a849ee",
+        "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+        "options": {
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+          "CMAKE_CXX_FLAGS": "",
+          "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+          "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+          "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+          "GTSAM_WITH_TBB": "OFF",
+          "GTSAM_WITH_EIGEN_MKL": "OFF",
+          "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+          "GTSAM_DEFAULT_ALLOCATOR": "STL",
+          "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+          "GTSAM_BUILD_TESTS": "OFF",
+          "GTSAM_BUILD_UNSTABLE": "OFF"
+        },
+        "reference_sources_sha256": {
+          "benchmark.cpp": "283e912365989f40968468edd0e7ff2973f4d29ef50bc7ffc4eaa781600cf865",
+          "CMakeLists.txt": "28860f46fcabb1e19b97cbeee6cc80348a2d11a37e6c56cd0741c546f0cf06b5"
+        },
+        "compiler": "c++ (Debian 14.2.0-19) 14.2.0"
+      },
+      "executable_sha256": "b4d601d6cd6d17658d048ee39ef6c99f8f54d414f50e15cee01efb8dd6a849ee"
+    },
+    "gtsam_cholesky_300": {
+      "quality": {
+        "eligible": true,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": true,
+          "iteration_limit_not_reached": true
+        },
+        "independent_cost": 36.75010834401441,
+        "stored_gradient_inf": 3.2612801348363973e-09,
+        "max_pose_difference_to_native_qr": 3.2152999795346896e-09
+      },
+      "timing_eligible": false,
+      "iteration_limit": 300,
+      "optimizer_iterations": 148
+    },
+    "gtsam_qr_300": {
+      "quality": {
+        "eligible": true,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": true,
+          "iteration_limit_not_reached": true
+        },
+        "independent_cost": 36.75010834401441,
+        "stored_gradient_inf": 3.2612801348363973e-09,
+        "max_pose_difference_to_native_qr": 0.0
+      },
+      "timing_eligible": false,
+      "iteration_limit": 300,
+      "optimizer_iterations": 148
+    }
+  },
+  "all_quality_gates_passed": false,
+  "memory_measured": false,
+  "scope": "Accuracy/failure diagnostics only. Individual native exploratory timings may overlap other solver processes; no equal-accuracy timing comparison or speed ratios."
+}

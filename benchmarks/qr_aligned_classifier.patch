@@ -1,0 +1,94 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -91,6 +91,7 @@
+         let mut lower_row = Vec::new();
+         let mut row = Vec::new();
+         let max_entries = self.options.max_entries;
++        let mut counts=[0_u64;8];
+         for (r, &residual) in residual.iter().enumerate() {
+             row.clear();
+             row.extend(j.row(r)?);
+@@ -100,7 +101,11 @@
+                     row.remove(0);
+                     continue;
+                 }
++                counts[0]+=1;
+                 let old = &mut self.rows[k];
++                if old.is_empty() { counts[1]+=1; }
++                let start=usize::from(!old.is_empty());
++                if !old.is_empty() && old.len()-start == row.len()-1 && old[start..].iter().zip(&row[1..]).all(|(a,b)|a.0==b.0) { counts[6]+=1; counts[7]+=(row.len()-1) as u64; }
+                 let diagonal = old.first().map_or(0., |&(_, value)| value);
+                 let norm = diagonal.hypot(below);
+                 if !norm.is_finite() || norm == 0. {
+@@ -122,10 +127,12 @@
+                 while i < old.len() && (j == row.len() || old[i].0 <= row[j].0) {
+                     let (col, upper) = old[i];
+                     let lower = if j < row.len() && row[j].0 == col {
++                        counts[2]+=1;
+                         let value = row[j].1;
+                         j += 1;
+                         value
+                     } else {
++                        counts[3]+=1;
+                         0.
+                     };
+                     let a = c * upper + s * lower;
+@@ -146,6 +153,7 @@
+                 }
+                 let in_place = has_diagonal && i == old.len();
+                 if in_place {
++                    counts[4]+=1;
+                     old.truncate(write);
+                     // New trailing columns cannot overwrite unread storage.
+                     for &(col, lower) in &row[j..] {
+@@ -166,6 +174,7 @@
+                         }
+                     }
+                 } else {
++                    counts[5]+=1;
+                     if has_diagonal {
+                         upper_row.extend_from_slice(&old[..write]);
+                     } else {
+@@ -252,6 +261,7 @@
+                 return Err(Error::NonFinite);
+             }
+         }
++        crate::qr_profile::record(counts);
+         Ok(())
+     }
+     /// Solve the full-column-rank cached model. No damping or pseudoinverse.
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,6 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++#[doc(hidden)]
++pub mod qr_profile;
+--- /dev/null
++++ b/crates/ropt/src/qr_profile.rs
+@@ -0,0 +1,5 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static COUNTS: [AtomicU64;8]=[const {AtomicU64::new(0)};8];
++pub fn record(values:[u64;8]) { for (c,v) in COUNTS.iter().zip(values) { c.fetch_add(v,Ordering::Relaxed); } }
++pub fn reset() { for c in &COUNTS { c.store(0,Ordering::Relaxed); } }
++pub fn dump() { for (name,c) in ["rotations","empty_upper","prefix_pairs","prefix_upper_only","in_place","fallback","aligned_suffix","aligned_entries"].iter().zip(&COUNTS) { eprintln!("{name},{}",c.load(Ordering::Relaxed)); } }
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup { ropt::qr_profile::reset(); }
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::qr_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;

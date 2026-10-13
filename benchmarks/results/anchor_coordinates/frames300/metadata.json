@@ -1,0 +1,54 @@
+{
+  "purpose": "reuse principal local coordinates within each iSAM update",
+  "frames": 300,
+  "rounds": 12,
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "warmup_streams_per_process": 1,
+  "measured_streams_per_process": 1,
+  "policy": "threshold=0.1; interval=10; forced delayed loops every 25; SparseLdl block ordering(3); restart LM damping; original fixture seeds and non-diagonal information",
+  "timed": "complete update including owned means/report, excluding root initialization, factor recipes, original energy/gradient and AD/dense-QR oracle checks, serialization, observer accounting and report destruction",
+  "gates": {
+    "fixed_root": "exact at all prefixes",
+    "refreshed_original_gradient_inf": 1e-06,
+    "refreshed_cost_gap_relative": 1e-10,
+    "checkpoint_batch_pose_difference": 2e-06,
+    "checkpoint_batch_cost_difference_relative": 1e-09,
+    "checkpoint_gradient_step_difference": 2e-07,
+    "cached_prefix_stationarity": "not required; approximation explicitly reported",
+    "before_after": "exact all-prefix full estimates, reports and quality traces"
+  },
+  "allocation_counting": false,
+  "memory_measured": false,
+  "native_timing": false,
+  "source_sha256": {
+    "before": "5d3a5de1a11c1aa1bdbbcf4c44859d54c7127d987cb24ac67d2e96ab6d16d289",
+    "after": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e"
+  },
+  "executable_sha256": {
+    "before": "78faa3fe9f30068cf97419f28274ba413092f273a8147175a0f8842d3edd9bd5",
+    "after": "d225f7ea0044715e98e0953e0da14fe5495ea001ee50211c3258d44d056bbcaf"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_cached_isam_se2.rs": "921da0f9e179f09b315762de82e40d7af7646d2de0ffea86fe9ab68050a51a7f",
+    "crates/ropt/examples/support/isam_se2.rs": "ba5725dc7afffaafa42b92d62abcc62ba662b0b45fc2d27b07f0b1e5cd5ae7c1",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/paired_anchor_coordinates.py": "b079bad60a822dfcadb7bc5696d9e6856c3f64cbb43ff6d38a0be09ed64affb3",
+    "benchmarks/anchor_coordinates.patch": "f0ee3830e32fd41b9631e438c2a9d88431af222033bc628ab91acdb7af468fb9"
+  }
+}

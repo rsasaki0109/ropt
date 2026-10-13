@@ -1,0 +1,83 @@
+{
+  "purpose": "same-input/same-policy stable grouping of full-model QR rows by leading column; both ropt kernels explicitly reuse LM damping and force every refresh; not default-policy timing",
+  "frames": 100,
+  "rounds": 12,
+  "warmup_streams_per_process": 1,
+  "timed_streams_per_process": 1,
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "native_manifest": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "version": "4.2.1",
+    "executable_sha256": "4baedbfb827c6021ea8f6b9defd0228379cb2f2acc3838bb74c6b6b2845b23d4",
+    "cmake_cache_sha256": "688d82674bb9c40f8d26e664bbc02e51b5fafbccb67290a8f3da4e38bd2f2be1",
+    "reference_sources_sha256": {
+      "benchmark.cpp": "04512a163e63ad60922876daa1fcac9ed08539948bc953e0beeb2616db967f76",
+      "CMakeLists.txt": "0d302ce92ad64c437f7284865a8d0fb62ce4f8eaccf12449e1fe50ce9addc4d4"
+    },
+    "runtime_library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a"
+  },
+  "gates": {
+    "original_gradient_inf": 1e-06,
+    "world_pose_norm_difference": 2e-06,
+    "relative_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "fixed_root": "exact"
+  },
+  "source_sha256": {
+    "before": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e",
+    "after": "eb6a9a576b921200f82bb3e474382919c1427258a9e324c0ca0561072b2521b0"
+  },
+  "executable_sha256": {
+    "before": "f30ec6acd3c9084641ce08d3c776b6d7e71efb2972b3ccd560abc45c88a3d3f2",
+    "after": "ede285013a8c64ec3270e8c1b33eeafbe2e01865d83372942fdf09e0e3f35c97",
+    "native": "4baedbfb827c6021ea8f6b9defd0228379cb2f2acc3838bb74c6b6b2845b23d4"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_warm_isam_se2.rs": "2c07def5dafebdfe895ada45cbdaa78009bdb2e8d8204f0dfc024db945d2b3f4",
+    "crates/ropt/examples/support/se2_benchmark.rs": "396fe1f16f8aba4786b053fbd39dd63b7a167438d5dfd131d4796d4e30f76d22",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/se2_stream.py": "cf2b1c202e82aaa3676397d06e9e7c0209d69cb41541ddffafc89fd800e161ae",
+    "benchmarks/paired_isam2.py": "2772135729792c33e954796b3fdf9ef3d2439415e4708cd8c4b370bd32d59c21",
+    "benchmarks/paired_qr_rebuild.py": "3d8a9fa6abea15b2bf89b5105397ce38838d600df583f24a43145b31524f1d31"
+  },
+  "input_sha256": "37c84d39609c8804d136f25c4ce2503db139d7dbe3e934d580e08daa9fbb940d",
+  "timed": "complete accuracy-target update including full owned means/report; native additional empty updates, stationarity probes and full cost included; input parsing, factor recipes/graphs, initialization, external validation, serialization and report destruction excluded",
+  "allocator_counting": false,
+  "memory_measured": false,
+  "rollback_patch_sha256": "ca7a5f705c5a8bcfc54fc50e654b9d2bc92f551d9a6325d573a97dc042c1d8ff"
+}

@@ -1,0 +1,136 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -233,12 +233,132 @@
+             continue;
+         }
+         for (k, &a) in row.iter().enumerate() {
+-            for &b in &row[k..] {
++            // Every diagonal was inserted before visiting J. Only strict
++            // off-diagonal pairs can add structure or consume the entry budget.
++            for &b in &row[k + 1..] {
+                 add_pattern_entry(&mut columns[a], b, &mut entries, limit)?;
+             }
+         }
+     }
+     Ok((columns, entries))
++}
++
++#[cfg(test)]
++mod normal_cursor_tests {
++    use super::*;
++
++    // Independent dense structural oracle: no hybrid columns, sorted cursor,
++    // or repeated-row shortcut. Include every diagonal even if J omits it.
++    fn reference(j: &CsrMatrix, limit: usize) -> Result<(Vec<Vec<usize>>, usize), Error> {
++        let (m, n) = j.shape();
++        if n == 0 {
++            return Err(Error::InvalidDimensions);
++        }
++        if n > limit {
++            return Err(Error::SparseFillLimit { limit });
++        }
++        let mut graph = vec![vec![false; n]; n];
++        for (k, column) in graph.iter_mut().enumerate() {
++            column[k] = true;
++        }
++        let mut entries = n;
++        for row in 0..m {
++            let support = j.row(row)?.map(|(col, _)| col).collect::<Vec<_>>();
++            for (k, &a) in support.iter().enumerate() {
++                for &b in &support[k..] {
++                    if !graph[a][b] {
++                        if entries >= limit {
++                            return Err(Error::SparseFillLimit { limit });
++                        }
++                        graph[a][b] = true;
++                        entries += 1;
++                    }
++                }
++            }
++        }
++        Ok((
++            graph
++                .into_iter()
++                .map(|column| {
++                    column
++                        .into_iter()
++                        .enumerate()
++                        .filter_map(|(row, present)| present.then_some(row))
++                        .collect()
++                })
++                .collect(),
++            entries,
++        ))
++    }
++
++    fn actual(j: &CsrMatrix, limit: usize) -> Result<(Vec<Vec<usize>>, usize), Error> {
++        assemble_pattern(j, limit).map(|(columns, entries)| {
++            (
++                columns
++                    .iter()
++                    .map(|column| column.iter().copied().collect())
++                    .collect(),
++                entries,
++            )
++        })
++    }
++
++    #[test]
++    fn normal_structure_and_each_budget_boundary_match_dense_oracle() {
++        for n in [0, 1, 9, 63, 64, 65, 72] {
++            let mut supports = vec![vec![], vec![], (0..n).step_by(2).collect::<Vec<_>>()];
++            // Non-adjacent duplicates, gaps, missing diagonals, row reordering,
++            // and promotion from 64 contiguous entries to tree storage.
++            supports.push((0..n).filter(|k| k % 3 != 1).collect());
++            supports.push(supports[2].clone());
++            supports.push((0..n).collect());
++            supports.push(supports.last().unwrap().clone());
++            for reverse in [false, true] {
++                let m = supports.len();
++                let triplets = supports
++                    .iter()
++                    .enumerate()
++                    .flat_map(|(r, support)| {
++                        support
++                            .iter()
++                            .map(move |&col| (if reverse { m - 1 - r } else { r }, col, 1.))
++                    })
++                    .collect();
++                let j = CsrMatrix::from_triplets(m, n, triplets).unwrap();
++                // Every distinct structural insertion boundary, including
++                // tree promotion and the exact final normal-entry limit.
++                for limit in 0..=n * (n + 1) / 2 + 1 {
++                    assert_eq!(
++                        actual(&j, limit),
++                        reference(&j, limit),
++                        "n={n}, reverse={reverse}, limit={limit}"
++                    );
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn normal_structure_depends_on_support_not_sign_scale_or_empty_rows() {
++        let j = CsrMatrix::from_triplets(
++            5,
++            9,
++            vec![
++                (0, 0, f64::MIN_POSITIVE),
++                (0, 4, -f64::MAX),
++                (0, 8, 1.),
++                (2, 2, 2.),
++                (2, 4, -3.),
++                (4, 0, -2.),
++                (4, 4, 3.),
++                (4, 8, -1.),
++            ],
++        )
++        .unwrap();
++        assert_eq!(actual(&j, usize::MAX), reference(&j, usize::MAX));
++        let empty = CsrMatrix::from_triplets(0, 9, vec![]).unwrap();
++        assert_eq!(actual(&empty, 9), reference(&empty, 9));
++    }
+ }
+ fn minimum_degree(
+     columns: &Columns,

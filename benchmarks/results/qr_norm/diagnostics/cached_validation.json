@@ -1,0 +1,28 @@
+{
+  "purpose": "cached/interval/loop-refresh correctness; both independent validators pass; floating traces need not be bit-identical",
+  "frames": 300,
+  "same_reasons_and_qr_entries": true,
+  "max_numeric_trace_differences": {
+    "nonlinear_cost": 5.1514348342607263e-14,
+    "gradient_inf": 6.728992363314035e-09,
+    "cached_cost": 5.129230373768223e-14,
+    "batch_pose_difference": 8.777376665991421e-15,
+    "batch_cost_difference": 4.1744385725905886e-14
+  },
+  "source_sha256": {
+    "before": "4cdcea1a4e4476218884a61185aa986717589355fd133806c56d1d1591c9e1cc",
+    "after": "ca68bf2894fb27e4c1498ed3fd7c71990fb62772b9fb153ceb5952f11bd689fd"
+  },
+  "cases": {
+    "before": {
+      "trace_sha256": "d19792110b6163912579ac7773cde1c687862eb45e84e0ad7b590e0c94110535",
+      "summary_sha256": "b92018a3e275fa4a155d59f13ce0a497ce2061ce691eb11cdfd3fcf428e81bc0",
+      "executable_sha256": "ceeab014434c4ec3e218ff05d8e3727ff094743b6e6387e57f14ef16bfdb6bac"
+    },
+    "after": {
+      "trace_sha256": "52525267e2ecabaa5554d3607215478005a943acfdc2c6f82b88bc71ba9116d1",
+      "summary_sha256": "2b35f827bfabdafc3999ee6c31e4bd227067892731e036fcdff638f365d87de1",
+      "executable_sha256": "4038da9d9b8dbe5363bc9609190e3ba3c6dc8a9bd580c63728655c76fed06d85"
+    }
+  }
+}

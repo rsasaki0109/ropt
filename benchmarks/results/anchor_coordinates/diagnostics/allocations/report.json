@@ -1,0 +1,43 @@
+{
+  "eligible": true,
+  "purpose": "Separate allocation traffic with exact agreement to accepted cached timings.",
+  "frames": 300,
+  "instrumented_times_excluded": true,
+  "peak_memory_or_rss_measured": false,
+  "native_memory_measured": false,
+  "full_means_reports_and_quality_equal_primary": true,
+  "cases": {
+    "before": {
+      "allocation_calls": 979186,
+      "allocation_bytes": 224930394
+    },
+    "after": {
+      "allocation_calls": 895456,
+      "allocation_bytes": 222920874
+    }
+  },
+  "saved_allocation_calls": 83730,
+  "saved_allocation_bytes": 2009520,
+  "static_fixture_prediction": {
+    "removed_local_vectors": 83730,
+    "removed_local_bytes": 2009520
+  },
+  "primary_metadata_sha256": "dbaf4805d0f38c7645a117155a899e16cb0c56741f47b69b55e80e84e5631b6b",
+  "primary_report_sha256": "e3c4eb5ae1dfd3a1750e7c4e599c3da93640921e19637c9f9f1ffbca0ced789b",
+  "source_sha256": {
+    "before": "5d3a5de1a11c1aa1bdbbcf4c44859d54c7127d987cb24ac67d2e96ab6d16d289",
+    "after": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e"
+  },
+  "executable_sha256": {
+    "before": "78faa3fe9f30068cf97419f28274ba413092f273a8147175a0f8842d3edd9bd5",
+    "after": "d225f7ea0044715e98e0953e0da14fe5495ea001ee50211c3258d44d056bbcaf"
+  },
+  "driver_sha256": "6600744926d21340e13b5b7b7dad341c4760c801c40a4913f059d33bb1fd4b3e",
+  "runner_files_sha256": {
+    "crates/ropt/examples/benchmark_cached_isam_se2.rs": "921da0f9e179f09b315762de82e40d7af7646d2de0ffea86fe9ab68050a51a7f",
+    "crates/ropt/examples/support/isam_se2.rs": "ba5725dc7afffaafa42b92d62abcc62ba662b0b45fc2d27b07f0b1e5cd5ae7c1",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/paired_anchor_coordinates.py": "b079bad60a822dfcadb7bc5696d9e6856c3f64cbb43ff6d38a0be09ed64affb3",
+    "benchmarks/anchor_coordinates.patch": "f0ee3830e32fd41b9631e438c2a9d88431af222033bc628ab91acdb7af468fb9"
+  }
+}

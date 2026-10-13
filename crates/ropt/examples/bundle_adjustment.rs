@@ -3,7 +3,20 @@
 mod ba;
 use ropt::{sparse::CgOptions, *};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let scene = ba::scene()?;
+    let autodiff = std::env::args().skip(1).any(|arg| arg == "--autodiff");
+    let scene = if autodiff {
+        ba::scene_with_autodiff(0.0, true)?
+    } else {
+        ba::scene()?
+    };
+    println!(
+        "Jacobian: {}",
+        if autodiff {
+            "forward AD on right tangents"
+        } else {
+            "analytic"
+        }
+    );
     let initial = scene.graph.initial();
     let initial_rms = scene.rms(&initial)?;
     let (retained, block_size) = scene.graph.schur_layout(&scene.points)?;

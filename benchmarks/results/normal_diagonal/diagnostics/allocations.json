@@ -1,0 +1,23 @@
+{
+  "purpose": "complete update/report allocation traffic; excluded from primary timing; not peak/RSS",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "source_sha256": {
+    "before": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+    "after": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0"
+  },
+  "cases": {
+    "before": {
+      "allocation_calls": 2403726,
+      "requested_bytes": 568194510,
+      "means_and_nontiming_reports_match_primary": true
+    },
+    "after": {
+      "allocation_calls": 2403726,
+      "requested_bytes": 568194510,
+      "means_and_nontiming_reports_match_primary": true
+    }
+  },
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678"
+}

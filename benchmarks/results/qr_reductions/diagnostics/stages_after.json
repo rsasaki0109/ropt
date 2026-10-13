@@ -1,0 +1,92 @@
+{
+  "purpose": "warmed inclusive stage profile; no other solver/build/test overlaps these final diagnostic streams; excluded from primary comparison; not additive",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "stages": [
+    {
+      "stage": "build_graph",
+      "calls": 601,
+      "inclusive_ns": 17305179
+    },
+    {
+      "stage": "batch_solve",
+      "calls": 300,
+      "inclusive_ns": 238758008
+    },
+    {
+      "stage": "factor_evaluation",
+      "calls": 932,
+      "inclusive_ns": 69523092
+    },
+    {
+      "stage": "qr_append",
+      "calls": 301,
+      "inclusive_ns": 220369769
+    },
+    {
+      "stage": "graph_retract",
+      "calls": 632,
+      "inclusive_ns": 6327906
+    },
+    {
+      "stage": "ldl_solve",
+      "calls": 631,
+      "inclusive_ns": 134728527
+    },
+    {
+      "stage": "ldl_prepare",
+      "calls": 300,
+      "inclusive_ns": 73964793
+    },
+    {
+      "stage": "ldl_numeric",
+      "calls": 631,
+      "inclusive_ns": 23893293
+    },
+    {
+      "stage": "ldl_rebind",
+      "calls": 183,
+      "inclusive_ns": 12719222
+    },
+    {
+      "stage": "normal_pattern",
+      "calls": 483,
+      "inclusive_ns": 14437316
+    },
+    {
+      "stage": "ordering",
+      "calls": 300,
+      "inclusive_ns": 15539623
+    },
+    {
+      "stage": "factor_pattern",
+      "calls": 300,
+      "inclusive_ns": 27574411
+    },
+    {
+      "stage": "update_plan",
+      "calls": 300,
+      "inclusive_ns": 9350662
+    },
+    {
+      "stage": "assembly_plan",
+      "calls": 483,
+      "inclusive_ns": 13833996
+    },
+    {
+      "stage": "normal_signature",
+      "calls": 300,
+      "inclusive_ns": 2890082
+    }
+  ],
+  "means_and_nontiming_reports_match_primary": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "primary": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b",
+    "instrumented": "95e3c754497ace5db9d40e384802ad6e24b38bd984d6e9eb7a705e00812407a0"
+  },
+  "executable_sha256": "b642be795cbe6168a13b4b4eb199840861d723215720703df1aa879d104fbda2",
+  "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678"
+}

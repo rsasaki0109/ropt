@@ -1,0 +1,16 @@
+{
+  "purpose": "instrumented predecessor diagnostic; times excluded from primary and stage times overlap",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "source_sha256": {
+    "before": "4ac6c808eef27dd66f6b6461c9092cf07f1083f29e16853c62d05c88dd32d68f",
+    "instrumented": "c3f8b3de41a9bf55e600e57cb0a4057c51bb4c9c78f9b325d225b683e85d8990"
+  },
+  "executable_sha256": "29b79f914cfa30b616a868aaaf7e092a6ebaeeb8a0626e0aa317dae2a527120b",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "patch_sha256": "ada9c9982078f9c7dde579a9005900b439559fdc076b221ed238d246a5cc9450",
+  "means_match_uninstrumented": true,
+  "means_sha256": "17138f42e5e723374c961d09e3624231c399bde0d60c94c03b9e7e81b3903733",
+  "max_original_gradient": 2.963925807564216e-07
+}

@@ -1,0 +1,21 @@
+{
+  "purpose": "cached/interval/loop-refresh correctness; not timing comparison",
+  "frames": 300,
+  "trace_and_summary_identical": true,
+  "source_sha256": {
+    "before": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+    "after": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b"
+  },
+  "cases": {
+    "before": {
+      "trace_sha256": "52525267e2ecabaa5554d3607215478005a943acfdc2c6f82b88bc71ba9116d1",
+      "summary_sha256": "2b35f827bfabdafc3999ee6c31e4bd227067892731e036fcdff638f365d87de1",
+      "executable_sha256": "8e93223eafb01152a8c4afb841caf8a09d875cd8d4bbfebf3b11e5c85c34c3f9"
+    },
+    "after": {
+      "trace_sha256": "52525267e2ecabaa5554d3607215478005a943acfdc2c6f82b88bc71ba9116d1",
+      "summary_sha256": "2b35f827bfabdafc3999ee6c31e4bd227067892731e036fcdff638f365d87de1",
+      "executable_sha256": "99dbac9b6ef9364fed47012e01fec6de9463caeed9bce1de8b0783b37041da8a"
+    }
+  }
+}

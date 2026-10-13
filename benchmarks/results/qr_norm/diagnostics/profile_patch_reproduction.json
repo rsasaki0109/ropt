@@ -1,0 +1,23 @@
+{
+  "purpose": "source-only forward diagnostic reproduction",
+  "checks": [
+    {
+      "variant": "before",
+      "patch": "symbolic_merge_stage_profile.patch",
+      "source_sha256": "d8163b33aa08c467391b107e16242ea7c0b9162cb19836bf32dadc593030c70e",
+      "reproduces_instrumented_kernel_and_runner": true
+    },
+    {
+      "variant": "after",
+      "patch": "symbolic_merge_stage_profile.patch",
+      "source_sha256": "fca28a0f27c9b9d1276e0054593f3bdec145def8b0dea4cbaa08c0bb17f7d4d5",
+      "reproduces_instrumented_kernel_and_runner": true
+    },
+    {
+      "variant": "cache",
+      "patch": "givens_cache_classifier.patch",
+      "source_sha256": "1ccf9eec0b72d68162b0d803fc94ff673fcf69dcc8a5b568ce1e5d165ce78f40",
+      "reproduces_instrumented_kernel_and_runner": true
+    }
+  ]
+}

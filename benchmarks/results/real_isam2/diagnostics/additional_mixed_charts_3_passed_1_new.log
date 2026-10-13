@@ -1,0 +1,11 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+     Running tests/isam_coordinates.rs (target/debug/deps/isam_coordinates-347b8b667601bbdc)
+
+running 3 tests
+test a_full_turn_raw_step_still_triggers_refresh_in_a_small_principal_chart ... ok
+test batch_ordering_preserves_mixed_charts_and_fixed_insertion_layout ... ok
+test mixed_charts_preserve_insertion_layout_cost_and_refreshed_coordinates ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

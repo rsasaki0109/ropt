@@ -1,0 +1,14 @@
+{
+  "purpose": "correctness validation; no timing thresholds",
+  "source_sha256": "4cdcea1a4e4476218884a61185aa986717589355fd133806c56d1d1591c9e1cc",
+  "regression_test_sha256": "57a8cfb5c3b1ce87139ac092286980c2014a55d4717c1bd1b345b4f728c38d90",
+  "rust_unit_integration_tests_passed": 213,
+  "rust_doctests_passed": 18,
+  "python_quality_tests_passed": 9,
+  "clippy_all_targets_deny_warnings": "passed",
+  "formatting": "passed",
+  "documentation_deny_warnings": "passed",
+  "rollback_source_stages_verified": 18,
+  "restored_predecessor_kernel_built_and_six_round_native_smoke_passed": true,
+  "primary_hashes_verified_after_documentation": true
+}

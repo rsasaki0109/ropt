@@ -1,0 +1,310 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -257,6 +257,8 @@
+     offsets: Vec<usize>,
+     rows: Vec<usize>,
+     normal_entries: usize,
++    normal_offsets: Vec<usize>,
++    normal_rows: Vec<usize>,
+     max_off_diagonal: usize,
+     update_targets: Option<Vec<usize>>,
+     assembly_targets: Option<Vec<usize>>,
+@@ -298,6 +300,15 @@
+                     .collect()
+             }
+         };
++        // Exact original-coordinate normal graph, independent of residual row
++        // layout and numerical values. Keep equality checks collision-free.
++        let mut normal_offsets = Vec::with_capacity(n + 1);
++        let mut normal_rows = Vec::with_capacity(normal_entries);
++        normal_offsets.push(0);
++        for column in &columns {
++            normal_rows.extend(column.iter().copied());
++            normal_offsets.push(normal_rows.len());
++        }
+         let mut inverse = vec![0; n];
+         for (new, &old) in permutation.iter().enumerate() {
+             inverse[old] = new;
+@@ -346,6 +357,8 @@
+             offsets,
+             rows,
+             normal_entries,
++            normal_offsets,
++            normal_rows,
+             max_off_diagonal,
+             update_targets: None,
+             assembly_targets: None,
+@@ -367,25 +380,59 @@
+             }
+             symbolic.update_targets = Some(targets);
+         }
+-        let remaining = options.max_entries - symbolic.update_entries();
++        symbolic.refresh_assembly(j, options.max_entries);
++        Ok(symbolic)
++    }
++    // A different CSR descriptor can share the exact same normal graph. Only
++    // that equality permits reusing ordering, fill and numeric update targets.
++    fn rebind_pattern(&mut self, j: &CsrMatrix, limit: usize) -> Result<bool, Error> {
++        if j.shape().1 != self.dimension() {
++            return Ok(false);
++        }
++        let (columns, entries) = assemble_pattern(j, limit)?;
++        if entries != self.normal_entries
++            || columns.iter().enumerate().any(|(col, rows)| {
++                rows.iter().copied().ne(self.normal_rows
++                    [self.normal_offsets[col]..self.normal_offsets[col + 1]]
++                    .iter()
++                    .copied())
++            })
++        {
++            return Ok(false);
++        }
++        self.refresh_assembly(j, limit);
++        let (offsets, indices) = j.pattern();
++        self.pattern_offsets.clear();
++        self.pattern_offsets.extend_from_slice(offsets);
++        self.pattern_indices.clear();
++        self.pattern_indices.extend_from_slice(indices);
++        self.shape = j.shape();
++        Ok(true)
++    }
++    fn refresh_assembly(&mut self, j: &CsrMatrix, limit: usize) {
++        let (pattern_offsets, pattern_indices) = j.pattern();
++        let remaining = limit - self.update_entries();
+         let operations = (0..j.shape().0).try_fold(0_usize, |sum, row| {
+             let count = pattern_offsets[row + 1] - pattern_offsets[row];
+             sum.checked_add(count.checked_mul(count.checked_add(1)?)? / 2)
+         });
+         if let Some(operations) = operations.filter(|&count| count <= remaining) {
+-            let mut targets = Vec::with_capacity(operations);
++            let mut targets = self.assembly_targets.take().unwrap_or_default();
++            targets.clear();
++            targets.reserve_exact(operations);
+             for row in 0..j.shape().0 {
+                 for a in pattern_offsets[row]..pattern_offsets[row + 1] {
+-                    let ca = symbolic.inverse[pattern_indices[a]];
++                    let ca = self.inverse[pattern_indices[a]];
+                     for &original in &pattern_indices[a..pattern_offsets[row + 1]] {
+-                        let cb = symbolic.inverse[original];
+-                        targets.push(symbolic.entry(ca.min(cb), ca.max(cb)));
++                        let cb = self.inverse[original];
++                        targets.push(self.entry(ca.min(cb), ca.max(cb)));
+                     }
+                 }
+             }
+-            symbolic.assembly_targets = Some(targets);
+-        }
+-        Ok(symbolic)
++            self.assembly_targets = Some(targets);
++        } else {
++            self.assembly_targets = None;
++        }
+     }
+     pub fn dimension(&self) -> usize {
+         self.permutation.len()
+@@ -607,7 +654,8 @@
+     pub factor_entries: usize,
+ }
+ /// Symbolic analysis and numeric scratch reused across linear solves. Exact CSR
+-/// pattern changes trigger reanalysis. No global cache or shared mutable state.
++/// pattern changes trigger checked pattern analysis. Equal normal graphs reuse
++/// ordering/fill with refreshed CSR assembly targets. No global/shared cache.
+ #[derive(Debug)]
+ pub struct SparseLdlWorkspace {
+     options: SparseLdlOptions,
+@@ -633,6 +681,8 @@
+             ready: false,
+         })
+     }
++    /// Successful CSR-pattern analyses, including normal-graph rebindings.
++    /// Value-only refactors do not increment this counter.
+     pub fn analyses(&self) -> usize {
+         self.analyses
+     }
+@@ -647,14 +697,21 @@
+             return Err(Error::InvalidOptions);
+         }
+         if self.symbolic.as_ref().is_none_or(|s| !s.matches_pattern(j)) {
+-            let symbolic = SparseLdlSymbolic::analyze(j, &self.options)?;
+-            self.values.resize(symbolic.factor_entries(), 0.0);
+-            self.column_scratch.resize(symbolic.max_off_diagonal, 0.0);
+-            self.solution
+-                .resize_vertically_mut(symbolic.dimension(), 0.0);
+-            self.residual
+-                .resize_vertically_mut(symbolic.dimension(), 0.0);
+-            self.symbolic = Some(symbolic);
++            let rebound = if let Some(symbolic) = &mut self.symbolic {
++                symbolic.rebind_pattern(j, self.options.max_entries)?
++            } else {
++                false
++            };
++            if !rebound {
++                let symbolic = SparseLdlSymbolic::analyze(j, &self.options)?;
++                self.values.resize(symbolic.factor_entries(), 0.0);
++                self.column_scratch.resize(symbolic.max_off_diagonal, 0.0);
++                self.solution
++                    .resize_vertically_mut(symbolic.dimension(), 0.0);
++                self.residual
++                    .resize_vertically_mut(symbolic.dimension(), 0.0);
++                self.symbolic = Some(symbolic);
++            }
+             self.analyses = self.analyses.saturating_add(1);
+         }
+         factor_numeric(
+@@ -928,3 +985,156 @@
+         }
+     }
+ }
++
++#[cfg(test)]
++mod normal_rebind_tests {
++    use super::*;
++    use crate::DMatrix;
++
++    fn dense_graph(extra_joint_rows: usize, reverse_rows: bool, huge: bool) -> CsrMatrix {
++        let n = 6;
++        let m = n + 1 + extra_joint_rows;
++        let mut entries = Vec::new();
++        for row in 0..m {
++            let target = if reverse_rows { m - 1 - row } else { row };
++            if row < n {
++                entries.push((target, row, 1.));
++            } else {
++                for col in 0..n {
++                    entries.push((
++                        target,
++                        col,
++                        if huge && row == n + extra_joint_rows {
++                            f64::MAX
++                        } else {
++                            0.2 + ((col + row + 1) as f64 * 0.17).cos()
++                        },
++                    ));
++                }
++            }
++        }
++        CsrMatrix::from_triplets(m, n, entries).unwrap()
++    }
++
++    #[test]
++    fn equal_normal_graph_rebinds_rows_and_plan_budget_without_changing_arithmetic() {
++        // 35 update destinations leave 28 assembly slots. One joint row fits;
++        // repeated joint rows require the same original search fallback.
++        let options = SparseLdlOptions {
++            max_entries: 63,
++            ..Default::default()
++        };
++        let original = dense_graph(0, false, false);
++        let static_symbolic = SparseLdlSymbolic::analyze(&original, &options).unwrap();
++        let changed = dense_graph(1, false, false);
++        assert!(!static_symbolic.matches_pattern(&changed));
++        assert!(matches!(
++            static_symbolic.factor_normal(&changed, 0.01),
++            Err(Error::Evaluation(_))
++        ));
++        let mut workspace = SparseLdlWorkspace::new(options).unwrap();
++        let rhs = DVector::from_fn(6, |i, _| (i as f64 * 0.3).sin());
++        let mut x = DVector::zeros(6);
++        workspace.solve_into(&original, &rhs, 0.01, &mut x).unwrap();
++        let rows_pointer = workspace.symbolic.as_ref().unwrap().rows.as_ptr();
++        let updates_pointer = workspace
++            .symbolic
++            .as_ref()
++            .unwrap()
++            .update_targets
++            .as_ref()
++            .unwrap()
++            .as_ptr();
++        for (index, j) in [
++            original,
++            changed,
++            dense_graph(1, true, false),
++            dense_graph(0, false, false),
++        ]
++        .into_iter()
++        .enumerate()
++        {
++            let stats = workspace.solve_into(&j, &rhs, 0.01, &mut x).unwrap();
++            let fresh = solve_normal(&j, &rhs, 0.01, &options).unwrap();
++            assert_eq!(x, fresh.x);
++            assert_eq!(stats.residual_norm, fresh.residual_norm);
++            assert_eq!(stats.refinement_steps, fresh.refinement_steps);
++            assert_eq!(stats.normal_entries, fresh.normal_entries);
++            assert_eq!(stats.factor_entries, fresh.factor_entries);
++            let symbolic = workspace.symbolic.as_ref().unwrap();
++            assert!(symbolic.matches_pattern(&j));
++            assert_eq!(symbolic.rows.as_ptr(), rows_pointer);
++            assert_eq!(
++                symbolic.update_targets.as_ref().unwrap().as_ptr(),
++                updates_pointer
++            );
++            assert_eq!(
++                symbolic.assembly_targets.is_some(),
++                index == 0 || index == 3
++            );
++            assert_eq!(workspace.analyses(), index + 1);
++            let mut dense = DMatrix::zeros(j.shape().0, 6);
++            for (r, c, v) in j.entries() {
++                dense[(r, c)] = v;
++            }
++            let mut h = dense.transpose() * dense;
++            for k in 0..6 {
++                h[(k, k)] += 0.01 * h[(k, k)].max(1.);
++            }
++            assert!((&x - h.cholesky().unwrap().solve(&rhs)).norm() < 1e-12);
++        }
++    }
++
++    #[test]
++    fn equal_counts_with_different_normal_edges_require_full_analysis() {
++        let make = |edges: &[(usize, usize)]| {
++            let mut entries: Vec<_> = (0..6).map(|i| (i, i, 1.)).collect();
++            for (r, &(a, b)) in edges.iter().enumerate() {
++                entries.extend([(6 + r, a, -1.), (6 + r, b, 1.)]);
++            }
++            CsrMatrix::from_triplets(8, 6, entries).unwrap()
++        };
++        let a = make(&[(0, 1), (2, 3)]);
++        let b = make(&[(0, 2), (1, 3)]);
++        let options = SparseLdlOptions::default();
++        let mut symbolic = SparseLdlSymbolic::analyze(&a, &options).unwrap();
++        let other = SparseLdlSymbolic::analyze(&b, &options).unwrap();
++        assert_eq!(symbolic.normal_entries(), other.normal_entries());
++        assert!(!symbolic.rebind_pattern(&b, options.max_entries).unwrap());
++        assert!(symbolic.matches_pattern(&a));
++        let smaller =
++            CsrMatrix::from_triplets(3, 3, vec![(0, 0, 1.), (1, 1, 1.), (2, 2, 1.)]).unwrap();
++        assert!(
++            !symbolic
++                .rebind_pattern(&smaller, options.max_entries)
++                .unwrap()
++        );
++        let mut workspace = SparseLdlWorkspace::new(options).unwrap();
++        for (i, j) in [a, b].into_iter().enumerate() {
++            let rhs = DVector::from_element(6, 1.);
++            let solved = workspace.solve(&j, &rhs, 0.01).unwrap();
++            assert_eq!(solved.x, solve_normal(&j, &rhs, 0.01, &options).unwrap().x);
++            assert_eq!(workspace.analyses(), i + 1);
++        }
++    }
++
++    #[test]
++    fn failed_numeric_factor_after_rebinding_cannot_expose_old_solution_and_recovers() {
++        let options = SparseLdlOptions::default();
++        let mut workspace = SparseLdlWorkspace::new(options).unwrap();
++        let original = dense_graph(0, false, false);
++        let rhs = DVector::from_element(6, 1.);
++        let expected = workspace.solve(&original, &rhs, 0.01).unwrap().x;
++        let bad = dense_graph(1, false, true);
++        assert_eq!(workspace.refactor(&bad, 0.01), Err(Error::NonFinite));
++        assert!(workspace.symbolic().unwrap().matches_pattern(&bad));
++        assert_eq!(workspace.analyses(), 2);
++        let mut x = DVector::zeros(6);
++        assert_eq!(
++            workspace.solve_factored_into(&rhs, &mut x),
++            Err(Error::LinearSolve)
++        );
++        assert_eq!(workspace.solve(&original, &rhs, 0.01).unwrap().x, expected);
++        assert_eq!(workspace.analyses(), 3);
++    }
++}

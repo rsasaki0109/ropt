@@ -1,0 +1,7 @@
+build_graph: calls=601 inclusive_ns=20231022
+batch_solve: calls=300 inclusive_ns=983845700
+factor_evaluation: calls=3003 inclusive_ns=323856993
+qr_append: calls=301 inclusive_ns=394487521
+graph_retract: calls=2403 inclusive_ns=66436889
+ldl_solve: calls=2402 inclusive_ns=337683515
+ldl_prepare: calls=300 inclusive_ns=146575483

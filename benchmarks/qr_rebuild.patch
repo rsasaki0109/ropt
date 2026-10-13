@@ -1,0 +1,260 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -119,6 +119,37 @@
+         j: &CsrMatrix,
+         residual: &DVector<f64>,
+     ) -> Result<(), Error> {
++        self.append_rows_in_place(j, residual, 0..j.shape().0)
++    }
++    pub(crate) fn rebuild_in_place(
++        &mut self,
++        j: &CsrMatrix,
++        residual: &DVector<f64>,
++    ) -> Result<(), Error> {
++        // A complete new model can group rows by their first pivot, avoiding
++        // late rotations through already populated downstream rows. Preserve
++        // original order within each group. Incremental append stays in input
++        // order; only a fresh factor may use this rebuild path.
++        if self.entries != 0 || self.constant_cost != 0. || self.rhs.iter().any(|&v| v != 0.) {
++            return Err(Error::InvalidOptions);
++        }
++        let (offsets, indices) = j.pattern();
++        let mut rows = (0..j.shape().0).collect::<Vec<_>>();
++        rows.sort_by_key(|&r| {
++            if offsets[r] == offsets[r + 1] {
++                j.shape().1
++            } else {
++                indices[offsets[r]]
++            }
++        });
++        self.append_rows_in_place(j, residual, rows.into_iter())
++    }
++    fn append_rows_in_place(
++        &mut self,
++        j: &CsrMatrix,
++        residual: &DVector<f64>,
++        rows: impl Iterator<Item = usize>,
++    ) -> Result<(), Error> {
+         let (m, n) = j.shape();
+         if n != self.dimension() || m != residual.len() {
+             return Err(Error::InvalidDimensions);
+@@ -130,7 +161,8 @@
+         let mut lower_row = Vec::new();
+         let mut row = Vec::new();
+         let max_entries = self.options.max_entries;
+-        for (r, &residual) in residual.iter().enumerate() {
++        for r in rows {
++            let residual = residual[r];
+             row.clear();
+             row.extend(j.row(r)?);
+             let mut b = -residual;
+@@ -515,3 +547,198 @@
+         }
+     }
+ }
++
++#[cfg(test)]
++mod rebuild_tests {
++    use super::*;
++    use crate::DMatrix;
++
++    fn csr(j: &DMatrix<f64>) -> CsrMatrix {
++        CsrMatrix::from_triplets(
++            j.nrows(),
++            j.ncols(),
++            (0..j.nrows())
++                .flat_map(|r| {
++                    (0..j.ncols())
++                        .filter_map(move |c| (j[(r, c)] != 0.).then_some((r, c, j[(r, c)])))
++                })
++                .collect(),
++        )
++        .unwrap()
++    }
++
++    fn reference(j: &DMatrix<f64>, residual: &DVector<f64>) -> DVector<f64> {
++        let mut x = j
++            .clone()
++            .try_svd(true, true, f64::EPSILON * f64::EPSILON, 1000)
++            .unwrap()
++            .solve(&(-residual), 1e-12)
++            .unwrap();
++        // These test matrices contain a strong diagonal and are well conditioned.
++        // SVD's disconnected-support vectors can leave a ~1e-10 original
++        // gradient. Refine only this oracle with an independent dense SPD solve;
++        // production rebuilds still use orthogonal Givens rotations exclusively.
++        let normal = (j.transpose() * j).cholesky().unwrap();
++        for _ in 0..3 {
++            let gradient = j.transpose() * (j * &x + residual);
++            if gradient.norm() < 1e-12 {
++                break;
++            }
++            x -= normal.solve(&gradient);
++        }
++        assert!((j.transpose() * (j * &x + residual)).norm() < 1e-12);
++        x
++    }
++
++    #[test]
++    fn grouped_rebuild_and_later_extension_match_refined_dense_reference_and_original_energy() {
++        for n in [4, 7, 16] {
++            let m = 3 * n + 3;
++            let dense = DMatrix::from_fn(m, n, |r, c| {
++                if r == 0 || r == m - 1 {
++                    0.
++                } else if r <= n {
++                    if c == n - r { 3. } else { 0. }
++                } else if (r + 2 * c) % 5 == 0 {
++                    ((r + c + 1) as f64).sin()
++                } else {
++                    0.
++                }
++            });
++            let residual = DVector::from_fn(m, |r, _| ((r + 1) as f64).cos());
++            let expected = reference(&dense, &residual);
++            for scale in [1e-100, 1., 1e100] {
++                let mut qr = IncrementalQr::new(n, Default::default()).unwrap();
++                qr.rebuild_in_place(&csr(&(&dense * scale)), &(&residual * scale))
++                    .unwrap();
++                let solved = qr.solve().unwrap();
++                let qr_gradient = dense.transpose() * (&dense * &solved + &residual);
++                let svd_gradient = dense.transpose() * (&dense * &expected + &residual);
++                assert!(svd_gradient.norm() < 1e-12);
++                assert!(qr_gradient.norm() < 1e-12);
++                assert!(
++                    (&solved - &expected).norm() < 1e-11,
++                    "n={n}, scale={scale}, actual={solved:?}, svd={expected:?}, gap={}, qr_gradient={}, svd_gradient={}",
++                    (&solved - &expected).norm(),
++                    qr_gradient.norm(),
++                    svd_gradient.norm()
++                );
++                qr.extend_columns(n + 1).unwrap();
++                assert!(matches!(qr.solve(), Err(Error::RankDeficient { .. })));
++                qr.append(
++                    &CsrMatrix::from_triplets(
++                        1,
++                        n + 1,
++                        vec![(0, 0, 0.5 * scale), (0, n, 2. * scale)],
++                    )
++                    .unwrap(),
++                    &DVector::from_element(1, -0.7 * scale),
++                )
++                .unwrap();
++                let combined = DMatrix::from_fn(m + 1, n + 1, |r, c| {
++                    if r < m {
++                        if c < n { dense[(r, c)] } else { 0. }
++                    } else if c == 0 {
++                        0.5
++                    } else if c == n {
++                        2.
++                    } else {
++                        0.
++                    }
++                });
++                let r = DVector::from_fn(m + 1, |i, _| if i < m { residual[i] } else { -0.7 });
++                let expected = reference(&combined, &r);
++                let solved = qr.solve().unwrap();
++                let qr_gradient = combined.transpose() * (&combined * &solved + &r);
++                let svd_gradient = combined.transpose() * (&combined * &expected + &r);
++                assert!(svd_gradient.norm() < 1e-12);
++                assert!(qr_gradient.norm() < 1e-12);
++                assert!(
++                    (&solved - &expected).norm() < 1e-11,
++                    "extended n={n}, scale={scale}, gap={}, qr_gradient={}, svd_gradient={}",
++                    (&solved - &expected).norm(),
++                    qr_gradient.norm(),
++                    svd_gradient.norm()
++                );
++                for x in [
++                    solved,
++                    DVector::zeros(n + 1),
++                    DVector::from_element(n + 1, 0.3),
++                ] {
++                    let original = 0.5 * (&combined * &x + &r).norm_squared();
++                    let cached = qr.cost(&x).unwrap() / scale / scale;
++                    assert!((original - cached).abs() < 1e-11 * original.max(1.));
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn rebuild_rejects_existing_models_bad_inputs_rank_loss_and_fill_overflow() {
++        let j =
++            CsrMatrix::from_triplets(2, 2, vec![(0, 0, 1.), (0, 1, 2.), (1, 0, 2.), (1, 1, 4.)])
++                .unwrap();
++        let mut qr = IncrementalQr::new(2, Default::default()).unwrap();
++        assert_eq!(
++            qr.rebuild_in_place(&j, &DVector::zeros(1)).unwrap_err(),
++            Error::InvalidDimensions
++        );
++        assert_eq!(
++            qr.rebuild_in_place(&j, &DVector::from_element(2, f64::INFINITY))
++                .unwrap_err(),
++            Error::NonFinite
++        );
++        qr.rebuild_in_place(&j, &DVector::zeros(2)).unwrap();
++        assert!(matches!(qr.solve(), Err(Error::RankDeficient { .. })));
++        assert_eq!(
++            qr.rebuild_in_place(&j, &DVector::zeros(2)).unwrap_err(),
++            Error::InvalidOptions
++        );
++        let dense = DMatrix::from_row_slice(3, 3, &[1., 1., 1., 1., 2., 3., 1., 3., 2.]);
++        let mut limited = IncrementalQr::new(
++            3,
++            IncrementalQrOptions {
++                max_entries: 3,
++                ..Default::default()
++            },
++        )
++        .unwrap();
++        assert_eq!(
++            limited
++                .rebuild_in_place(&csr(&dense), &DVector::zeros(3))
++                .unwrap_err(),
++            Error::SparseFillLimit { limit: 3 }
++        );
++        let mut constants = IncrementalQr::new(0, Default::default()).unwrap();
++        let empty = CsrMatrix::from_triplets(1, 0, vec![]).unwrap();
++        constants
++            .append(&empty, &DVector::from_element(1, 2.))
++            .unwrap();
++        assert_eq!(
++            constants
++                .rebuild_in_place(&empty, &DVector::zeros(1))
++                .unwrap_err(),
++            Error::InvalidOptions
++        );
++    }
++
++    #[test]
++    fn rebuild_keeps_exact_extreme_power_of_two_models_finite() {
++        for exponent in [-800, 800] {
++            let scale = 2.0_f64.powi(exponent);
++            let dense = DMatrix::from_fn(5, 4, |r, c| {
++                if r < 4 && c == 3 - r {
++                    if r % 2 == 0 { scale } else { -scale }
++                } else {
++                    0.
++                }
++            });
++            let expected = DVector::from_vec(vec![1., 2., 3., 4.]);
++            let r = -&dense * &expected;
++            let mut qr = IncrementalQr::new(4, Default::default()).unwrap();
++            qr.rebuild_in_place(&csr(&dense), &r).unwrap();
++            assert_eq!(qr.solve().unwrap(), expected);
++            assert_eq!(qr.cost(&expected).unwrap(), 0.);
++        }
++    }
++}
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -265,7 +265,7 @@
+             // The solver already evaluated the model at its final accepted state.
+             // Squared loss leaves whitening intact with unit IRLS weights.
+             qr = IncrementalQr::new(n, self.options.qr)?;
+-            qr.append_in_place(&j, &r)?;
++            qr.rebuild_in_place(&j, &r)?;
+             // Require an observable undamped model even when batch LM used damping.
+             qr.solve()?;
+         }

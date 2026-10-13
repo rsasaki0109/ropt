@@ -1,0 +1,36 @@
+{
+  "purpose": "explicit predecessor source restores archived rejected normal-pattern candidates",
+  "helper_sha256": "a6f0e04e43e6f3ffb14f0b1d106308ea2fe71589a44cccf3be8391de922b861a",
+  "cases": [
+    {
+      "candidate": "bulk",
+      "matches_archived_source": true,
+      "source_sha256": "e6722aeb64358a1a53aa80c903dd54864fc37cf025bdf1d4bf97736457175a4e",
+      "candidate_manifest": {
+        "purpose": "rejected candidate reproduction; production checkout unchanged",
+        "candidate": "bulk",
+        "before_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "candidate_source_sha256": "e6722aeb64358a1a53aa80c903dd54864fc37cf025bdf1d4bf97736457175a4e",
+        "patch_sha256": "f190e2d116529c5ec8f34bea19a995eb944eddd832938389af8e5251d98766c5",
+        "zero_fuzz_apply": true
+      },
+      "six_round_25_arrival_native_smoke_pass": true,
+      "smoke_report_sha256": "680a7b8e60987739030f59a60a4db9dbf623c3b746291707d1dd4a757e4e7aa4"
+    },
+    {
+      "candidate": "diagonal",
+      "matches_archived_source": true,
+      "source_sha256": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0",
+      "candidate_manifest": {
+        "purpose": "rejected candidate reproduction; production checkout unchanged",
+        "candidate": "diagonal",
+        "before_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "candidate_source_sha256": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0",
+        "patch_sha256": "52885a724b1ac2ad5df7bd33efe3ef8b826df01771dbee90aa38e8a9beefd465",
+        "zero_fuzz_apply": true
+      },
+      "six_round_25_arrival_native_smoke_pass": true,
+      "smoke_report_sha256": "64c537612cfc95c65a6b1aa1aa361d357506cd6ba5bca2d30b7e32fa08519849"
+    }
+  ]
+}

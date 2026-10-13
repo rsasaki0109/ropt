@@ -1,0 +1,1 @@
+Error: "nonconverged or inconsistent final cost"

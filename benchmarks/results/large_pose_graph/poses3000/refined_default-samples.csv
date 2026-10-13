@@ -1,0 +1,2 @@
+backend,sample,elapsed_ns,initial_cost,final_cost,termination,nonlinear_trials,accepted_trials,linear_iterations
+sparse_ldl_block,0,2920990009,1.85785060011531546e5,3.67501083440142509e1,Cost,24,23,0

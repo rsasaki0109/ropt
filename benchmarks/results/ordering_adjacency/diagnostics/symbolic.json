@@ -1,0 +1,39 @@
+{
+  "purpose": "instrumented fresh symbolic allocation diagnostic, not primary timing",
+  "input": "reverse-star:256",
+  "repeats": 100,
+  "source_sha256": {
+    "before": "f9d5a34d25424400b89c31ec8726e8aec95e5cad37ed2a471679e63291ed5105",
+    "after": "4ac6c808eef27dd66f6b6461c9092cf07f1083f29e16853c62d05c88dd32d68f"
+  },
+  "runner_sha256": "86e921ed5efef41c8db9371903d431db79bbbb73e911b5aadd22ad38c5697c5b",
+  "permutation_and_entry_counts_identical": true,
+  "cases": {
+    "before": {
+      "columns": 256,
+      "jacobian_entries": 511,
+      "repeats": 100,
+      "elapsed_ns": 10757662,
+      "allocation_calls": 112100,
+      "requested_bytes": 12384800,
+      "normal_entries": 511,
+      "factor_entries": 511,
+      "assembly_entries": 766,
+      "update_entries": 255,
+      "executable_sha256": "a1d6385898fa5a44219efaed43bac2ab97651684252226c039749763a701e2de"
+    },
+    "after": {
+      "columns": 256,
+      "jacobian_entries": 511,
+      "repeats": 100,
+      "elapsed_ns": 8737496,
+      "allocation_calls": 86900,
+      "requested_bytes": 10652000,
+      "normal_entries": 511,
+      "factor_entries": 511,
+      "assembly_entries": 766,
+      "update_entries": 255,
+      "executable_sha256": "e8c43f63587f50e088e2aa1aee216840fbf5cc5ab670b90ddfae976e65ba16d7"
+    }
+  }
+}

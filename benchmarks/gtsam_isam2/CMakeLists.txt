@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(ropt_gtsam_isam2_reference LANGUAGES CXX)
+find_package(GTSAM 4.2 REQUIRED)
+add_executable(gtsam_isam2 benchmark.cpp)
+target_link_libraries(gtsam_isam2 PRIVATE gtsam)
+target_compile_features(gtsam_isam2 PRIVATE cxx_std_17)
+target_compile_options(gtsam_isam2 PRIVATE -Wall -Wextra -Werror)

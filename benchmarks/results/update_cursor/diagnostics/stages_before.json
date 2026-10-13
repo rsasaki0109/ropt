@@ -1,0 +1,92 @@
+{
+  "purpose": "warmed inclusive stage profiling; excluded from primary comparisons; not additive",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "stages": [
+    {
+      "stage": "build_graph",
+      "calls": 601,
+      "inclusive_ns": 16945351
+    },
+    {
+      "stage": "batch_solve",
+      "calls": 300,
+      "inclusive_ns": 261113522
+    },
+    {
+      "stage": "factor_evaluation",
+      "calls": 932,
+      "inclusive_ns": 73211900
+    },
+    {
+      "stage": "qr_append",
+      "calls": 301,
+      "inclusive_ns": 239401686
+    },
+    {
+      "stage": "graph_retract",
+      "calls": 632,
+      "inclusive_ns": 6225638
+    },
+    {
+      "stage": "ldl_solve",
+      "calls": 631,
+      "inclusive_ns": 153571740
+    },
+    {
+      "stage": "ldl_prepare",
+      "calls": 300,
+      "inclusive_ns": 93285215
+    },
+    {
+      "stage": "ldl_numeric",
+      "calls": 631,
+      "inclusive_ns": 25024026
+    },
+    {
+      "stage": "ldl_rebind",
+      "calls": 183,
+      "inclusive_ns": 12715153
+    },
+    {
+      "stage": "normal_pattern",
+      "calls": 483,
+      "inclusive_ns": 14704394
+    },
+    {
+      "stage": "ordering",
+      "calls": 300,
+      "inclusive_ns": 15491664
+    },
+    {
+      "stage": "factor_pattern",
+      "calls": 300,
+      "inclusive_ns": 30081277
+    },
+    {
+      "stage": "update_plan",
+      "calls": 300,
+      "inclusive_ns": 25528845
+    },
+    {
+      "stage": "assembly_plan",
+      "calls": 483,
+      "inclusive_ns": 14243182
+    },
+    {
+      "stage": "normal_signature",
+      "calls": 300,
+      "inclusive_ns": 2599852
+    }
+  ],
+  "means_and_nontiming_reports_match_primary": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "primary": "ca68bf2894fb27e4c1498ed3fd7c71990fb62772b9fb153ceb5952f11bd689fd",
+    "instrumented": "fca28a0f27c9b9d1276e0054593f3bdec145def8b0dea4cbaa08c0bb17f7d4d5"
+  },
+  "executable_sha256": "f8cc8ecdc22b7667dd928a8106fad2012f0d719ad553216e2c2295e354605bc6",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9"
+}

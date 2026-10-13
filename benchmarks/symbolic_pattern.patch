@@ -1,0 +1,206 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -2,7 +2,7 @@
+ use crate::sparse::{CsrMatrix, LinearOperator, NormalOperator, finite_vector};
+ use crate::{DVector, Error};
+ use std::cmp::Reverse;
+-use std::collections::{BTreeMap, BTreeSet, BinaryHeap, btree_map::Entry};
++use std::collections::{BTreeSet, BinaryHeap};
+ 
+ #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+ pub enum SparseOrdering {
+@@ -52,33 +52,70 @@
+         Ok(())
+     }
+ }
+-type Columns = Vec<BTreeMap<usize, f64>>;
+-fn add_entry(
+-    column: &mut BTreeMap<usize, f64>,
++// Keep short structural columns contiguous; bound insertion shifts for large
++// columns by promoting to a tree. Neither representation stores numeric zeros.
++enum PatternColumn {
++    Small(Vec<usize>),
++    Large(BTreeSet<usize>),
++}
++impl PatternColumn {
++    fn diagonal(row: usize) -> Self {
++        let mut rows = Vec::with_capacity(8);
++        rows.push(row);
++        Self::Small(rows)
++    }
++    fn iter(&self) -> impl Iterator<Item = &usize> {
++        let (small, large) = match self {
++            Self::Small(rows) => (Some(rows), None),
++            Self::Large(rows) => (None, Some(rows)),
++        };
++        small
++            .into_iter()
++            .flatten()
++            .chain(large.into_iter().flatten())
++    }
++    fn into_rows(self) -> Vec<usize> {
++        match self {
++            Self::Small(rows) => rows,
++            Self::Large(rows) => rows.into_iter().collect(),
++        }
++    }
++}
++type Columns = Vec<PatternColumn>;
++fn add_pattern_entry(
++    column: &mut PatternColumn,
+     row: usize,
+-    value: f64,
+     entries: &mut usize,
+     limit: usize,
+ ) -> Result<(), Error> {
+-    if !value.is_finite() {
+-        return Err(Error::NonFinite);
+-    }
+-    match column.entry(row) {
+-        Entry::Occupied(mut old) => {
+-            let sum = *old.get() + value;
+-            if !sum.is_finite() {
+-                return Err(Error::NonFinite);
+-            }
+-            *old.get_mut() = sum;
+-        }
+-        Entry::Vacant(new) => {
++    match column {
++        PatternColumn::Small(rows) => {
++            let position = match rows.binary_search(&row) {
++                Ok(_) => return Ok(()),
++                Err(position) => position,
++            };
+             if *entries >= limit {
+                 return Err(Error::SparseFillLimit { limit });
+             }
+-            new.insert(value);
+-            *entries += 1;
+-        }
+-    }
++            if rows.len() < 64 {
++                rows.insert(position, row);
++            } else {
++                let mut tree = rows.iter().copied().collect::<BTreeSet<_>>();
++                tree.insert(row);
++                *column = PatternColumn::Large(tree);
++            }
++        }
++        PatternColumn::Large(rows) => {
++            if rows.contains(&row) {
++                return Ok(());
++            }
++            if *entries >= limit {
++                return Err(Error::SparseFillLimit { limit });
++            }
++            rows.insert(row);
++        }
++    }
++    *entries += 1;
+     Ok(())
+ }
+ fn assemble_pattern(j: &CsrMatrix, limit: usize) -> Result<(Columns, usize), Error> {
+@@ -89,17 +126,14 @@
+     if n > limit {
+         return Err(Error::SparseFillLimit { limit });
+     }
+-    let mut columns = (0..n)
+-        .map(|k| BTreeMap::from([(k, 0.0)]))
+-        .collect::<Columns>();
++    let mut columns = (0..n).map(PatternColumn::diagonal).collect::<Columns>();
+     let mut entries = n;
+-    let mut row = Vec::new();
++    let (offsets, indices) = j.pattern();
+     for r in 0..m {
+-        row.clear();
+-        row.extend(j.row(r)?);
+-        for (k, &(a, _)) in row.iter().enumerate() {
+-            for &(b, _) in &row[k..] {
+-                add_entry(&mut columns[a], b, 0.0, &mut entries, limit)?;
++        let row = &indices[offsets[r]..offsets[r + 1]];
++        for (k, &a) in row.iter().enumerate() {
++            for &b in &row[k..] {
++                add_pattern_entry(&mut columns[a], b, &mut entries, limit)?;
+             }
+         }
+     }
+@@ -113,7 +147,7 @@
+     let n = columns.len();
+     let mut adjacent = vec![BTreeSet::new(); n];
+     for (col, values) in columns.iter().enumerate() {
+-        for &row in values.keys() {
++        for &row in values.iter() {
+             if row != col {
+                 adjacent[col].insert(row);
+                 adjacent[row].insert(col);
+@@ -189,15 +223,14 @@
+                 }
+                 let blocks = n / block_size;
+                 let mut coarse = (0..blocks)
+-                    .map(|k| BTreeMap::from([(k, 0.0)]))
++                    .map(PatternColumn::diagonal)
+                     .collect::<Columns>();
+                 let mut entries = blocks;
+                 for (col, values) in columns.iter().enumerate() {
+-                    for &row in values.keys() {
+-                        add_entry(
++                    for &row in values.iter() {
++                        add_pattern_entry(
+                             &mut coarse[col / block_size],
+                             row / block_size,
+-                            0.0,
+                             &mut entries,
+                             options.max_entries,
+                         )?;
+@@ -215,35 +248,35 @@
+         for (new, &old) in permutation.iter().enumerate() {
+             inverse[old] = new;
+         }
+-        let mut work = vec![BTreeSet::new(); n];
++        let mut work = (0..n)
++            .map(|_| PatternColumn::Small(Vec::with_capacity(8)))
++            .collect::<Columns>();
++        let mut entries = 0;
+         for (old_col, column) in columns.into_iter().enumerate() {
+-            for old_row in column.into_keys() {
++            for &old_row in column.iter() {
+                 let (a, b) = (inverse[old_col], inverse[old_row]);
+-                work[a.min(b)].insert(a.max(b));
+-            }
+-        }
+-        let mut entries = normal_entries;
++                add_pattern_entry(
++                    &mut work[a.min(b)],
++                    a.max(b),
++                    &mut entries,
++                    options.max_entries,
++                )?;
++            }
++        }
+         let mut offsets = Vec::with_capacity(n + 1);
+         let mut rows = Vec::with_capacity(normal_entries);
+         let mut max_off_diagonal = 0;
+         offsets.push(0);
+         for k in 0..n {
+-            let column = std::mem::take(&mut work[k]).into_iter().collect::<Vec<_>>();
++            let column =
++                std::mem::replace(&mut work[k], PatternColumn::Small(Vec::new())).into_rows();
+             if column.first() != Some(&k) {
+                 return Err(Error::InvalidDimensions);
+             }
+             max_off_diagonal = max_off_diagonal.max(column.len() - 1);
+             for (i, &a) in column[1..].iter().enumerate() {
+                 for &b in &column[i + 1..] {
+-                    if !work[a].contains(&b) {
+-                        if entries >= options.max_entries {
+-                            return Err(Error::SparseFillLimit {
+-                                limit: options.max_entries,
+-                            });
+-                        }
+-                        work[a].insert(b);
+-                        entries += 1;
+-                    }
++                    add_pattern_entry(&mut work[a], b, &mut entries, options.max_entries)?;
+                 }
+             }
+             rows.extend(column);

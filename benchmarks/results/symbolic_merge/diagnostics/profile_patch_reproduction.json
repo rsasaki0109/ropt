@@ -1,0 +1,16 @@
+{
+  "purpose": "source-only forward timing-patch reproduction",
+  "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+  "checks": [
+    {
+      "variant": "before",
+      "instrumented_source_sha256": "7e3b1f5e25eed5180b598970434e6170502fbe18287df81d920cb37d315838a7",
+      "matches_instrumented_kernel_and_runner": true
+    },
+    {
+      "variant": "after",
+      "instrumented_source_sha256": "d8163b33aa08c467391b107e16242ea7c0b9162cb19836bf32dadc593030c70e",
+      "matches_instrumented_kernel_and_runner": true
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "purpose": "rejected one-sided prefix candidate; small-workload slowdown; separate campaign, not pooled",
+  "source_sha256": "b84de879d84eec8d356ab3c89ed0e09a77ed3b6cbfad61047fbbb64e5f3395c4",
+  "forward_patch_reproduces_attempt": true,
+  "patch_sha256": "f7b25f950b8bf7bcb55d8584414cf251d6b48d6a5bdbb2930b1192b1ecd7b564",
+  "cases": {
+    "100": {
+      "before_median_ms": 43.1242315,
+      "after_median_ms": 45.045911000000004,
+      "reduction_percent": -4.45614781564283,
+      "pairs_faster": 3
+    },
+    "300": {
+      "before_median_ms": 578.1607735,
+      "after_median_ms": 568.59608,
+      "reduction_percent": 1.6543311027654828,
+      "pairs_faster": 7
+    }
+  }
+}

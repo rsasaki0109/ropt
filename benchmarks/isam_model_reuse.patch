@@ -1,0 +1,215 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -4,7 +4,8 @@
+ use crate::fixed_lag::{Key, SmootherFactor, SmootherUpdate, WindowVariable, build_graph};
+ use crate::incremental_qr::{IncrementalQr, IncrementalQrOptions};
+ use crate::{
+-    DVector, Error, LinearSolver, LocalProblem, Loss, Options, QrOptions, Termination, solve_local,
++    DVector, Error, LinearSolver, LocalProblem, Loss, Options, QrOptions, Termination,
++    solver::solve_local_gaussian_model,
+ };
+ use std::collections::BTreeMap;
+ 
+@@ -190,7 +191,8 @@
+                     "iSAM batch refresh matrix entry limit exceeded".into(),
+                 ));
+             }
+-            let solved = solve_local(&graph, graph.initial(), &self.options.batch_solver)?;
++            let (solved, r, j) =
++                solve_local_gaussian_model(&graph, graph.initial(), &self.options.batch_solver)?;
+             if matches!(
+                 solved.termination,
+                 Termination::NoProgress | Termination::MaxIterations
+@@ -207,9 +209,8 @@
+                 variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
+             }
+             anchors = variables.clone();
+-            // The optimized ambient vector uses the same layout as the new
+-            // anchors, including fixed blocks and non-Euclidean tangent sizes.
+-            let (r, j) = graph.evaluate_sparse(&solved.x)?;
++            // The solver already evaluated the model at its final accepted state.
++            // Squared loss leaves whitening intact with unit IRLS weights.
+             qr = IncrementalQr::new(n, self.options.qr)?;
+             qr.append_in_place(&j, &r)?;
+             // Require an observable undamped model even when batch LM used damping.
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -340,6 +340,25 @@
+     jacobian: Jacobian,
+ }
+ impl Linearization {
++    /// Consume the already evaluated accepted model. iSAM uses this only for
++    /// squared loss with unit IRLS weights; no callback or differentiation replay.
++    fn into_sparse(self) -> Result<(DVector<f64>, CsrMatrix), Error> {
++        let j = match self.jacobian {
++            Jacobian::Sparse(j) => j,
++            Jacobian::Dense(j) => CsrMatrix::from_triplets(
++                j.nrows(),
++                j.ncols(),
++                (0..j.nrows())
++                    .flat_map(|r| {
++                        let j = &j;
++                        (0..j.ncols())
++                            .filter_map(move |c| (j[(r, c)] != 0.).then_some((r, c, j[(r, c)])))
++                    })
++                    .collect(),
++            )?,
++        };
++        Ok((self.residual, j))
++    }
+     fn actual_reduction(
+         &self,
+         trial: &Self,
+@@ -618,6 +637,32 @@
+     initial: DVector<f64>,
+     options: &Options,
+ ) -> Result<Report, Error> {
++    solve_local_model(problem, initial, options).map(|(report, _)| report)
++}
++/// Return the final accepted whitened Gaussian model for undamped square-root
++/// rebuilds. General robust callers must not treat an IRLS model as Gaussian.
++pub(crate) fn solve_local_gaussian_model(
++    problem: &impl LocalProblem,
++    initial: DVector<f64>,
++    options: &Options,
++) -> Result<(Report, DVector<f64>, CsrMatrix), Error> {
++    if !matches!(options.loss, Loss::Squared)
++        || problem
++            .loss_blocks()
++            .iter()
++            .any(|block| !matches!(block.loss, Loss::Squared))
++    {
++        return Err(Error::InvalidOptions);
++    }
++    let (report, model) = solve_local_model(problem, initial, options)?;
++    let (r, j) = model.into_sparse()?;
++    Ok((report, r, j))
++}
++fn solve_local_model(
++    problem: &impl LocalProblem,
++    initial: DVector<f64>,
++    options: &Options,
++) -> Result<(Report, Linearization), Error> {
+     let (ambient, n, m) = problem.dimensions();
+     if ambient == 0 || m == 0 || initial.len() != ambient {
+         return Err(Error::InvalidDimensions);
+@@ -691,13 +736,16 @@
+     let mut cost = model.cost;
+     let initial_cost = cost;
+     if n == 0 {
+-        return Ok(Report {
+-            x,
+-            initial_cost,
+-            cost,
+-            termination: Termination::Gradient,
+-            iterations: Vec::new(),
+-        });
++        return Ok((
++            Report {
++                x,
++                initial_cost,
++                cost,
++                termination: Termination::Gradient,
++                iterations: Vec::new(),
++            },
++            model,
++        ));
+     }
+     let mut damping = options.initial_damping;
+     let mut growth = 2.0;
+@@ -799,13 +847,16 @@
+             }
+         }
+     }
+-    Ok(Report {
+-        x,
+-        initial_cost,
+-        cost,
+-        termination,
+-        iterations: history,
+-    })
++    Ok((
++        Report {
++            x,
++            initial_cost,
++            cost,
++            termination,
++            iterations: history,
++        },
++        model,
++    ))
+ }
+ 
+ #[cfg(test)]
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -35,6 +35,10 @@
+         }
+     }
+     pub(crate) fn validate(self, x: &DVector<f64>) -> Result<(), Error> {
++        self.validate_slice(x.as_slice())
++    }
++    fn validate_slice(self, values: &[f64]) -> Result<(), Error> {
++        let x = nalgebra::DVectorView::from_slice(values, values.len());
+         if x.len() != self.dimensions().0 || x.is_empty() {
+             return Err(Error::InvalidDimensions);
+         }
+@@ -647,26 +651,31 @@
+         if x.len() != self.initial.len() {
+             return Err(Error::InvalidDimensions);
+         }
+-        for i in 0..self.variables.len() {
+-            self.value(
+-                x,
+-                VariableId {
+-                    graph: self.identity,
+-                    index: i,
+-                },
+-            )?;
+-        }
++        // Validate every block, including fixed/disconnected variables, without
++        // allocating owned copies that would immediately be discarded.
++        for variable in &self.variables {
++            variable
++                .kind
++                .validate_slice(&x.as_slice()[variable.ambient.clone()])?;
++        }
++        // Callbacks keep the owned-vector API. Reuse per-slot storage across
++        // factors, passing only the current arity; no values escape the callback.
++        let mut inputs = Vec::<DVector<f64>>::new();
+         let mut row = 0;
+         for f in &self.factors {
+-            let values = f
+-                .variables
+-                .iter()
+-                .map(|id| self.value(x, *id))
+-                .collect::<Result<Vec<_>, _>>()?;
++            inputs.resize_with(inputs.len().max(f.variables.len()), || DVector::zeros(0));
++            for (id, buffer) in f.variables.iter().zip(&mut inputs) {
++                let ambient = &self.variables[id.index].ambient;
++                if buffer.len() != ambient.len() {
++                    buffer.resize_vertically_mut(ambient.len(), 0.);
++                }
++                buffer.copy_from(&x.rows(ambient.start, ambient.len()));
++            }
++            let values = &inputs[..f.variables.len()];
+             let (mut residual, mut blocks) = match &f.evaluation {
+-                Evaluation::Analytic(function) => function(&values)?,
++                Evaluation::Analytic(function) => function(values)?,
+                 Evaluation::Central { step, function } => {
+-                    let residual = function(&values)?;
++                    let residual = function(values)?;
+                     check_residual(&residual, f.residuals)?;
+                     let mut blocks = Vec::new();
+                     for (index, id) in f.variables.iter().enumerate() {
+@@ -680,8 +689,8 @@
+                         for k in 0..n {
+                             let mut d = DVector::zeros(n);
+                             d[k] = *step;
+-                            let mut plus = values.clone();
+-                            let mut minus = values.clone();
++                            let mut plus = values.to_vec();
++                            let mut minus = values.to_vec();
+                             plus[index] = kind.retract(&values[index], &d)?;
+                             minus[index] = kind.retract(&values[index], &(-d))?;
+                             let a = function(&plus)?;

@@ -58,7 +58,8 @@ impl SE2 {
         let (a, b) = if w.abs() < 1e-6 {
             (1.0 - w * w / 6.0, w / 2.0 - w.powi(3) / 24.0)
         } else {
-            (w.sin() / w, (1.0 - w.cos()) / w)
+            // Half-angle identity avoids cancellation in 1-cos(w).
+            (w.sin() / w, 2.0 * (w / 2.0).sin().powi(2) / w)
         };
         Self {
             rotation: SO2::exp(w),

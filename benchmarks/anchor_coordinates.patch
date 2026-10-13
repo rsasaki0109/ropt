@@ -1,0 +1,91 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -1,6 +1,7 @@
+ //! Initial iSAM-style incremental square-root smoothing.
+ //! New Gaussian rows update cached sparse R using Givens rotations. Threshold or
+ //! periodic refresh runs batch LM and rebuilds the undamped model. No Bayes tree.
++use crate::factor::{FactorGraph, VariableId};
+ use crate::fixed_lag::{Key, SmootherFactor, SmootherUpdate, WindowVariable, build_graph};
+ use crate::incremental_qr::{IncrementalQr, IncrementalQrOptions};
+ use crate::{
+@@ -176,6 +177,7 @@
+         } else {
+             self.qr.clone()
+         };
++        let mut cached_coordinates = None;
+         if reason.is_none() {
+             qr.extend_columns(n)?;
+             let (r, j) = new_graph.evaluate_sparse(&new_graph.initial())?;
+@@ -191,9 +193,12 @@
+                 .iter()
+                 .map(|range| delta.rows(range.start, range.len()).norm())
+                 .fold(0.0_f64, f64::max);
+-            let max_delta = anchor_delta(&variables, &anchors)?.max(raw_delta);
++            let coordinates = anchor_coordinates(&variables, &anchors, &new_graph, &new_ids)?;
++            let max_delta = coordinates.1.max(raw_delta);
+             if max_delta > self.options.relinearization_threshold {
+                 reason = Some(IsamRelinearizationReason::Threshold);
++            } else {
++                cached_coordinates = Some(coordinates);
+             }
+         }
+         let refresh = reason.is_some();
+@@ -264,16 +269,14 @@
+             // Require an observable undamped model even when batch LM used damping.
+             qr.solve()?;
+         }
+-        let max_anchor_delta = anchor_delta(&variables, &anchors)?;
+-        let mut delta = DVector::zeros(n);
+-        for (&key, &id) in &new_ids {
+-            if let Some(range) = new_graph.tangent_range(id)? {
+-                let v = &variables[&key];
+-                delta
+-                    .rows_mut(range.start, range.len())
+-                    .copy_from(&v.kind.local(&anchors[&key].value, &v.value)?);
+-            }
+-        }
++        // Share principal local coordinates between threshold, report and cost.
++        // The raw QR step can wind beyond the principal chart; keep its separate
++        // threshold check. Refreshes changed anchors and must recompute Local,
++        // even at identical poses where floating Lie operations may be nonzero.
++        let (delta, max_anchor_delta) = match cached_coordinates {
++            Some(coordinates) => coordinates,
++            None => anchor_coordinates(&variables, &anchors, &new_graph, &new_ids)?,
++        };
+         let linearized_cost = qr.cost(&delta)?;
+         let estimates = variables
+             .iter()
+@@ -309,18 +312,26 @@
+         })
+     }
+ }
+-fn anchor_delta(
++fn anchor_coordinates(
+     values: &BTreeMap<Key, WindowVariable>,
+     anchors: &BTreeMap<Key, WindowVariable>,
+-) -> Result<f64, Error> {
++    graph: &FactorGraph,
++    ids: &BTreeMap<Key, VariableId>,
++) -> Result<(DVector<f64>, f64), Error> {
++    let mut delta = DVector::zeros(graph.dimensions().1);
+     let mut maximum = 0.0_f64;
+-    for (&key, v) in values {
+-        if !v.fixed {
+-            maximum = maximum.max(v.kind.local(&anchors[&key].value, &v.value)?.norm());
++    // Key order matches the previous norm reduction. Column ranges follow graph
++    // insertion order, which need not match the numeric keys.
++    for (&key, &id) in ids {
++        if let Some(range) = graph.tangent_range(id)? {
++            let v = &values[&key];
++            let local = v.kind.local(&anchors[&key].value, &v.value)?;
++            maximum = maximum.max(local.norm());
++            delta.rows_mut(range.start, range.len()).copy_from(&local);
+         }
+     }
+     if !maximum.is_finite() {
+         return Err(Error::NonFinite);
+     }
+-    Ok(maximum)
+-}
++    Ok((delta, maximum))
++}

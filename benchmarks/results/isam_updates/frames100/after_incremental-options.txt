@@ -1,0 +1,6 @@
+mode=incremental
+frames=100
+isam=IsamOptions { relinearization_threshold: 1000000000.0, relinearization_interval: 18446744073709551615, qr: IncrementalQrOptions { relative_rank_tolerance: 1e-12, max_entries: 32000000 }, batch_solver: Options { linear_solver: SparseLdl(SparseLdlOptions { ordering: MinimumDegree, max_entries: 1000000, relative_tolerance: 1e-10, absolute_tolerance: 1e-12 }), algorithm: LevenbergMarquardt, loss: Squared, max_iterations: 100, gradient_tolerance: 1e-10, step_tolerance: 1e-10, cost_tolerance: 1e-15, initial_damping: 1e-12 } }
+batch=FixedLagOptions { lag: 2.0, solver: Options { linear_solver: SparseLdl(SparseLdlOptions { ordering: MinimumDegree, max_entries: 1000000, relative_tolerance: 1e-10, absolute_tolerance: 1e-12 }), algorithm: LevenbergMarquardt, loss: Squared, max_iterations: 100, gradient_tolerance: 1e-10, step_tolerance: 1e-10, cost_tolerance: 1e-15, initial_damping: 1e-12 }, marginalization: MarginalizationOptions { relative_rank_tolerance: 1e-12, svd_max_iterations: 1000, max_entries: 32000000 }, marginalization_loss: Gaussian }
+all timestamps=None; batch retains all history; no expiry
+callback counting enabled; allocator counting disabled

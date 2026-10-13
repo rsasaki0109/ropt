@@ -1,0 +1,17 @@
+
+type:              ISAM2GaussNewtonParams
+wildfireThreshold: 0
+relinearizeThreshold:              0
+relinearizeSkip:                   1
+enableRelinearization:             1
+evaluateNonlinearError:            0
+factorization:                     QR
+cacheLinearizedFactors:            1
+enableDetailedResults:             0
+enablePartialRelinearizationCheck: 0
+findUnusedFactorSlots:             0
+exact_between=ON
+root eliminated with equivalent prior
+additional empty updates until original gradient<=5e-7, maximum 200 calls
+version=4.2.1
+jacobian_probe=3.2719382758727988e-10

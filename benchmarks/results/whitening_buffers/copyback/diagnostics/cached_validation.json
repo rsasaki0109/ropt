@@ -1,0 +1,11 @@
+{
+  "purpose": "first copyback version cached correctness, not timing",
+  "frames": 300,
+  "trace_and_summary_identical": true,
+  "source_sha256": {
+    "before": "23ac190ae27e83972cf5e84c21ed948a42768210f00d95e75f9612b2582c72ef",
+    "after": "42bc01ab14dfa555bc0f67332de6f973a07a04adc48ff7ea5b1e26250443d833"
+  },
+  "trace_sha256": "d19792110b6163912579ac7773cde1c687862eb45e84e0ad7b590e0c94110535",
+  "summary_sha256": "b92018a3e275fa4a155d59f13ce0a497ce2061ce691eb11cdfd3fcf428e81bc0"
+}

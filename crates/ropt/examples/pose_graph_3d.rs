@@ -1,5 +1,5 @@
-//! Small dense SE(3) graph, using explicitly requested tangent central differences.
-use ropt::{factor::*, manifold::*, *};
+//! SE(3) Lie Log graph with forward AD local Jacobians and a fixed initial pose.
+use ropt::{factor::*, manifold::*, pose_graph::add_relative_pose3_factor, *};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let truth = [
         SE3::exp(Tangent6::zeros()),
@@ -19,14 +19,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     graph.set_fixed(ids[0], true)?;
     for (a, b) in [(0, 1), (1, 2), (0, 2)] {
         let measurement = truth[a].inverse().compose(truth[b]);
-        graph.add_numeric_factor(&[ids[a], ids[b]], 6, 1e-6, move |values| {
-            let relative = read_se3(&values[0])?
-                .inverse()
-                .compose(read_se3(&values[1])?);
-            Ok(DVector::from_column_slice(
-                measurement.local(relative).as_slice(),
-            ))
-        })?;
+        add_relative_pose3_factor(
+            &mut graph,
+            ids[a],
+            ids[b],
+            measurement,
+            FactorOptions::default(),
+        )?;
     }
     for (name, linear_solver) in [
         ("dense", LinearSolver::Dense),

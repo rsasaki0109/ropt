@@ -1,0 +1,21 @@
+{
+  "before": {
+    "allocations": 8937704,
+    "requested_bytes": 2212836126
+  },
+  "after": {
+    "allocations": 6574152,
+    "requested_bytes": 1953361086
+  },
+  "frames": 300,
+  "kind": "allocation traffic only; instrumented timing excluded; not peak/live memory",
+  "warmup": 0,
+  "streams": 1,
+  "means_identical": true,
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "artifact_hashes": {
+    "before": "5db070dd0622eb1f03a3bd9c1451d8ace3324d5ddc2979b7fb41f202d2f820e3",
+    "after": "4c80469e347678396b84971fa10479855078166ad5213e93ac07960542141c29",
+    "native": "4baedbfb827c6021ea8f6b9defd0228379cb2f2acc3838bb74c6b6b2845b23d4"
+  }
+}

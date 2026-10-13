@@ -1,0 +1,3 @@
+backend,total_ns,evaluation_ns,retraction_ns,evaluations,retractions,allocation_calls,requested_bytes,cost,nonlinear_trials,linear_iterations,termination
+scalar_cg,442629983,56620022,1168528,18,17,1436466,119950208,1.05375815353752977e0,17,11055,Cost
+block_cg,410789381,48468593,980505,17,16,1361691,115322808,1.05375815353753155e0,16,9144,Cost

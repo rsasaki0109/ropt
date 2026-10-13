@@ -1,0 +1,12 @@
+{
+  "source_sha256": true,
+  "executable_sha256": true,
+  "files_sha256": true,
+  "current_source_matches": true,
+  "same_full_means_within_each_variant": true,
+  "executable_hashes_match": true,
+  "decompressed_poses_sha256": {
+    "ropt": "e6c1e5681f5f876bdb8e821395ff39ef44cbd73a54a64be7e4fe4988867bf252",
+    "native": "d60a9fff27e52086e517ec8d1f2eb57ff583f584d378ebf039ed44fa5c29e85e"
+  }
+}

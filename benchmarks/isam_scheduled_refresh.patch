@@ -1,0 +1,120 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -34,10 +34,19 @@
+     Incremental,
+     Relinearized,
+ }
++/// Why the complete nonlinear model was rebuilt. Explicit requests take
++/// precedence over the interval; the threshold is checked only on cached solves.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub enum IsamRelinearizationReason {
++    Forced,
++    Interval,
++    Threshold,
++}
+ #[derive(Debug)]
+ pub struct IsamReport {
+     pub estimates: BTreeMap<Key, DVector<f64>>,
+     pub kind: IsamUpdateKind,
++    pub relinearization_reason: Option<IsamRelinearizationReason>,
+     /// Recipes installed in the final QR update (new factors or the entire graph).
+     /// Excludes discarded preliminary updates and batch LM callback counts.
+     pub factors_linearized: usize,
+@@ -87,6 +96,9 @@
+     /// smoother; timestamp refresh requests are rejected. Fixed flags cannot change.
+     /// Without a full refresh, estimates solve a cached linearization, not the
+     /// fully relinearized nonlinear objective. Owned state is unchanged on error.
++    /// Forced/interval refreshes start from committed estimates and new seeds,
++    /// without first evaluating new factors or solving at potentially stale anchors.
++    /// Threshold-triggered refreshes start from the successful cached solve.
+     pub fn update(
+         &mut self,
+         update: SmootherUpdate,
+@@ -119,27 +131,42 @@
+         }
+         let (new_graph, new_ids) = build_graph(&anchors, &update.factors, &order)?;
+         let (_, n, _) = new_graph.dimensions();
+-        let mut qr = self.qr.clone();
+-        qr.extend_columns(n)?;
+-        let (r, j) = new_graph.evaluate_sparse(&new_graph.initial())?;
+-        qr.append_in_place(&j, &r)?;
+-        let delta = qr.solve()?;
+-        let state = new_graph.retract(&new_graph.initial(), &delta)?;
+         let new_count = update.factors.len();
+-        // Variable layout is determined solely by insertion order/kind/fixed
+-        // status. The new-factor graph already has the complete variable layout.
+-        for (&key, &id) in &new_ids {
+-            variables.get_mut(&key).unwrap().value = new_graph.value(&state, id)?;
+-        }
+-        let raw_delta = new_graph
+-            .tangent_blocks()?
+-            .iter()
+-            .map(|range| delta.rows(range.start, range.len()).norm())
+-            .fold(0.0_f64, f64::max);
+-        let max_delta = anchor_delta(&variables, &anchors)?.max(raw_delta);
+-        let refresh = force_relinearize
+-            || updates.is_multiple_of(self.options.relinearization_interval)
+-            || max_delta > self.options.relinearization_threshold;
++        let mut reason = if force_relinearize {
++            Some(IsamRelinearizationReason::Forced)
++        } else if updates.is_multiple_of(self.options.relinearization_interval) {
++            Some(IsamRelinearizationReason::Interval)
++        } else {
++            None
++        };
++        // A scheduled rebuild does not depend on observability or residual
++        // validity at obsolete anchors. Do not copy/solve the discarded cache.
++        let mut qr = if reason.is_some() {
++            IncrementalQr::new(n, self.options.qr)?
++        } else {
++            self.qr.clone()
++        };
++        if reason.is_none() {
++            qr.extend_columns(n)?;
++            let (r, j) = new_graph.evaluate_sparse(&new_graph.initial())?;
++            qr.append_in_place(&j, &r)?;
++            let delta = qr.solve()?;
++            let state = new_graph.retract(&new_graph.initial(), &delta)?;
++            // This graph already has the full insertion-order variable layout.
++            for (&key, &id) in &new_ids {
++                variables.get_mut(&key).unwrap().value = new_graph.value(&state, id)?;
++            }
++            let raw_delta = new_graph
++                .tangent_blocks()?
++                .iter()
++                .map(|range| delta.rows(range.start, range.len()).norm())
++                .fold(0.0_f64, f64::max);
++            let max_delta = anchor_delta(&variables, &anchors)?.max(raw_delta);
++            if max_delta > self.options.relinearization_threshold {
++                reason = Some(IsamRelinearizationReason::Threshold);
++            }
++        }
++        let refresh = reason.is_some();
+         if refresh {
+             // Keep the committed recipes untouched until success; ordinary
+             // updates never clone or register the old factor history.
+@@ -168,9 +195,13 @@
+                 solved.termination,
+                 Termination::NoProgress | Termination::MaxIterations
+             ) {
+-                return Err(Error::Evaluation(
+-                    "iSAM batch refresh did not converge".into(),
+-                ));
++                return Err(Error::Evaluation(format!(
++                    "iSAM batch refresh did not converge: {:?}, trials={}, cost={:.17e}, last gradient={:?}",
++                    solved.termination,
++                    solved.iterations.len(),
++                    solved.cost,
++                    solved.iterations.last().map(|it| it.gradient_norm),
++                )));
+             }
+             for (&key, &id) in &ids {
+                 variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
+@@ -213,6 +244,7 @@
+             } else {
+                 IsamUpdateKind::Incremental
+             },
++            relinearization_reason: reason,
+             factors_linearized: if refresh {
+                 self.factors.len()
+             } else {

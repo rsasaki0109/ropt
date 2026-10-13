@@ -1,0 +1,19 @@
+{
+  "purpose": "isolated direct-mapped norm-input cache simulation, not primary timing or global uniqueness proof",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "counts": {
+    "rotations": 2998044,
+    "zero_diagonal": 135450,
+    "hits64": 0,
+    "hits256": 0,
+    "hits1024": 0
+  },
+  "means_match_primary_predecessor": true,
+  "source_sha256": "1ccf9eec0b72d68162b0d803fc94ff673fcf69dcc8a5b568ce1e5d165ce78f40",
+  "executable_sha256": "a90d3e4c64d787c3347bfb82e9ac656672aacd10f90395a14ad6b6090695eca0",
+  "patch_sha256": "c8a40f7a5e97536e300d80ef888edf42006a57cb51c028398c0facfba4b40706",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "max_original_gradient": 2.963925807564216e-07
+}

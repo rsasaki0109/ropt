@@ -1,0 +1,28 @@
+{
+  "purpose": "warmed predecessor aligned suffix counts; instrumentation excluded from primary timing",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "counts": {
+    "rotations": 2998044,
+    "aligned_rotations": 1424980,
+    "aligned_entries": 19850690,
+    "suffix_empty": 9972,
+    "suffix_one": 54822,
+    "suffix_two": 99972,
+    "suffix_three_to_seven": 372548,
+    "suffix_eight_to_fifteen": 351958,
+    "suffix_sixteen_to_thirtyone": 423906,
+    "suffix_thirtytwo_to_sixtythree": 111802,
+    "suffix_sixtyfour_plus": 0
+  },
+  "means_and_nontiming_reports_match_primary": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "primary": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+    "instrumented": "76a54b85ff992300a048c60a2c99a6301fd7d74ded28c94ff3af7e578dad2adf"
+  },
+  "executable_sha256": "79e7253b76cf402e32423c47d0307946a150b52745261b1f5897d7cc35bae4c7",
+  "patch_sha256": "ecc0b905da2b2c3838f1f528b177fd3771431f4bc07f611a98b565b85d1d1aca",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678"
+}

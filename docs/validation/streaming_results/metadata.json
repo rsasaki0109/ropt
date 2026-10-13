@@ -1,0 +1,30 @@
+{
+  "purpose": "deterministic synthetic functional validation; CSV sampled every ten frames (plus iSAM frame 1)",
+  "created_utc": "2026-10-12T12:44:49.970543+00:00",
+  "git_head": "b8d9242d700e1288eea86722839bef92091f5139",
+  "dirty": true,
+  "source_fingerprint_sha256": "358db6a8372cddf7fe79cf94d5145eb4cb990a07e1ded372fc430e0ac491fab2",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "profile": "debug",
+  "timing_measured": false,
+  "peak_memory_measured": false,
+  "fixed_lag": {
+    "frames": 80,
+    "interval_seconds": 1,
+    "lag_seconds": 5,
+    "solver": "default dense QR LM",
+    "summary": "80 frames; maximum live variables=6, factors=12, position error=0.10006278 m; latest right-tangent stddev=[0.062493986638223684, 0.07052087186274596, 0.04873752226834615]"
+  },
+  "isam": {
+    "added_poses": 40,
+    "loop_closures": 4,
+    "relinearization_threshold": 0.1,
+    "relinearization_interval": 10,
+    "explicit_final_refresh": true,
+    "summary": "40 poses added: 36 incremental updates, 4 automatic full refreshes; final explicit refresh; endpoint error=0.00003615 m; live variables=41, factors=45"
+  },
+  "debug_executable_sha256": {
+    "fixed_lag_odometry": "e315723a6b2509abfd656329ce084691e38ed6f76020e2f686bdcbf8bf1567b7",
+    "isam_pose_graph": "3dd8b4100a6be1e44ea284cb5f4ddc797ace4896e78af516e01893d18510e64d"
+  }
+}

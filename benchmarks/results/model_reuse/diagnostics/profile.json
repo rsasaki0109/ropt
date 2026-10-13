@@ -1,0 +1,42 @@
+{
+  "kind": "separate instrumented diagnostic; not primary timing; inclusive scopes overlap",
+  "warmup": 0,
+  "streams": 1,
+  "frames": 300,
+  "metrics": {
+    "build_graph": {
+      "calls": 601,
+      "inclusive_ns": 20231022
+    },
+    "batch_solve": {
+      "calls": 300,
+      "inclusive_ns": 983845700
+    },
+    "factor_evaluation": {
+      "calls": 3003,
+      "inclusive_ns": 323856993
+    },
+    "qr_append": {
+      "calls": 301,
+      "inclusive_ns": 394487521
+    },
+    "graph_retract": {
+      "calls": 2403,
+      "inclusive_ns": 66436889
+    },
+    "ldl_solve": {
+      "calls": 2402,
+      "inclusive_ns": 337683515
+    },
+    "ldl_prepare": {
+      "calls": 300,
+      "inclusive_ns": 146575483
+    }
+  },
+  "whole_update_ns": 1509133898,
+  "means_identical_to_before": true,
+  "source_sha256": "bce258cccf7f9b627d646f2511bbe0e33bfd848a35cbffd2540d2ca3b4f6aacc",
+  "executable_sha256": "571142bb418b8ff1f1af11703129a11f0f08464ed8ff1405673e8df05faeb5a0",
+  "profile_patch_sha256": "a3b6506ec4ec207990fe373eef64bdae5dfebf509fcca731757cb55843f7e6ae",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678"
+}

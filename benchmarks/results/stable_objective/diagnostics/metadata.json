@@ -1,0 +1,58 @@
+{
+  "created_utc": "2026-10-12T20:42:04Z",
+  "dataset": {
+    "sha256": "b9e62bab6b28d75b3fc845033cdd84496c5c81fdb7faca670896bcfc0da347c4",
+    "derived": true,
+    "provenance": {
+      "source": "https://raw.githubusercontent.com/borglab/gtsam/4.2.1/examples/Data/w10000.graph",
+      "source_sha256": "1e88f220bd580a4c2b9fc065358608a53b26b1c30033405990b4cdc83236fc89",
+      "prefix_vertices": 3000,
+      "retained_edges": 16834,
+      "output_sha256": "b9e62bab6b28d75b3fc845033cdd84496c5c81fdb7faca670896bcfc0da347c4",
+      "source_equivalence_records": 5875,
+      "omitted_equivalences_within_prefix": 1684,
+      "complete_original_problem": false,
+      "transformation": "explicit between-only subgraph: IDs 0..N-1, keep EDGE2 within prefix, omit EQUIV, permute TORO information to g2o"
+    }
+  },
+  "source_fingerprints": {
+    "before": "6a77f7827cd50db5ddfce106bcb51ae0628f63bec9ada95dd28454cc69fd965d",
+    "after": "a0adf3e1b40b8c13d70f5eefd8a40960e3c8bf78701caf73e2ecdc5124d0ecac"
+  },
+  "trace_executables": {
+    "before": "0440bb344dfcb9233fb6a94b4e70c37f7e916038955c6c8721130735d6016ec4",
+    "after": "c92a1b260c2d918032e057cb202943bac7f03a04f3702e6fe6003113c74ada8c"
+  },
+  "rollback_patch_sha256": "6aee2936a6e5e7527888f64522107dc7df7625743e6c9e058def829f89b1caf0",
+  "quality": {
+    "before": {
+      "eligible": false,
+      "checks": {
+        "finite": true,
+        "anchor": true,
+        "cost": true,
+        "gradient": true,
+        "pose_agreement": false,
+        "termination": false
+      },
+      "independent_cost": 36.75010834401441,
+      "stored_gradient_inf": 1.5785983631388945e-10,
+      "max_pose_difference_to_native_qr": 9.104896516959165e-06
+    },
+    "after": {
+      "eligible": true,
+      "checks": {
+        "finite": true,
+        "anchor": true,
+        "cost": true,
+        "gradient": true,
+        "pose_agreement": true,
+        "termination": true
+      },
+      "independent_cost": 36.75010834401441,
+      "stored_gradient_inf": 2.194425197110661e-10,
+      "max_pose_difference_to_native_qr": 1.005483705967358e-07
+    }
+  },
+  "scope": "Iteration/accuracy diagnostics, not timing samples. Before summary reports NoProgress; after Cost. No pose data vendored."
+}

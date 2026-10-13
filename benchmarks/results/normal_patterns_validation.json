@@ -1,0 +1,36 @@
+{
+  "purpose": "final retained production validation after rejection of both experiments",
+  "production_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+  "production_kernel_equals_pre_experiment": true,
+  "no_candidate_adopted": true,
+  "production_regression_tests": {
+    "unit_integration_passed": 223,
+    "doctests_passed": 18,
+    "failed": 0,
+    "new_public_integration_tests": 2,
+    "test_file_sha256": "6ef32e0f8f919ac131b56f466b47d3fc8b6be8091f148fc61f07276753a0660e",
+    "full_test_log_sha256": "538adb0be293fdf61e25970790e9a101332c569a7e0c58f47d15bf613865ea0f"
+  },
+  "python_oracle_tests_passed": 9,
+  "clippy_all_targets_warnings_denied_pass": true,
+  "format_pass": true,
+  "documentation_warnings_denied_pass": true,
+  "updated_readme_doctests_passed": 18,
+  "python_compile_pass": true,
+  "documentation_links_exist": true,
+  "primary_candidate_samples": {
+    "measured_streams": 144,
+    "timed_arrivals": 28800,
+    "all_accuracy_gates_pass": true,
+    "before_candidate_means_costs_entries_trials_damping_exact": true,
+    "compiler_test_solver_overlap": false,
+    "allocations_disabled": true
+  },
+  "baseline_helper_unchanged_sha256": "9c02e6c3bad9c0261b3513ed5c0ac62b1b6030fc1fbbc526a5b0cc1518c3c63f",
+  "raw_metadata_sources_runners_patches_inputs_verified": true,
+  "separate_diagnostics_excluded_from_primary_times": true,
+  "both_reproduction_kernels_match_archives_and_native_smoke": true,
+  "subjective_maturity_percent": 75,
+  "committed": false,
+  "pushed": false
+}

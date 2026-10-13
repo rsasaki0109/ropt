@@ -1,0 +1,29 @@
+{
+  "purpose": "source-only forward-patch reproduction; instrumented binaries built and validated separately",
+  "patches": [
+    {
+      "patch": "normal_rebind_stage_profile.patch",
+      "patch_sha256": "ada9c9982078f9c7dde579a9005900b439559fdc076b221ed238d246a5cc9450",
+      "source_sha256": "c3f8b3de41a9bf55e600e57cb0a4057c51bb4c9c78f9b325d225b683e85d8990",
+      "matches_instrumented_kernel": true,
+      "runner_sha256": "689b2e104ecfc98943094eab60ac4dff3a06f8abcbe7e1e4149e946f5f9311e9",
+      "runner_matches": true
+    },
+    {
+      "patch": "normal_rebind_classifier.patch",
+      "patch_sha256": "1c62d8e5124846e11541d2ed4373db39d5c5f88bbb3e00574c8084e35ecc2d17",
+      "source_sha256": "8a22c40049c946a691e7e2e8a8eef25677600a0f85e3897af26e22044a411848",
+      "matches_instrumented_kernel": true,
+      "runner_sha256": "d8ad3cb856aef5d9bca2289ac4da0eb52575ce175348763f50b880f8cd6c9c64",
+      "runner_matches": true
+    },
+    {
+      "patch": "normal_rebind_after_profile.patch",
+      "patch_sha256": "ed5e6ae1c86efab9901c0f01f51b5adb7302013baa6000afe641803fb641e5ad",
+      "source_sha256": "8c655e972fdf09c58b1f8ae7097ba9241a1ba8daa1fec6acd21f7d1bf43a14e6",
+      "matches_instrumented_kernel": true,
+      "runner_sha256": "689b2e104ecfc98943094eab60ac4dff3a06f8abcbe7e1e4149e946f5f9311e9",
+      "runner_matches": true
+    }
+  ]
+}

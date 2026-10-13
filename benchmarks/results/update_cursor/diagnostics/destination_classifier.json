@@ -1,0 +1,19 @@
+{
+  "purpose": "isolated warmed predecessor destination classifier; instrumented times excluded",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "counts": {
+    "operations": 4462692,
+    "next_entry": 4111485,
+    "diagonal": 975879
+  },
+  "searches_avoided": 4111485,
+  "remaining_searches": 351207,
+  "means_match_primary_predecessor": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": "5a09d96b9bc9a18955f8d75cf1a920862c6074589fd51946b2c3c3d3411f591d",
+  "executable_sha256": "663828f5f7990ae91569e03927b471eb6e50ad743f1daa218fdc00cb5828c7bc",
+  "patch_sha256": "e7481940cc3a432ac59c1edc81e6e2dc060c81c0fa482e95bf23ccb2cb7afa35",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678"
+}

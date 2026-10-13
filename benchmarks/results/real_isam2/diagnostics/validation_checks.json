@@ -1,0 +1,15 @@
+{
+  "source_sha256": "6f3670ec8c608eb12bee16b2031aab5835a241e735285d6772adb0a172ba3c5c",
+  "unique_rust_unit_integration_tests": 242,
+  "doc_tests": 18,
+  "python_tests": 13,
+  "clippy_warnings_denied": true,
+  "rustdoc_warnings_denied": true,
+  "formatting_passed": true,
+  "full_suite_tests_before_added_mixed_case": 241,
+  "additional_mixed_chart_test_file_run": 3,
+  "source_stages_verified": 25,
+  "predecessor_built_and_cached_validator_passed": true,
+  "rollback_patch_sha256": "3211949a4187e5f2363e7063c4afe042a8af4103ea5e3d679441e77fbd036774",
+  "builder_sha256": "1cb71eb74bff4b8aee0c2d0a9702faa66c8f40afddfd02919b0b08b745574af9"
+}

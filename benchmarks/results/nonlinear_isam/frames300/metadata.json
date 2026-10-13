@@ -1,0 +1,57 @@
+{
+  "purpose": "accuracy only; no timings or external library comparison",
+  "frames": 300,
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null
+    }
+  },
+  "source_sha256": "688ae1c80275448108cbb771343f2b633affb7566e327718cda1f5b9667ea7ff",
+  "executable_sha256": "332e6aea9bcb767f6d694cab7fbb51ee8013094414c7b785e60be0f019615d5d",
+  "templates_sha256": {
+    "crates/ropt/examples/validate_isam_se2.rs": "3b5298951a13d64a90e11d5caf0b6fb881174c5b5a2279377bb1288e929381eb",
+    "crates/ropt/examples/support/isam_se2.rs": "89c6d83de0b8abc3f8c7a4d376943d69893af9f0379c769072ef93b6a94843e9",
+    "benchmarks/nonlinear_isam.py": "43ea2236fbeb4e2db53dad1581ce5361f1c5adf2b9ed46a2449c406af3dcc2e8"
+  },
+  "options": {
+    "threshold": 0.1,
+    "interval": 10,
+    "force_on_loops": true,
+    "refresh": "analytic SE2 sparse LDL block minimum degree 3",
+    "reference": "AD SE2 dense QR from independent odometry seeds",
+    "gradient_tolerance": 5e-07,
+    "cost_tolerance": 1e-15,
+    "step_tolerance": 1e-10,
+    "initial_damping": 0.001,
+    "max_iterations": 200
+  },
+  "gates": {
+    "pose_local_norm": 2e-06,
+    "refreshed_gradient_inf": 1e-06,
+    "central_difference_steps": [
+      1e-06,
+      5e-07
+    ],
+    "gradient_step_difference": 2e-07,
+    "relative_original_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "root": "exactly fixed at every prefix"
+  },
+  "exit_code": 0
+}

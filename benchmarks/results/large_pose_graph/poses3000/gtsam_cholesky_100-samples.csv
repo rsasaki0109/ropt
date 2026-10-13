@@ -1,0 +1,2 @@
+sample,elapsed_ns,initial_cost,final_cost,optimizer_iterations,final_lambda
+0,9062380207,185785.06001153085,36.750139660827656,100,1.0000000000000002e-08

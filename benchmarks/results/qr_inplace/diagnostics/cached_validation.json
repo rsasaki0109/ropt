@@ -1,0 +1,25 @@
+{
+  "purpose": "default cached/interval/loop-refresh correctness; no timing comparison",
+  "frames": 300,
+  "trace_and_summary_identical": true,
+  "source_sha256": {
+    "before": "54aa16cb8687c670088e9513d422f081983f76d8446587ecbc52ba0d2b1d7c6b",
+    "after": "23ac190ae27e83972cf5e84c21ed948a42768210f00d95e75f9612b2582c72ef"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/validate_isam_se2.rs": "3b5298951a13d64a90e11d5caf0b6fb881174c5b5a2279377bb1288e929381eb",
+    "crates/ropt/examples/support/isam_se2.rs": "89c6d83de0b8abc3f8c7a4d376943d69893af9f0379c769072ef93b6a94843e9"
+  },
+  "cases": {
+    "before": {
+      "trace_sha256": "d19792110b6163912579ac7773cde1c687862eb45e84e0ad7b590e0c94110535",
+      "summary_sha256": "b92018a3e275fa4a155d59f13ce0a497ce2061ce691eb11cdfd3fcf428e81bc0",
+      "executable_sha256": "9d3b3a5b3c5cd2082b89c1b5cb906f830a19da0ed7cdf24630b9a52400390f46"
+    },
+    "after": {
+      "trace_sha256": "d19792110b6163912579ac7773cde1c687862eb45e84e0ad7b590e0c94110535",
+      "summary_sha256": "b92018a3e275fa4a155d59f13ce0a497ce2061ce691eb11cdfd3fcf428e81bc0",
+      "executable_sha256": "8d728a43ed4e46d0c15ca32c1ddb8dabb8b561d3cae3c976ecad3a2e636cf2ff"
+    }
+  }
+}

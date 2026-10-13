@@ -1,0 +1,12 @@
+[
+  {
+    "variant": "before",
+    "zero_fuzz_forward_patch_reproduces_compiled_source": true,
+    "source_sha256": "521cdff335bf96463bedd8591f36d12376002330aeaa4bb16282c6f4267fa674"
+  },
+  {
+    "variant": "after",
+    "zero_fuzz_forward_patch_reproduces_compiled_source": true,
+    "source_sha256": "144a4989f751823b0709a413d2aa825673f16f7a2f54925438bc1f2aa3158070"
+  }
+]

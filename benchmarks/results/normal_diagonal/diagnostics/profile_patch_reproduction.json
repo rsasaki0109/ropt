@@ -1,0 +1,25 @@
+{
+  "purpose": "same zero-fuzz forward profiling patch on two isolated sources; fresh targets; primary source untouched",
+  "cases": [
+    {
+      "variant": "before",
+      "zero_fuzz_apply": true,
+      "source_sha256": {
+        "primary": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "instrumented": "d75f3e15e25f1590599b7924899ede5a831b0665fe8e6600f34cc37c7fcca076"
+      },
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "all_fifteen_counters_verified": true
+    },
+    {
+      "variant": "after",
+      "zero_fuzz_apply": true,
+      "source_sha256": {
+        "primary": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0",
+        "instrumented": "39c5d4f2207d7a8e1daa534205aa0b6750239b6a1618bc1987dc47f5e853cef8"
+      },
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "all_fifteen_counters_verified": true
+    }
+  ]
+}

@@ -57,6 +57,46 @@ impl CsrMatrix {
             values,
         })
     }
+    /// Internal checked handoff for assembly that already emits canonical rows.
+    /// No sorting, duplicate reduction or pruning is performed here.
+    pub(crate) fn from_canonical(
+        rows: usize,
+        columns: usize,
+        offsets: Vec<usize>,
+        indices: Vec<usize>,
+        values: Vec<f64>,
+    ) -> Result<Self, Error> {
+        if rows.checked_add(1) != Some(offsets.len())
+            || indices.len() != values.len()
+            || offsets.first() != Some(&0)
+            || offsets.last() != Some(&indices.len())
+            || offsets.windows(2).any(|pair| pair[0] > pair[1])
+            || indices.iter().any(|&column| column >= columns)
+        {
+            return Err(Error::InvalidDimensions);
+        }
+        for row in 0..rows {
+            if indices[offsets[row]..offsets[row + 1]]
+                .windows(2)
+                .any(|pair| pair[0] >= pair[1])
+            {
+                return Err(Error::InvalidDimensions);
+            }
+        }
+        if values.iter().any(|value| !value.is_finite()) {
+            return Err(Error::NonFinite);
+        }
+        if values.contains(&0.) {
+            return Err(Error::InvalidDimensions);
+        }
+        Ok(Self {
+            rows,
+            columns,
+            offsets,
+            indices,
+            values,
+        })
+    }
     pub fn shape(&self) -> (usize, usize) {
         (self.rows, self.columns)
     }
@@ -70,6 +110,12 @@ impl CsrMatrix {
     }
     pub fn nnz(&self) -> usize {
         self.values.len()
+    }
+    pub(crate) fn pattern(&self) -> (&[usize], &[usize]) {
+        (&self.offsets, &self.indices)
+    }
+    pub(crate) fn values(&self) -> &[f64] {
+        &self.values
     }
     pub fn entries(&self) -> impl Iterator<Item = (usize, usize, f64)> + '_ {
         (0..self.rows).flat_map(move |r| {
@@ -126,17 +172,86 @@ impl CsrMatrix {
         Ok(())
     }
 }
-fn finite_vector(x: &DVector<f64>) -> Result<(), Error> {
+pub(crate) fn finite_vector(x: &DVector<f64>) -> Result<(), Error> {
     if x.iter().all(|v| v.is_finite()) {
         Ok(())
     } else {
         Err(Error::NonFinite)
     }
 }
+
+#[cfg(test)]
+mod canonical_tests {
+    use super::*;
+
+    #[test]
+    fn canonical_handoff_checks_storage_and_matches_independent_products() {
+        let j = CsrMatrix::from_canonical(3, 4, vec![0, 2, 2, 3], vec![0, 3, 2], vec![2., -1., 4.])
+            .unwrap();
+        assert_eq!(
+            j.multiply(&DVector::from_vec(vec![1., 2., 3., 4.]))
+                .unwrap(),
+            DVector::from_vec(vec![-2., 0., 12.])
+        );
+        assert_eq!(
+            j.transpose_multiply(&DVector::from_vec(vec![1., 2., 3.]))
+                .unwrap(),
+            DVector::from_vec(vec![2., 0., 12., -1.])
+        );
+        for (rows, columns, offsets, indices, values) in [
+            (2, 3, vec![0], vec![], vec![]),
+            (1, 2, vec![1, 1], vec![0], vec![1.]),
+            (2, 2, vec![0, 2, 1], vec![0], vec![1.]),
+            (1, 2, vec![0, 2], vec![0], vec![1.]),
+            (1, 2, vec![0, 1], vec![2], vec![1.]),
+            (1, 3, vec![0, 2], vec![2, 1], vec![1., 2.]),
+            (1, 3, vec![0, 2], vec![1, 1], vec![1., 2.]),
+            (1, 3, vec![0, 1], vec![0], vec![]),
+            (usize::MAX, 0, vec![0], vec![], vec![]),
+        ] {
+            assert_eq!(
+                CsrMatrix::from_canonical(rows, columns, offsets, indices, values).unwrap_err(),
+                Error::InvalidDimensions
+            );
+        }
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                CsrMatrix::from_canonical(1, 1, vec![0, 1], vec![0], vec![value]).unwrap_err(),
+                Error::NonFinite
+            );
+        }
+        for value in [0., -0.] {
+            assert_eq!(
+                CsrMatrix::from_canonical(1, 1, vec![0, 1], vec![0], vec![value]).unwrap_err(),
+                Error::InvalidDimensions
+            );
+        }
+        let empty = CsrMatrix::from_canonical(2, 0, vec![0, 0, 0], vec![], vec![]).unwrap();
+        assert_eq!(
+            empty.multiply(&DVector::zeros(0)).unwrap(),
+            DVector::zeros(2)
+        );
+    }
+}
 /// Implementors must provide a symmetric positive definite operator and its positive diagonal.
 pub trait LinearOperator {
     fn dimension(&self) -> usize;
     fn apply(&self, x: &DVector<f64>) -> Result<DVector<f64>, Error>;
+    /// Write A*x into an existing n-vector. Implementors must fill every entry.
+    /// The default preserves existing implementations; optimized implementations
+    /// may reuse the caller's buffer without allocation or interior mutable state.
+    fn apply_into(&self, x: &DVector<f64>, out: &mut DVector<f64>) -> Result<(), Error> {
+        if x.len() != self.dimension() || out.len() != self.dimension() {
+            return Err(Error::InvalidDimensions);
+        }
+        let result = self.apply(x)?;
+        if result.len() != self.dimension() {
+            return Err(Error::InvalidDimensions);
+        }
+        finite_vector(&result)?;
+        out.copy_from(&result);
+        Ok(())
+    }
     fn diagonal(&self) -> Result<DVector<f64>, Error>;
 }
 #[derive(Debug, Clone, Copy)]
@@ -194,6 +309,30 @@ pub fn conjugate_gradient(
     if diagonal.iter().any(|v| *v <= 0.0) {
         return Err(Error::LinearSolve);
     }
+    let preconditioner = crate::preconditioner::Jacobi::new(diagonal)?;
+    conjugate_gradient_preconditioned(operator, &preconditioner, b, options)
+}
+/// Zero-initialized PCG with an explicit SPD preconditioner and checked true residual.
+/// Does not certify global SPD; both operator and preconditioner must satisfy their contracts.
+pub fn conjugate_gradient_preconditioned(
+    operator: &impl LinearOperator,
+    preconditioner: &impl crate::preconditioner::Preconditioner,
+    b: &DVector<f64>,
+    options: &CgOptions,
+) -> Result<CgReport, Error> {
+    let n = operator.dimension();
+    if n == 0 || b.len() != n || preconditioner.dimension() != n {
+        return Err(Error::InvalidDimensions);
+    }
+    options.validate()?;
+    finite_vector(b)?;
+    let precondition = |r: &DVector<f64>, z: &mut DVector<f64>| -> Result<(), Error> {
+        preconditioner.apply_into(r, z)?;
+        if z.len() != n {
+            return Err(Error::InvalidDimensions);
+        }
+        finite_vector(z)
+    };
     let norm = b.norm();
     if !norm.is_finite() {
         return Err(Error::NonFinite);
@@ -204,16 +343,17 @@ pub fn conjugate_gradient(
     if !threshold.is_finite() {
         return Err(Error::InvalidOptions);
     }
-    let apply = |v: &DVector<f64>| -> Result<DVector<f64>, Error> {
-        let out = operator.apply(v)?;
+    let apply = |v: &DVector<f64>, out: &mut DVector<f64>| -> Result<(), Error> {
+        operator.apply_into(v, out)?;
         if out.len() != n {
             return Err(Error::InvalidDimensions);
         }
-        finite_vector(&out)?;
-        Ok(out)
+        finite_vector(out)
     };
     let mut x = DVector::zeros(n);
-    let mut r = b - &apply(&x)?;
+    let mut ap = DVector::zeros(n);
+    apply(&x, &mut ap)?;
+    let mut r = b - &ap;
     if r.norm() <= threshold {
         return Ok(CgReport {
             x,
@@ -221,11 +361,13 @@ pub fn conjugate_gradient(
             residual_norm: r.norm(),
         });
     }
-    let mut z = r.component_div(&diagonal);
+    let mut z = DVector::zeros(n);
+    precondition(&r, &mut z)?;
     let mut p = z.clone();
+    let mut true_r = DVector::zeros(n);
     let mut rz = r.dot(&z);
     for iteration in 1..=options.max_iterations {
-        let ap = apply(&p)?;
+        apply(&p, &mut ap)?;
         let curvature = p.dot(&ap);
         if !curvature.is_finite() || !rz.is_finite() {
             return Err(Error::NonFinite);
@@ -239,7 +381,10 @@ pub fn conjugate_gradient(
         finite_vector(&x)?;
         finite_vector(&r)?;
         if r.norm() <= threshold {
-            let true_r = b - apply(&x)?;
+            apply(&x, &mut true_r)?;
+            for k in 0..n {
+                true_r[k] = b[k] - true_r[k];
+            }
             let residual_norm = true_r.norm();
             if residual_norm <= threshold {
                 return Ok(CgReport {
@@ -249,16 +394,22 @@ pub fn conjugate_gradient(
                 });
             }
             // Restart if rounding made the recursive residual too optimistic.
-            r = true_r;
-            z = r.component_div(&diagonal);
-            p = z.clone();
+            r.copy_from(&true_r);
+            precondition(&r, &mut z)?;
+            p.copy_from(&z);
             rz = r.dot(&z);
             continue;
         }
-        z = r.component_div(&diagonal);
+        precondition(&r, &mut z)?;
         let next = r.dot(&z);
+        if !next.is_finite() {
+            return Err(Error::NonFinite);
+        }
+        if next <= 0.0 {
+            return Err(Error::LinearSolve);
+        }
         let beta = next / rz;
-        p = &z + beta * p;
+        p.axpy(1.0, &z, beta);
         rz = next;
     }
     Err(Error::LinearIterationLimit {
@@ -290,14 +441,34 @@ impl LinearOperator for NormalOperator<'_> {
         self.jacobian.columns
     }
     fn apply(&self, x: &DVector<f64>) -> Result<DVector<f64>, Error> {
-        let mut out = self
-            .jacobian
-            .transpose_multiply(&self.jacobian.multiply(x)?)?;
+        let mut out = DVector::zeros(self.dimension());
+        self.apply_into(x, &mut out)?;
+        Ok(out)
+    }
+    fn apply_into(&self, x: &DVector<f64>, out: &mut DVector<f64>) -> Result<(), Error> {
+        if x.len() != self.dimension() || out.len() != self.dimension() {
+            return Err(Error::InvalidDimensions);
+        }
+        finite_vector(x)?;
+        out.fill(0.0);
+        // Fuse J*x and J^T*(J*x) row by row; no residual-sized scratch vector.
+        for row in 0..self.jacobian.rows {
+            let range = self.jacobian.offsets[row]..self.jacobian.offsets[row + 1];
+            let mut value = 0.0;
+            for k in range.clone() {
+                value += self.jacobian.values[k] * x[self.jacobian.indices[k]];
+            }
+            if !value.is_finite() {
+                return Err(Error::NonFinite);
+            }
+            for k in range {
+                out[self.jacobian.indices[k]] += self.jacobian.values[k] * value;
+            }
+        }
         for i in 0..x.len() {
             out[i] += self.damping * self.diagonal[i].max(1.0) * x[i];
         }
-        finite_vector(&out)?;
-        Ok(out)
+        finite_vector(out)
     }
     fn diagonal(&self) -> Result<DVector<f64>, Error> {
         let d = self.diagonal.map(|v| v + self.damping * v.max(1.0));

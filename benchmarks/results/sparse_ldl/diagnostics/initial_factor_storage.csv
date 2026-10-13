@@ -1,0 +1,3 @@
+ordering,columns,jacobian_entries,normal_lower_entries,factor_entries,cost,nonlinear_trials,termination
+Natural,897,8587,6750,36480,1.05375815353753000e0,16,Cost
+MinimumDegree,897,8587,6750,12908,1.05375815353753000e0,16,Cost

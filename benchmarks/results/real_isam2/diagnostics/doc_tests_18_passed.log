@@ -1,0 +1,27 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.44s
+   Doc-tests ropt
+
+running 18 tests
+test crates/ropt/src/lib.rs - (line 1114) ... ok
+test crates/ropt/src/lib.rs - (line 1069) ... ok
+test crates/ropt/src/lib.rs - (line 1187) ... ok
+test crates/ropt/src/lib.rs - (line 176) ... ok
+test crates/ropt/src/lib.rs - (line 108) ... ok
+test crates/ropt/src/lib.rs - (line 201) ... ok
+test crates/ropt/src/lib.rs - (line 250) ... ok
+test crates/ropt/src/lib.rs - (line 304) ... ok
+test crates/ropt/src/lib.rs - (line 437) ... ok
+test crates/ropt/src/lib.rs - (line 348) ... ok
+test crates/ropt/src/lib.rs - (line 596) ... ok
+test crates/ropt/src/lib.rs - (line 717) ... ok
+test crates/ropt/src/lib.rs - (line 652) ... ok
+test crates/ropt/src/lib.rs - (line 682) ... ok
+test crates/ropt/src/lib.rs - (line 761) ... ok
+test crates/ropt/src/lib.rs - (line 994) ... ok
+test crates/ropt/src/lib.rs - (line 901) ... ok
+test crates/ropt/src/lib.rs - (line 814) ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+all doctests ran in 0.59s; merged doctests compilation took 0.58s

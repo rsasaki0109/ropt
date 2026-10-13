@@ -1,0 +1,29 @@
+{
+  "purpose": "warmed complete-update/report allocation traffic; times excluded from timing comparisons; not live/peak/RSS memory",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "source_sha256": {
+    "before": "591d0b1d9b0d392550cca9f1e8725c1b7711cc51b02a8ed8a8b164392d386a19",
+    "after": "3fa2c64823b6f2749c4211f6ecd883d9e8f1af8bca089d0e8ecf97b8b4d3b5dd"
+  },
+  "executable_sha256": {
+    "before": "46733de21f7d609d44a6067f382f76120571eabe7f6bd8366c9e650a1d80b557",
+    "after": "73cb67ccd2de0fe69e04a258efef152d0db602a68070111ae13c7890deb8999b"
+  },
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "cases": {
+    "before": {
+      "allocation_calls": 3594324,
+      "requested_bytes": 977028313,
+      "means_and_reports_match_primary": true,
+      "means_sha256": "17138f42e5e723374c961d09e3624231c399bde0d60c94c03b9e7e81b3903733"
+    },
+    "after": {
+      "allocation_calls": 3418789,
+      "requested_bytes": 956249913,
+      "means_and_reports_match_primary": true,
+      "means_sha256": "17138f42e5e723374c961d09e3624231c399bde0d60c94c03b9e7e81b3903733"
+    }
+  }
+}

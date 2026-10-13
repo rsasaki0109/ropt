@@ -1,0 +1,14 @@
+AccuracySummary {
+    incremental: 258,
+    forced: 12,
+    interval: 30,
+    threshold: 0,
+    checkpoints: 12,
+    max_pose_difference: 8.267086357910613e-7,
+    max_cost_difference: 1.56097357262297e-13,
+    max_refreshed_gradient: 4.904791850446344e-7,
+    max_incremental_gradient: 0.010027493381643826,
+    max_cached_cost_gap: 5.974799868191383e-7,
+    max_gradient_step_difference: 8.471869039627933e-8,
+    final_qr_entries: 29511,
+}

@@ -1,0 +1,15 @@
+{
+  "purpose": "default restart policy correctness check; times excluded from primary comparison",
+  "frames": 100,
+  "original_quality_passed": true,
+  "means_and_reports_identical": true,
+  "agreement": {
+    "max_world_pose_norm": 0.0,
+    "max_cost_difference": 0.0
+  },
+  "executable_sha256": {
+    "before": "4b45792a7c3539307a1eb9d7cc8743342f7760f28516b71c7e44ff615c138806",
+    "after": "a025fbf1820f81a88f8159f1edaa152279e08787527f751d72251ef5c7664a67"
+  },
+  "input_sha256": "37c84d39609c8804d136f25c4ce2503db139d7dbe3e934d580e08daa9fbb940d"
+}

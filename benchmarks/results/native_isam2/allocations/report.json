@@ -1,0 +1,21 @@
+{
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "frames": 300,
+  "warmup": 0,
+  "streams": 1,
+  "kind": "separate instrumented diagnostic; timings excluded; traffic rather than live/peak/RSS memory",
+  "means_identical": true,
+  "before": {
+    "allocations": 22216359,
+    "requested_bytes": 4449602278
+  },
+  "after": {
+    "allocations": 8937704,
+    "requested_bytes": 2212836126
+  },
+  "executable_sha256": {
+    "before": "edf487942cc1da4d2c54abc7e4f29ded9bc27711116c1a69a89288d4d389b720",
+    "after": "5db070dd0622eb1f03a3bd9c1451d8ace3324d5ddc2979b7fb41f202d2f820e3",
+    "native": "4baedbfb827c6021ea8f6b9defd0228379cb2f2acc3838bb74c6b6b2845b23d4"
+  }
+}

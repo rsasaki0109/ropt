@@ -1,0 +1,92 @@
+{
+  "purpose": "explicit damping policy change, not a same-algorithm speedup; same input/options/accuracy gates",
+  "frames": 300,
+  "rounds": 8,
+  "warmup_streams": 1,
+  "timed_streams_per_process": 1,
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "native_manifest": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "executable_sha256": "4baedbfb827c6021ea8f6b9defd0228379cb2f2acc3838bb74c6b6b2845b23d4",
+    "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "benchmark.cpp": "04512a163e63ad60922876daa1fcac9ed08539948bc953e0beeb2616db967f76",
+      "CMakeLists.txt": "0d302ce92ad64c437f7284865a8d0fb62ce4f8eaccf12449e1fe50ce9addc4d4"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "reference_cache_sha256": "688d82674bb9c40f8d26e664bbc02e51b5fafbccb67290a8f3da4e38bd2f2be1",
+    "runtime_library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a"
+  },
+  "source_sha256": {
+    "before": "e6e08a58d37556e23efd146969b11f0edd746907c87e03e0e056454537cd5fd4",
+    "current": "e8735c009834aad576680b9a329be720f3ba3ceed7ed2475bd814debf5717c38"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/support/se2_benchmark.rs": "396fe1f16f8aba4786b053fbd39dd63b7a167438d5dfd131d4796d4e30f76d22",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "crates/ropt/examples/benchmark_isam_se2.rs": "53d7b9104430d590454da4fdcdacd7a0e4a042438c60880e9ea22285375439bb",
+    "crates/ropt/examples/benchmark_restart_isam_se2.rs": "688941e98b63ffc5d90e58fde8f6a9252160d79499c5bf84ed7662b2971b4d45",
+    "crates/ropt/examples/benchmark_warm_isam_se2.rs": "2c07def5dafebdfe895ada45cbdaa78009bdb2e8d8204f0dfc024db945d2b3f4",
+    "benchmarks/paired_damping.py": "4ec047c52cf1153e1b36a3144731348778b7bcc2832d19cdef17f2cbec4c4668",
+    "benchmarks/paired_isam2.py": "2772135729792c33e954796b3fdf9ef3d2439415e4708cd8c4b370bd32d59c21",
+    "benchmarks/se2_stream.py": "cf2b1c202e82aaa3676397d06e9e7c0209d69cb41541ddffafc89fd800e161ae"
+  },
+  "executable_sha256": {
+    "before": "0cf343c2f88b27e172a74e7a360978c2ed16fe718f78afacc8891550a10fbc63",
+    "restart": "4b45792a7c3539307a1eb9d7cc8743342f7760f28516b71c7e44ff615c138806",
+    "reuse": "2fc8ee89a00421a52f48eabd442accffd1a20a08a3d63f82d2c54a6c21692cd8",
+    "native": "4baedbfb827c6021ea8f6b9defd0228379cb2f2acc3838bb74c6b6b2845b23d4"
+  },
+  "rollback_patch_sha256": "099cc2348a9fd826aa666781c0ef5bb43bff5131afc031beb16a1a4c41451392",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "gates": {
+    "original_gradient_inf": 1e-06,
+    "world_pose_norm_difference": 2e-06,
+    "relative_objective_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "root": "exact"
+  },
+  "policies": {
+    "before": "previous kernel, restart",
+    "restart": "current kernel, default restart",
+    "reuse": "current kernel, explicit adaptive LM damping reuse",
+    "native": "unchanged native iSAM2"
+  },
+  "timed": "complete update/full owned report; native extra updates, stationarity feedback and full means; constructor, recipe creation, telemetry extraction, quality checks, serialization and report destruction excluded",
+  "allocator_counting": false,
+  "memory_measured": false
+}

@@ -1,0 +1,23 @@
+{
+  "purpose": "same forward diagnostic patch on both isolated kernels; fresh targets; primary sources untouched",
+  "cases": [
+    {
+      "variant": "before",
+      "primary_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+      "instrumented_source_sha256": "d75f3e15e25f1590599b7924899ede5a831b0665fe8e6600f34cc37c7fcca076",
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "zero_fuzz_apply": true,
+      "fresh_cargo_target": "/tmp/ropt-qr-reductions-before-stages/target",
+      "all_fifteen_counters_and_primary_reports_verified": true
+    },
+    {
+      "variant": "after",
+      "primary_source_sha256": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b",
+      "instrumented_source_sha256": "95e3c754497ace5db9d40e384802ad6e24b38bd984d6e9eb7a705e00812407a0",
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "zero_fuzz_apply": true,
+      "fresh_cargo_target": "/tmp/ropt-qr-reductions-after-stages/target",
+      "all_fifteen_counters_and_primary_reports_verified": true
+    }
+  ]
+}

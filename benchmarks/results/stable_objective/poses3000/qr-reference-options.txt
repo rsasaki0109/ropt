@@ -1,0 +1,19 @@
+
+relative decrease threshold: 1e-12
+absolute decrease threshold: 1e-12
+      total error threshold: 0
+         maximum iterations: 300
+                  verbosity: SILENT
+         linear solver type: MULTIFRONTAL QR
+                   ordering: COLAMD
+              lambdaInitial: 0.001
+               lambdaFactor: 10
+           lambdaUpperBound: 100000
+           lambdaLowerBound: 0
+           minModelFidelity: 0.001
+            diagonalDamping: 0
+                minDiagonal: 1e-06
+                maxDiagonal: 1e+32
+                verbosityLM: SILENT
+GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR=ON
+GTSAM_VERSION=4.2.1

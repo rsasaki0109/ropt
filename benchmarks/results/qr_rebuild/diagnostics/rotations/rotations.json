@@ -1,0 +1,27 @@
+{
+  "purpose": "Count actual Givens rotations separately; instrumented times are excluded.",
+  "instrumented_times_excluded": true,
+  "cases": {
+    "before": {
+      "rotations": 2998044,
+      "qr_appends": 301,
+      "primary_source_sha256": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e",
+      "instrumented_source_sha256": "521cdff335bf96463bedd8591f36d12376002330aeaa4bb16282c6f4267fa674",
+      "executable_sha256": "4c3cdf4e5106be2e9cf7a143a58cf5ef1f2c8cd9fa97ed132a8a9fc70567daca",
+      "forward_patch_sha256": "61a0c6162c901f258dc1eb11f221f1a87ced21a963bbb90c1a46812ff8b85168",
+      "full_means_quality_and_nontiming_reports_match_primary": true
+    },
+    "after": {
+      "rotations": 965443,
+      "qr_appends": 301,
+      "primary_source_sha256": "eb6a9a576b921200f82bb3e474382919c1427258a9e324c0ca0561072b2521b0",
+      "instrumented_source_sha256": "144a4989f751823b0709a413d2aa825673f16f7a2f54925438bc1f2aa3158070",
+      "executable_sha256": "ec88456501636070bd700550f86834aceeef1e416d461e25b9d49831f26d692d",
+      "forward_patch_sha256": "bdba1ed0b89d4c7d8f7635f89a0bbdafe79f179108afb2769746d74d6cc71b5f",
+      "full_means_quality_and_nontiming_reports_match_primary": true
+    }
+  },
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "driver_sha256": "f5169454dab72cdb91b3cd42111ea857a749606bf466bb2fd6ff8c7cde55cf7b",
+  "primary_metadata_sha256": "225a3b39eb04c29488e90fc1504a0150ca4587b33909b296fc2ca50fe17a7b36"
+}

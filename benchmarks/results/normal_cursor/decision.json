@@ -1,0 +1,7 @@
+{
+  "decision": "not adopted",
+  "reason": "100-arrival median improves 1.7% (10/12 pairs); 300-arrival median increases 2.7% (5/12 pairs improve); complete-update benefit not demonstrated despite separate normal-pattern profile decrease",
+  "primary_gates_unchanged": true,
+  "means_costs_and_trials_identical": true,
+  "scope": "synthetic same-policy measurements; cloud variability remains uncontrolled"
+}

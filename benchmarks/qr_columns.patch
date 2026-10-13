@@ -1,0 +1,98 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -16,6 +16,31 @@
+         (a * a + b * b).sqrt()
+     } else {
+         a.hypot(b)
++    }
++}
++
++// Both live suffixes have strictly ascending, unique column indices. Equal
++// endpoints and a span of len - 1 prove that both contain the same entire
++// contiguous range. Gapped ranges still require checking every interior index.
++#[inline]
++fn same_columns(upper: &[(usize, f64)], lower: &[(usize, f64)]) -> bool {
++    if upper.len() != lower.len() {
++        return false;
++    }
++    match upper.len() {
++        0 => true,
++        1 => upper[0].0 == lower[0].0,
++        len => {
++            let last = len - 1;
++            if upper[0].0 != lower[0].0 || upper[last].0 != lower[last].0 {
++                return false;
++            }
++            upper[last].0 - upper[0].0 == last
++                || upper[1..last]
++                    .iter()
++                    .zip(&lower[1..last])
++                    .all(|(a, b)| a.0 == b.0)
++        }
+     }
+ }
+ 
+@@ -135,13 +160,9 @@
+                     old[0].1 = norm;
+                 }
+                 // Equal live suffixes need no union merge or lower-row copy.
+-                // Compare every column first; equal lengths alone are insufficient.
+-                let aligned = has_diagonal
+-                    && old.len() - 1 == row.len() - row_start - 1
+-                    && old[1..]
+-                        .iter()
+-                        .zip(&row[row_start + 1..])
+-                        .all(|(upper, lower)| upper.0 == lower.0);
++                // Prove contiguous ranges from their endpoints, otherwise
++                // compare every column; equal lengths alone are insufficient.
++                let aligned = has_diagonal && same_columns(&old[1..], &row[row_start + 1..]);
+                 if aligned {
+                     // Independent column rotations share only reductions.
+                     // Delay the finite check until this suffix is complete; an
+@@ -451,3 +472,46 @@
+         }
+     }
+ }
++
++#[cfg(test)]
++mod column_tests {
++    use super::same_columns;
++
++    #[test]
++    fn sorted_subset_masks_exhaustively_check_gaps_widths_and_max_indices() {
++        for base in [0, usize::MAX - 6] {
++            for a in 0_u8..128 {
++                let upper = (0..7)
++                    .filter(|&col| a & (1 << col) != 0)
++                    .map(|col| (base + col, 1.))
++                    .collect::<Vec<_>>();
++                for b in 0_u8..128 {
++                    let lower = (0..7)
++                        .filter(|&col| b & (1 << col) != 0)
++                        .map(|col| (base + col, -3.))
++                        .collect::<Vec<_>>();
++                    // Equality of subset masks is an independent structural
++                    // oracle; coefficients have no role in column matching.
++                    assert_eq!(same_columns(&upper, &lower), a == b);
++                }
++            }
++        }
++    }
++
++    #[test]
++    fn wide_contiguous_and_gapped_suffixes_check_endpoints_and_interior() {
++        for len in [63, 64, 65, 127, 128, 257] {
++            let contiguous = (0..len).map(|col| (col, 1.)).collect::<Vec<_>>();
++            assert!(same_columns(&contiguous, &contiguous));
++            let mut changed_end = contiguous.clone();
++            changed_end[len - 1].0 += 1;
++            assert!(!same_columns(&contiguous, &changed_end));
++            let gapped = (0..len).map(|col| (2 * col, 1.)).collect::<Vec<_>>();
++            assert!(same_columns(&gapped, &gapped));
++            let mut changed_middle = gapped.clone();
++            changed_middle[len / 2].0 += 1;
++            assert!(!same_columns(&gapped, &changed_middle));
++            assert!(!same_columns(&gapped, &gapped[..len - 1]));
++        }
++    }
++}

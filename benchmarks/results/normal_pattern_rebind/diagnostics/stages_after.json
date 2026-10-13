@@ -1,0 +1,16 @@
+{
+  "purpose": "instrumented final stage diagnostic; times excluded from primary and stage times overlap",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "source_sha256": {
+    "base": "a0448407832c4c7f9f61ae02c52f86533f9b99d9dc52bdfddc3e91a36c099909",
+    "instrumented": "8c655e972fdf09c58b1f8ae7097ba9241a1ba8daa1fec6acd21f7d1bf43a14e6"
+  },
+  "executable_sha256": "1a8f384b37d6a16b53cdf282768de515cf2a751ca639041ad6ae96bb758c83c9",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "patch_sha256": "ed5e6ae1c86efab9901c0f01f51b5adb7302013baa6000afe641803fb641e5ad",
+  "means_match_primary": true,
+  "means_sha256": "17138f42e5e723374c961d09e3624231c399bde0d60c94c03b9e7e81b3903733",
+  "max_original_gradient": 2.963925807564216e-07
+}

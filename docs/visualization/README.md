@@ -1,4 +1,43 @@
-# Reproduce the README animation
+# Reproduce the README gallery
+
+The gallery uses actual recorded pose estimates, measured benchmark samples and
+deterministic solver checkpoints. It includes three GIFs and static trajectory
+and comparison plots; no renderer invents timing samples or solver states.
+
+## Recorded Intel hero and Rosenbrock
+
+From the repository root:
+
+```sh
+cargo run -p ropt --example export_rosenbrock_trace --locked -- docs/assets/rosenbrock_trace.csv
+python3 -m venv .venv-viz
+.venv-viz/bin/python -m pip install -r docs/visualization/requirements.txt
+.venv-viz/bin/python docs/visualization/render_showcase.py
+```
+
+The renderer produces `ropt-hero.gif`, its PNG still, `intel943-trajectory.png`,
+`isam2-comparison.png`, `rosenbrock-convergence.gif` and its PNG still under
+`docs/assets`. [showcase_manifest.json](../assets/showcase_manifest.json) captures
+input/renderer/output SHA-256 checksums, sizes and rendering versions.
+
+The Intel hero selects 80 **actual** prefixes from the archived primary ropt
+output. It replays all 943 poses / 1,837 measured constraints in an inferred
+pose-ID arrival order. It has no interpolation and is not real-time footage.
+Its original-energy chart shows the cost of the growing graph, which can increase
+as observations arrive; it is not the cost of iterations on a fixed objective.
+The comparison plot retains all six paired samples in each of two independent
+campaigns, with complete update/replay timings rather than per-frame latency.
+Both campaigns use common accuracy gates and explicit full-refresh policies;
+the MIT1228 artifact remains ineligible. See [the comparison contract](../../benchmarks/REAL_ISAM2.md).
+
+Rosenbrock uses the same AD residual and initial state as the standard example.
+The exporter reruns LM with every iteration cap and checks each actual state cost
+against the full solve's accepted/rejected trial record. The independent renderer
+also checks those costs against `0.5 * (100*(y-x*x)^2 + (1-x)^2)` before plotting.
+All 32 trials are shown without interpolation. Rejected trials keep the accepted
+state. This synthetic demo is not a performance benchmark.
+
+## Bundle adjustment
 
 The checked-in GIF visualizes the deterministic, noise-free Bundle Adjustment
 fixture used by the Rust regression tests: 4 camera poses, 12 world points and

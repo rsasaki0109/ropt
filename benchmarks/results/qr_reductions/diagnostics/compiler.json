@@ -1,0 +1,47 @@
+{
+  "purpose": "static emitted instruction counts; not executed operation counts or performance evidence",
+  "manual_simd": false,
+  "target_cpu_native": false,
+  "cases": {
+    "before": {
+      "executable_sha256": "7fbfbbc57bfff5e0ce547e99b380e903c3f397e411dd5ad8c0f8cc9f660ea748",
+      "matches_primary_executable": true,
+      "function": "IncrementalQr::append_in_place",
+      "static_instruction_counts": {
+        "mulpd": 1,
+        "addpd": 0,
+        "subpd": 0,
+        "cmpeqpd": 0,
+        "cmpordpd": 0,
+        "cmpltpd": 0,
+        "andpd": 3,
+        "psubq": 0,
+        "paddq": 0,
+        "mulsd": 36,
+        "addsd": 11,
+        "subsd": 9
+      },
+      "disassembly_sha256": "22055c63d50e5c6478ad376906ddf66083c8969d98ac3eba4fd0127d78e6ed02"
+    },
+    "after": {
+      "executable_sha256": "cdf4de510015a4030581c8b1a9cd8345f9f3ba3a551eb8123529049660121170",
+      "matches_primary_executable": true,
+      "function": "IncrementalQr::append_in_place",
+      "static_instruction_counts": {
+        "mulpd": 9,
+        "addpd": 2,
+        "subpd": 2,
+        "cmpeqpd": 4,
+        "cmpordpd": 4,
+        "cmpltpd": 0,
+        "andpd": 16,
+        "psubq": 2,
+        "paddq": 2,
+        "mulsd": 36,
+        "addsd": 11,
+        "subsd": 9
+      },
+      "disassembly_sha256": "586703bebb945ba1e524dfc85b13fea0382e184960bb3396899049e312bab817"
+    }
+  }
+}

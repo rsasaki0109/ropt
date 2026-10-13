@@ -1,0 +1,14 @@
+{
+  "status": "incomplete exploratory diagnosis; not passing accuracy evidence",
+  "requested_updates": 100,
+  "completed_updates": 49,
+  "failure_at": 50,
+  "termination": "NoProgress",
+  "trials": 12,
+  "cost": 0.18587978591534,
+  "last_trial_gradient": 1.2567558105303078e-10,
+  "solver_gradient_tolerance": 1e-10,
+  "solver_cost_tolerance": 1e-15,
+  "central_difference_step": 1e-05,
+  "provenance": "Observed before final finite-difference step checks and explicit gradient-tolerance configuration; source snapshot/executable were not frozen. Preserved prefix output and diagnostics, not a reproducible performance sample."
+}

@@ -1,0 +1,13 @@
+frames=100
+threshold=0.1
+interval=10
+force_every=25
+batch=SparseLdl(BlockMinimumDegree(3))
+batch_damping=restart(1e-3)
+cost_tolerance=1e-15
+gradient_tolerance=5e-7
+max_iterations=200
+root_update_timed=false
+warmup_streams=1
+measured_streams=1
+allocation_counting=false

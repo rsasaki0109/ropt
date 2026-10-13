@@ -1,0 +1,21 @@
+{
+  "purpose": "same forward diagnostic patch on both isolated kernels; fresh Cargo targets; primary sources untouched",
+  "cases": [
+    {
+      "variant": "before",
+      "primary_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+      "instrumented_source_sha256": "d75f3e15e25f1590599b7924899ede5a831b0665fe8e6600f34cc37c7fcca076",
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "zero_fuzz_apply": true,
+      "fresh_cargo_target": "/tmp/ropt-normal-cursor-before-stages/target"
+    },
+    {
+      "variant": "after",
+      "primary_source_sha256": "e6722aeb64358a1a53aa80c903dd54864fc37cf025bdf1d4bf97736457175a4e",
+      "instrumented_source_sha256": "4b356fd0892c766f3619ca6bd1520b4286b8563fe5e48efbcbbe1ccfb40a6caf",
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "zero_fuzz_apply": true,
+      "fresh_cargo_target": "/tmp/ropt-normal-cursor-after-stages/target"
+    }
+  ]
+}

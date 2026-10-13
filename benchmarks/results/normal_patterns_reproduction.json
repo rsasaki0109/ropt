@@ -1,0 +1,56 @@
+{
+  "purpose": "fresh isolated forward candidate builds and balanced native smoke; no production change; primary timing excluded",
+  "before_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+  "helper_sha256": "7092f9a726e9fc02e5efe1934520650d447fce21e8fe3761fc7f45dd36da43ee",
+  "driver_sha256": "ba962958e08062059e6a6bfe549859423169bfef4555aca4a382797dd7b11c56",
+  "cases": [
+    {
+      "candidate": "bulk",
+      "candidate_source_sha256": "e6722aeb64358a1a53aa80c903dd54864fc37cf025bdf1d4bf97736457175a4e",
+      "matches_archived_candidate": true,
+      "zero_fuzz_apply": true,
+      "built_offline_with_fresh_target": true,
+      "candidate_manifest": {
+        "purpose": "rejected candidate reproduction; production checkout unchanged",
+        "candidate": "bulk",
+        "before_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "candidate_source_sha256": "e6722aeb64358a1a53aa80c903dd54864fc37cf025bdf1d4bf97736457175a4e",
+        "patch_sha256": "f190e2d116529c5ec8f34bea19a995eb944eddd832938389af8e5251d98766c5",
+        "zero_fuzz_apply": true
+      },
+      "smoke_frames": 25,
+      "smoke_rounds": 6,
+      "smoke_timed_updates": 450,
+      "smoke_all_quality_gates_pass": true,
+      "smoke_source_sha256": {
+        "before": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "after": "e6722aeb64358a1a53aa80c903dd54864fc37cf025bdf1d4bf97736457175a4e"
+      },
+      "executable_sha256": "0dd23c8624de84b4ee99fa7c971dac328fe86f61b68fd7bcc5c263b2958e5d4c"
+    },
+    {
+      "candidate": "diagonal",
+      "candidate_source_sha256": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0",
+      "matches_archived_candidate": true,
+      "zero_fuzz_apply": true,
+      "built_offline_with_fresh_target": true,
+      "candidate_manifest": {
+        "purpose": "rejected candidate reproduction; production checkout unchanged",
+        "candidate": "diagonal",
+        "before_source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "candidate_source_sha256": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0",
+        "patch_sha256": "52885a724b1ac2ad5df7bd33efe3ef8b826df01771dbee90aa38e8a9beefd465",
+        "zero_fuzz_apply": true
+      },
+      "smoke_frames": 25,
+      "smoke_rounds": 6,
+      "smoke_timed_updates": 450,
+      "smoke_all_quality_gates_pass": true,
+      "smoke_source_sha256": {
+        "before": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+        "after": "24645554b7683b4aa2a3ccb44e1b80accb33901fa0e24294c156e57c599b72d0"
+      },
+      "executable_sha256": "847de73cd0bbe1041c9472b3b37d92c64df8c4e176c158d7436f3d4e7059e491"
+    }
+  ]
+}

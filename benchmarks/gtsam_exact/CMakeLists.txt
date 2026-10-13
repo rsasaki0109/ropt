@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.16)
+project(ropt_gtsam_exact_reference LANGUAGES CXX)
+find_package(GTSAM 4.2 REQUIRED)
+add_executable(gtsam_exact benchmark.cpp)
+target_link_libraries(gtsam_exact PRIVATE gtsam)
+target_compile_features(gtsam_exact PRIVATE cxx_std_17)
+target_compile_options(gtsam_exact PRIVATE -Wall -Wextra -Werror)

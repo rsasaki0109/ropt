@@ -1,0 +1,16 @@
+{
+  "eligible": true,
+  "updates": 100,
+  "reference_checkpoints": 4,
+  "update_reasons": {
+    "None": 86,
+    "Some(Forced)": 4,
+    "Some(Interval)": 10
+  },
+  "max_pose_difference": 8.267086366324576e-07,
+  "max_cost_difference": 6.428191312579656e-14,
+  "max_refreshed_gradient": 4.630289207607774e-07,
+  "max_incremental_gradient": 0.009960787912943917,
+  "max_cached_cost_gap": 5.930804369280729e-07,
+  "final_qr_entries": 4551
+}

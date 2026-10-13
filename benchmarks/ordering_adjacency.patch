@@ -1,0 +1,245 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -74,6 +74,56 @@
+             .flatten()
+             .chain(large.into_iter().flatten())
+     }
++    // Adjacency operations use the same ascending hybrid storage as patterns.
++    // Their logical edge budget remains checked by minimum_degree before fill.
++    fn len(&self) -> usize {
++        match self {
++            Self::Small(rows) => rows.len(),
++            Self::Large(rows) => rows.len(),
++        }
++    }
++    fn contains(&self, row: &usize) -> bool {
++        match self {
++            Self::Small(rows) => rows.binary_search(row).is_ok(),
++            Self::Large(rows) => rows.contains(row),
++        }
++    }
++    fn insert_neighbor(&mut self, row: usize) {
++        match self {
++            Self::Small(rows) => {
++                if let Err(position) = rows.binary_search(&row) {
++                    if rows.len() < 64 {
++                        rows.insert(position, row);
++                    } else {
++                        let mut tree = rows.iter().copied().collect::<BTreeSet<_>>();
++                        tree.insert(row);
++                        *self = Self::Large(tree);
++                    }
++                }
++            }
++            Self::Large(rows) => {
++                rows.insert(row);
++            }
++        }
++    }
++    fn remove(&mut self, row: &usize) {
++        match self {
++            Self::Small(rows) => {
++                if let Ok(position) = rows.binary_search(row) {
++                    rows.remove(position);
++                }
++            }
++            Self::Large(rows) => {
++                rows.remove(row);
++            }
++        }
++    }
++    fn clear(&mut self) {
++        match self {
++            Self::Small(rows) => rows.clear(),
++            Self::Large(rows) => rows.clear(),
++        }
++    }
+     fn into_rows(self) -> Vec<usize> {
+         match self {
+             Self::Small(rows) => rows,
+@@ -145,12 +195,14 @@
+     limit: usize,
+ ) -> Result<Vec<usize>, Error> {
+     let n = columns.len();
+-    let mut adjacent = vec![BTreeSet::new(); n];
++    let mut adjacent = (0..n)
++        .map(|_| PatternColumn::Small(Vec::new()))
++        .collect::<Columns>();
+     for (col, values) in columns.iter().enumerate() {
+         for &row in values.iter() {
+             if row != col {
+-                adjacent[col].insert(row);
+-                adjacent[row].insert(col);
++                adjacent[col].insert_neighbor(row);
++                adjacent[row].insert_neighbor(col);
+             }
+         }
+     }
+@@ -159,6 +211,7 @@
+         .map(|k| Reverse((adjacent[k].len(), k)))
+         .collect::<BinaryHeap<_>>();
+     let mut order = Vec::with_capacity(n);
++    let mut neighbors = Vec::new();
+     while order.len() < n {
+         let key = loop {
+             let Reverse((degree, key)) = heap.pop().ok_or(Error::LinearSolve)?;
+@@ -168,7 +221,8 @@
+         };
+         active[key] = false;
+         order.push(key);
+-        let neighbors = adjacent[key].iter().copied().collect::<Vec<_>>();
++        neighbors.clear();
++        neighbors.extend(adjacent[key].iter().copied());
+         for &other in &neighbors {
+             adjacent[other].remove(&key);
+         }
+@@ -178,14 +232,14 @@
+                     if entries >= limit {
+                         return Err(Error::SparseFillLimit { limit });
+                     }
+-                    adjacent[a].insert(b);
+-                    adjacent[b].insert(a);
++                    adjacent[a].insert_neighbor(b);
++                    adjacent[b].insert_neighbor(a);
+                     entries += 1;
+                 }
+             }
+         }
+         adjacent[key].clear();
+-        for other in neighbors {
++        for &other in &neighbors {
+             heap.push(Reverse((adjacent[other].len(), other)));
+         }
+     }
+@@ -746,3 +800,131 @@
+ ) -> Result<SparseLdlReport, Error> {
+     SparseLdlWorkspace::new(*options)?.solve(j, rhs, damping)
+ }
++
++#[cfg(test)]
++mod adjacency_tests {
++    use super::*;
++
++    #[test]
++    fn sorted_neighbors_preserve_membership_through_promotion_removal_and_clear() {
++        let mut neighbors = PatternColumn::Small(Vec::new());
++        for value in (0..64).rev() {
++            neighbors.insert_neighbor(value);
++            neighbors.insert_neighbor(value);
++        }
++        assert!(matches!(neighbors, PatternColumn::Small(_)));
++        assert_eq!(neighbors.len(), 64);
++        assert_eq!(
++            neighbors.iter().copied().collect::<Vec<_>>(),
++            (0..64).collect::<Vec<_>>()
++        );
++        neighbors.remove(&30);
++        neighbors.remove(&200);
++        assert!(!neighbors.contains(&30));
++        assert!(neighbors.contains(&31));
++        neighbors.insert_neighbor(30);
++        neighbors.insert_neighbor(100);
++        assert!(matches!(neighbors, PatternColumn::Large(_)));
++        let mut expected: Vec<_> = (0..64).chain([100]).collect();
++        for value in (0..64).step_by(2) {
++            neighbors.remove(&value);
++            expected.retain(|&v| v != value);
++        }
++        assert_eq!(neighbors.len(), expected.len());
++        assert_eq!(neighbors.iter().copied().collect::<Vec<_>>(), expected);
++        neighbors.clear();
++        assert_eq!(neighbors.len(), 0);
++        neighbors.insert_neighbor(7);
++        neighbors.insert_neighbor(1);
++        neighbors.insert_neighbor(7);
++        assert_eq!(neighbors.iter().copied().collect::<Vec<_>>(), vec![1, 7]);
++    }
++
++    // Dense boolean graph plus a full scan selects the minimum (degree, key).
++    // It shares neither the heap nor the hybrid representation with production.
++    fn reference(n: usize, edges: &[(usize, usize)], limit: usize) -> Result<Vec<usize>, Error> {
++        let mut graph = vec![vec![false; n]; n];
++        let mut entries = n;
++        for &(a, b) in edges {
++            if !graph[a][b] {
++                graph[a][b] = true;
++                graph[b][a] = true;
++                entries += 1;
++            }
++        }
++        let mut active = vec![true; n];
++        let mut order = Vec::new();
++        for _ in 0..n {
++            let key = (0..n)
++                .filter(|&k| active[k])
++                .min_by_key(|&k| (graph[k].iter().filter(|&&v| v).count(), k))
++                .unwrap();
++            active[key] = false;
++            order.push(key);
++            let neighbors: Vec<_> = (0..n).filter(|&k| graph[key][k]).collect();
++            for &other in &neighbors {
++                graph[other][key] = false;
++            }
++            for (i, &a) in neighbors.iter().enumerate() {
++                for &b in &neighbors[i + 1..] {
++                    if !graph[a][b] {
++                        if entries >= limit {
++                            return Err(Error::SparseFillLimit { limit });
++                        }
++                        graph[a][b] = true;
++                        graph[b][a] = true;
++                        entries += 1;
++                    }
++                }
++            }
++            graph[key].fill(false);
++        }
++        Ok(order)
++    }
++
++    #[test]
++    fn greedy_order_and_cumulative_fill_limits_match_independent_dense_graph() {
++        let fixtures = [
++            (1, vec![]),
++            (8, vec![(1, 2), (4, 5), (1, 2)]),
++            (
++                24,
++                (0..24)
++                    .flat_map(|k| [(k, (k + 1) % 24), (k, (k + 5) % 24)])
++                    .collect(),
++            ),
++            (
++                72,
++                (1..72)
++                    .flat_map(|k| [(0, k), (k, if k == 71 { 1 } else { k + 1 })])
++                    .collect(),
++            ),
++            (
++                72,
++                (0..72)
++                    .flat_map(|a| (a + 1..72).map(move |b| (a, b)))
++                    .collect(),
++            ),
++            (96, (1..96).rev().map(|k| (0, k)).collect()),
++        ];
++        for (n, edges) in fixtures {
++            let mut columns: Columns = (0..n).map(PatternColumn::diagonal).collect();
++            let mut entries = n;
++            for &(a, b) in &edges {
++                add_pattern_entry(&mut columns[a.min(b)], a.max(b), &mut entries, usize::MAX)
++                    .unwrap();
++            }
++            for limit in [
++                entries,
++                (entries + 10).min(n * (n + 1) / 2),
++                n * (n + 1) / 2,
++            ] {
++                assert_eq!(
++                    minimum_degree(&columns, entries, limit),
++                    reference(n, &edges, limit),
++                    "n={n}, limit={limit}"
++                );
++            }
++        }
++    }
++}

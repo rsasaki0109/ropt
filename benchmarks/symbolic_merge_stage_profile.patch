@@ -1,0 +1,179 @@
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup { ropt::update_profile::reset(); }
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::update_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -627,6 +627,7 @@
+         if x.len() != self.initial.len() || d.len() != self.tangent_size {
+             return Err(Error::InvalidDimensions);
+         }
++        let _scope = crate::update_profile::begin(4);
+         let mut out = x.clone();
+         for v in &self.variables {
+             let value = &x.as_slice()[v.ambient.clone()];
+@@ -724,6 +725,7 @@
+         if x.len() != self.initial.len() {
+             return Err(Error::InvalidDimensions);
+         }
++        let _scope = crate::update_profile::begin(2);
+         // Validate every block, including fixed/disconnected variables, without
+         // allocating owned copies that would immediately be discarded.
+         for variable in &self.variables {
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -305,6 +305,7 @@
+     factors: &[SmootherFactor],
+     order: &[Key],
+ ) -> Result<(FactorGraph, BTreeMap<Key, VariableId>), Error> {
++        let _scope = crate::update_profile::begin(0);
+     let mut graph = FactorGraph::new();
+     let mut ids = BTreeMap::new();
+     for key in order {
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -80,6 +80,7 @@
+         j: &CsrMatrix,
+         residual: &DVector<f64>,
+     ) -> Result<(), Error> {
++        let _scope = crate::update_profile::begin(3);
+         let (m, n) = j.shape();
+         if n != self.dimension() || m != residual.len() {
+             return Err(Error::InvalidDimensions);
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,5 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++pub mod update_profile;
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -680,6 +680,7 @@
+     initial: DVector<f64>,
+     options: &Options,
+ ) -> Result<(Report, Linearization, f64), Error> {
++        let _scope = crate::update_profile::begin(1);
+     let (ambient, n, m) = problem.dimensions();
+     if ambient == 0 || m == 0 || initial.len() != ambient {
+         return Err(Error::InvalidDimensions);
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -169,6 +169,7 @@
+     Ok(())
+ }
+ fn assemble_pattern(j: &CsrMatrix, limit: usize) -> Result<(Columns, usize), Error> {
++    let _scope = crate::update_profile::begin(9);
+     let (m, n) = j.shape();
+     if n == 0 {
+         return Err(Error::InvalidDimensions);
+@@ -266,8 +267,10 @@
+ impl SparseLdlSymbolic {
+     pub fn analyze(j: &CsrMatrix, options: &SparseLdlOptions) -> Result<Self, Error> {
+         options.validate()?;
++        let _scope = crate::update_profile::begin(6);
+         let (columns, normal_entries) = assemble_pattern(j, options.max_entries)?;
+         let n = columns.len();
++        let ordering_scope = crate::update_profile::begin(10);
+         let permutation = match options.ordering {
+             SparseOrdering::Natural => (0..n).collect(),
+             SparseOrdering::MinimumDegree => {
+@@ -300,6 +303,8 @@
+                     .collect()
+             }
+         };
++        drop(ordering_scope);
++        let signature_scope = crate::update_profile::begin(14);
+         // Exact original-coordinate normal graph, independent of residual row
+         // layout and numerical values. Keep equality checks collision-free.
+         let mut normal_offsets = Vec::with_capacity(n + 1);
+@@ -309,6 +314,8 @@
+             normal_rows.extend(column.iter().copied());
+             normal_offsets.push(normal_rows.len());
+         }
++        drop(signature_scope);
++        let fill_scope = crate::update_profile::begin(11);
+         let mut inverse = vec![0; n];
+         for (new, &old) in permutation.iter().enumerate() {
+             inverse[old] = new;
+@@ -347,6 +354,7 @@
+             rows.extend(column);
+             offsets.push(rows.len());
+         }
++        drop(fill_scope);
+         let (pattern_offsets, pattern_indices) = j.pattern();
+         let mut symbolic = Self {
+             shape: j.shape(),
+@@ -363,6 +371,7 @@
+             update_targets: None,
+             assembly_targets: None,
+         };
++        let update_plan_scope = crate::update_profile::begin(12);
+         // Bound optional operation-index storage independently by the same entry
+         // budget. Dense/high-fill factors can fall back to binary searches.
+         let operations = (0..n).try_fold(0_usize, |sum, k| {
+@@ -380,12 +389,14 @@
+             }
+             symbolic.update_targets = Some(targets);
+         }
++        drop(update_plan_scope);
+         symbolic.refresh_assembly(j, options.max_entries);
+         Ok(symbolic)
+     }
+     // A different CSR descriptor can share the exact same normal graph. Only
+     // that equality permits reusing ordering, fill and numeric update targets.
+     fn rebind_pattern(&mut self, j: &CsrMatrix, limit: usize) -> Result<bool, Error> {
++        let _scope = crate::update_profile::begin(8);
+         if j.shape().1 != self.dimension() {
+             return Ok(false);
+         }
+@@ -410,6 +421,7 @@
+         Ok(true)
+     }
+     fn refresh_assembly(&mut self, j: &CsrMatrix, limit: usize) {
++        let _scope = crate::update_profile::begin(13);
+         let (pattern_offsets, pattern_indices) = j.pattern();
+         let remaining = limit - self.update_entries();
+         let operations = (0..j.shape().0).try_fold(0_usize, |sum, row| {
+@@ -510,6 +522,7 @@
+     if !damping.is_finite() || damping < 0.0 {
+         return Err(Error::InvalidOptions);
+     }
++        let _scope = crate::update_profile::begin(7);
+     values.fill(0.0);
+     let (offsets, indices) = j.pattern();
+     let numeric = j.values();
+@@ -758,6 +771,7 @@
+         if rhs.len() != j.shape().1 || x.len() != rhs.len() {
+             return Err(Error::InvalidDimensions);
+         }
++        let _scope = crate::update_profile::begin(5);
+         finite_vector(rhs)?;
+         self.refactor(j, damping)?;
+         self.solve_factored_into(rhs, x)?;
+--- /dev/null
++++ b/crates/ropt/src/update_profile.rs
+@@ -0,0 +1,8 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static TIME:[AtomicU64;15]=[const{AtomicU64::new(0)};15];
++static CALLS:[AtomicU64;15]=[const{AtomicU64::new(0)};15];
++pub struct Scope{id:usize,start:std::time::Instant}
++pub fn begin(id:usize)->Scope{Scope{id,start:std::time::Instant::now()}}
++impl Drop for Scope{fn drop(&mut self){TIME[self.id].fetch_add(self.start.elapsed().as_nanos() as u64,Ordering::Relaxed);CALLS[self.id].fetch_add(1,Ordering::Relaxed);}}
++pub fn reset(){for (t,c) in TIME.iter().zip(&CALLS){t.store(0,Ordering::Relaxed);c.store(0,Ordering::Relaxed);}}
++pub fn dump(){eprintln!("stage,calls,inclusive_ns");for (id,name) in ["build_graph","batch_solve","factor_evaluation","qr_append","graph_retract","ldl_solve","ldl_prepare","ldl_numeric","ldl_rebind","normal_pattern","ordering","factor_pattern","update_plan","assembly_plan","normal_signature"].iter().enumerate(){eprintln!("{name},{},{}",CALLS[id].load(Ordering::Relaxed),TIME[id].load(Ordering::Relaxed));}}

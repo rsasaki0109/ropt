@@ -1,0 +1,39 @@
+{
+  "purpose": "cached policy correctness; independent original gradients and AD/dense QR checkpoints, not native timing",
+  "frames": 300,
+  "all_checker_gates_passed": true,
+  "cases": {
+    "before": {
+      "trace_sha256": "52525267e2ecabaa5554d3607215478005a943acfdc2c6f82b88bc71ba9116d1",
+      "summary_sha256": "2b35f827bfabdafc3999ee6c31e4bd227067892731e036fcdff638f365d87de1",
+      "reason_counts": {
+        "None": 258,
+        "Some(Forced)": 12,
+        "Some(Interval)": 30
+      },
+      "max_refreshed_gradient": 4.904791850446344e-07,
+      "max_cached_gradient": 0.010027493381643826,
+      "max_checkpoint_pose_gap": 8.267086357910613e-07,
+      "final_qr_entries": 29511
+    },
+    "after": {
+      "trace_sha256": "d24b799cbc92953cc582a4f2820b587da2be2e566e5f874fa31a2733e6779e2d",
+      "summary_sha256": "166df1ad49697ec0216267716a2c63cb7f9e7687af2d2103a0309642fc477a0c",
+      "reason_counts": {
+        "None": 258,
+        "Some(Forced)": 12,
+        "Some(Interval)": 30
+      },
+      "max_refreshed_gradient": 4.91402057933854e-07,
+      "max_cached_gradient": 0.010027493915938657,
+      "max_checkpoint_pose_gap": 8.267086374788487e-07,
+      "final_qr_entries": 29511
+    }
+  },
+  "trace_bytes_identical": false,
+  "max_before_after_original_cost_gap": 5.906386491005833e-14,
+  "source_sha256": {
+    "before": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e",
+    "after": "eb6a9a576b921200f82bb3e474382919c1427258a9e324c0ca0561072b2521b0"
+  }
+}

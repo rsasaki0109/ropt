@@ -1,0 +1,70 @@
+{
+  "goal": "outperform native iSAM2 at common accuracy on the established synthetic SE2 comparison",
+  "goal_completed_for_measured_scope": true,
+  "scope": "100/300-arrival synthetic streams, verified correct-Jacobian native GTSAM4.2.1 configuration, single CPU; not general SLAM or default-policy superiority",
+  "source_sha256": "eb6a9a576b921200f82bb3e474382919c1427258a9e324c0ca0561072b2521b0",
+  "before_source_sha256": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e",
+  "unit_integration_tests_passed": 233,
+  "doctests_passed": 18,
+  "python_tests_passed": 9,
+  "clippy_all_targets_warnings_denied": true,
+  "formatting_passed": true,
+  "documentation_warnings_denied": true,
+  "records": {
+    "frames25": {
+      "median_speedup_native": 1.2419999017852843,
+      "after_faster_native_pairs": 6,
+      "rounds": 6,
+      "all_common_accuracy_gates_passed": true
+    },
+    "frames100": {
+      "median_speedup_native": 1.1843935622757953,
+      "after_faster_native_pairs": 12,
+      "rounds": 12,
+      "all_common_accuracy_gates_passed": true
+    },
+    "frames300": {
+      "median_speedup_native": 1.0746054571443766,
+      "after_faster_native_pairs": 12,
+      "rounds": 12,
+      "all_common_accuracy_gates_passed": true
+    },
+    "frames300-confirmation": {
+      "median_speedup_native": 1.1078718887113932,
+      "after_faster_native_pairs": 11,
+      "rounds": 12,
+      "all_common_accuracy_gates_passed": true
+    }
+  },
+  "all_source_runner_patch_executable_input_hashes_verified": true,
+  "actual_native_library_hash_verified": true,
+  "primary_measured_streams": 108,
+  "primary_timed_arrivals": 25200,
+  "separate_smoke_streams": 18,
+  "separate_smoke_timed_arrivals": 450,
+  "before_after_forced_means_original_costs_lm_sequences_exact": true,
+  "qr_report_cost_rounding_allowed_only_within_unchanged_original_energy_gate": true,
+  "cached_300_independent_ad_dense_qr_and_gradient_checks_passed": true,
+  "rotation_diagnostic_own_primary_means_quality_and_all_nontiming_fields_exact": true,
+  "rotation_counts": {
+    "before": 2998044,
+    "after": 965443
+  },
+  "instrumented_times_excluded": true,
+  "zero_fuzz_forward_rotation_patch_proof": true,
+  "rollback_source_stages_matching_archives": 24,
+  "older_stage_compilation": "skipped in source-only checks",
+  "immediate_predecessor_compiled_and_exercised": true,
+  "subjective_maturity_percent": 75,
+  "committed": false,
+  "pushed": false,
+  "logs_sha256": {
+    "tests": "8ea1ceba0d7f3496c701125e1e8af14fa8c37fa2da121686bbff5cb97fe3f681",
+    "clippy": "10b170a38c1b663eb426be37c58a314242e824fc52d48eb5b51e73097c318e1f",
+    "build": "41f2cb024606fe69f26b93988c62fba803f3b499c3fd5b669a8eefc466b7b1ec",
+    "baseline": "3278a2d8d4689576c0d2e38ca1e4540f52151b0b6cb69e387151ba4a0aa65f1d",
+    "doctests": "34f8a35262dfe2de6a44c091d000a9de371a261cedc1d63b6e75d793ad0ca5cd",
+    "doc": "0966ecdc95f2be63d70257f74c63704aecd89250c11368887f01b4eb5c14f5cc",
+    "python-tests": "5684d13977a1f6829bcd5f644c72b35ab6f8d42951d571a5f230c4cc35a359f3"
+  }
+}

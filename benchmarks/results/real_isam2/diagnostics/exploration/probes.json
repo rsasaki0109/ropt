@@ -1,0 +1,103 @@
+{
+  "note": "exploratory configurations; cold timing, possible overlap and no separately frozen source. Not primary comparisons or evidence of isolated change speedups. Failed logs and successful slow/accuracy-failing probes retained.",
+  "cases": [
+    {
+      "name": "ropt",
+      "purpose": "absolute-gradient early NoProgress; before normalized convergence",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "normalized-ropt",
+      "purpose": "column-normalized natural-order QR; million-entry limit",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "ordered-ropt",
+      "purpose": "whole stream but pose-agreement failure; no final refinement",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "polish-ropt",
+      "purpose": "prototype final-refinement NoProgress",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "polish2-ropt",
+      "purpose": "prototype recovery did not meet stricter internal target",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "finaltol-ropt",
+      "purpose": "prototype warm-damping NoProgress",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "restartsmall-ropt",
+      "purpose": "prototype restart 1e-6 NoProgress",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "backtrack-ropt",
+      "purpose": "prototype backtracking could not recover NoProgress",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "restartstandard-ropt",
+      "purpose": "accuracy-passing prototype, expensive repeated QR rebuilds",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "lastmodelreuse-ropt",
+      "purpose": "one-refinement prototype fails pose-agreement",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "frozen-ropt",
+      "purpose": "accuracy-passing frozen-QR prototype before early stopping and norm optimization",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "fastnorm-ropt",
+      "purpose": "accuracy-passing norm optimization probe",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "cachednorm-ropt",
+      "purpose": "duplicate gradient-work elimination probe",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    },
+    {
+      "name": "targetnorm-ropt",
+      "purpose": "final configuration single cold probe; not primary timing",
+      "eligible_for_performance_ratio": false,
+      "source_snapshot_retained": false,
+      "diagnostic_only": true
+    }
+  ]
+}

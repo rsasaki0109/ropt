@@ -1,0 +1,16 @@
+stage,calls,inclusive_ns
+build_graph,601,15775533
+batch_solve,300,230734771
+factor_evaluation,932,66363397
+qr_append,301,208623764
+graph_retract,632,6078330
+ldl_solve,631,130823574
+ldl_prepare,300,71968801
+ldl_numeric,631,24549727
+ldl_rebind,183,12384039
+normal_pattern,483,14590188
+ordering,300,15218068
+factor_pattern,300,26888206
+update_plan,300,9332326
+assembly_plan,483,12801790
+normal_signature,300,2624077

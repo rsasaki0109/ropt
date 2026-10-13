@@ -1,0 +1,92 @@
+{
+  "purpose": "warmed inclusive stage profiling; excluded from primary comparisons; counters verified; earlier empty-counter attempt excluded",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "stages": [
+    {
+      "stage": "build_graph",
+      "calls": 601,
+      "inclusive_ns": 17040483
+    },
+    {
+      "stage": "batch_solve",
+      "calls": 300,
+      "inclusive_ns": 243137205
+    },
+    {
+      "stage": "factor_evaluation",
+      "calls": 932,
+      "inclusive_ns": 66162767
+    },
+    {
+      "stage": "qr_append",
+      "calls": 301,
+      "inclusive_ns": 252331975
+    },
+    {
+      "stage": "graph_retract",
+      "calls": 632,
+      "inclusive_ns": 6158385
+    },
+    {
+      "stage": "ldl_solve",
+      "calls": 631,
+      "inclusive_ns": 144307884
+    },
+    {
+      "stage": "ldl_prepare",
+      "calls": 300,
+      "inclusive_ns": 86035079
+    },
+    {
+      "stage": "ldl_numeric",
+      "calls": 631,
+      "inclusive_ns": 23759956
+    },
+    {
+      "stage": "ldl_rebind",
+      "calls": 183,
+      "inclusive_ns": 12589604
+    },
+    {
+      "stage": "normal_pattern",
+      "calls": 483,
+      "inclusive_ns": 14640957
+    },
+    {
+      "stage": "ordering",
+      "calls": 300,
+      "inclusive_ns": 14487288
+    },
+    {
+      "stage": "factor_pattern",
+      "calls": 300,
+      "inclusive_ns": 26888726
+    },
+    {
+      "stage": "update_plan",
+      "calls": 300,
+      "inclusive_ns": 23655326
+    },
+    {
+      "stage": "assembly_plan",
+      "calls": 483,
+      "inclusive_ns": 13305498
+    },
+    {
+      "stage": "normal_signature",
+      "calls": 300,
+      "inclusive_ns": 2589033
+    }
+  ],
+  "means_match_primary": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "primary": "4cdcea1a4e4476218884a61185aa986717589355fd133806c56d1d1591c9e1cc",
+    "instrumented": "d8163b33aa08c467391b107e16242ea7c0b9162cb19836bf32dadc593030c70e"
+  },
+  "executable_sha256": "0100c23294d0e8693258606ec28f881cfcc282fc460e87b2c03178567e4e8ce2",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9"
+}

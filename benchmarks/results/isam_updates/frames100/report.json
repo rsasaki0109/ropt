@@ -1,0 +1,343 @@
+{
+  "metadata": {
+    "created_utc": "2026-10-12T21:49:31Z",
+    "frames": 100,
+    "rounds": 6,
+    "environment": {
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "logical_cpus": 5,
+      "cpu_affinity": [
+        0
+      ],
+      "cgroup_cpu_max": "400000 100000",
+      "python": "3.12.14",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+      "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+      "thread_variables": {
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      }
+    },
+    "dataset": "synthetic Euclidean2 correlated Gaussian observation/odometry stream; every 25 updates adds fixed-root to existing half-history key factor; root fixed exactly",
+    "derivatives": "explicit analytic constant Jacobians",
+    "source_fingerprints": {
+      "before": "a0adf3e1b40b8c13d70f5eefd8a40960e3c8bf78701caf73e2ecdc5124d0ecac",
+      "after": "11d6160e152d661673d9fbeee35fafe8b8b58cd2d8025ff4beca6be4a9ffd729"
+    },
+    "stream_source_sha256": {
+      "crates/ropt/examples/benchmark_isam.rs": "57af14d23ea071429f026b2d6f7d3537dc207655c15791f562b63e986416e825",
+      "crates/ropt/examples/support/isam_stream.rs": "5e40c30662d079224e11aeab7520fbf3bf1e8b80ea69aeacd8eecfc35459d749"
+    },
+    "executables": {
+      "before": "e4462a915055d0016487ea3e869565c94bb3fa6b1f0c42a74c5c9eabcf5bdc1c",
+      "after": "4e5be440ecc4754c0d1fc518f8bd6455ae792b8b6f73e3bd2568bc08b1e6c12b"
+    },
+    "driver_sha256": "e9a8a642ef2867c4e8ec9a8931398a5ad7daec6d7d56a12846852a9c2d009694",
+    "python_oracle_sha256": "6bf8ca059778aaefa61cf6a2fbe94ddc6b68fb2a661b3928897f76ea32af4e94",
+    "rollback_patch_sha256": "fa5301eb78c2005e885d91617bd204cc31b14e877c078083b3a22a7b7b09cba9",
+    "warmup": "one discarded complete stream per process; initialization outside timers",
+    "timed": "sum of complete smoother.update calls including owned reports; recipe construction, oracle/validation, output and report destruction outside timers",
+    "callback_counting_enabled": true,
+    "allocation_counting_enabled": false,
+    "memory_measured": false,
+    "quality_thresholds": {
+      "pose_delta": 1e-08,
+      "gradient_inf": 1e-08,
+      "relative_cost": 1e-09
+    }
+  },
+  "cases": {
+    "before_incremental": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 8.2080255,
+        "min_ms": 7.862048,
+        "max_ms": 8.807806,
+        "mean_ms": 8.286387,
+        "stdev_ms": 0.287554803815435
+      },
+      "quality": [
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        }
+      ]
+    },
+    "after_incremental": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 4.371771,
+        "min_ms": 4.204859,
+        "max_ms": 4.583858,
+        "mean_ms": 4.362605,
+        "stdev_ms": 0.12170657007327104
+      },
+      "quality": [
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.0019568166609160915,
+          "gradient_inf": 6.724655554624093e-15,
+          "pose_delta": 7.32410687763558e-15
+        }
+      ]
+    },
+    "batch": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 20.626404,
+        "min_ms": 20.031942,
+        "max_ms": 21.505233,
+        "mean_ms": 20.732885833333334,
+        "stdev_ms": 0.5087671980455682
+      },
+      "quality": [
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.001956816660916093,
+          "gradient_inf": 1.7361979909313874e-14,
+          "pose_delta": 9.111948763821684e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.001956816660916093,
+          "gradient_inf": 1.7361979909313874e-14,
+          "pose_delta": 9.111948763821684e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.001956816660916093,
+          "gradient_inf": 1.7361979909313874e-14,
+          "pose_delta": 9.111948763821684e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.001956816660916093,
+          "gradient_inf": 1.7361979909313874e-14,
+          "pose_delta": 9.111948763821684e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.001956816660916093,
+          "gradient_inf": 1.7361979909313874e-14,
+          "pose_delta": 9.111948763821684e-15
+        },
+        {
+          "eligible": true,
+          "checks": {
+            "anchor": true,
+            "pose": true,
+            "gradient": true,
+            "cost": true,
+            "all_prefixes": true,
+            "callbacks": true
+          },
+          "independent_cost": 0.001956816660916093,
+          "gradient_inf": 1.7361979909313874e-14,
+          "pose_delta": 9.111948763821684e-15
+        }
+      ]
+    }
+  },
+  "all_quality_gates_passed": true,
+  "scope": "configured synthetic linear all-history updates; batch is FixedLagSmoother with persistent variables/no expiry; no GTSAM/iSAM2/general ranking"
+}

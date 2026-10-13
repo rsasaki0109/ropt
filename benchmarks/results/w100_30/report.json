@@ -1,0 +1,204 @@
+{
+  "metadata": {
+    "schema_version": 1,
+    "created_utc": "2026-10-12T09:28:13Z",
+    "dataset": {
+      "source": "https://raw.githubusercontent.com/borglab/gtsam/a74146dbea788ea25828041065d82674d6430ada/examples/Data/w100_30.g2o",
+      "sha256": "69d9959b6e6c530ad268b4d9999383acbd262b54319fd830e1d3075142c73343",
+      "poses": 30,
+      "edges": 59,
+      "active_tangent": 87,
+      "residuals": 177,
+      "anchor": 0
+    },
+    "repository": {
+      "head": "b8d9242d700e1288eea86722839bef92091f5139",
+      "dirty": true,
+      "solver_source_sha256": "e540caa7b66bb3d3b718cfbc08d658e95f40eabe0e28c09f970bea0167570f8b",
+      "driver_sha256": "41d499f7c5c895239786cfc6d1d5ec6f527d280aee2209cbee2045aace1b1333"
+    },
+    "environment": {
+      "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "logical_cpus": 5,
+      "cpu_affinity": [
+        0
+      ],
+      "cgroup_cpu_max": "400000 100000",
+      "python": "3.12.14",
+      "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+      "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+      "thread_variables": {
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      }
+    },
+    "release_executable_sha256": "cb1b6bb6e1e600a922d0afa70fcdbef4c1de170301692d7abd8d9afce1fc3340",
+    "warmup": 5,
+    "repeats": 30,
+    "quality_thresholds": {
+      "cost_absolute": 1e-09,
+      "gradient_inf": 1e-05,
+      "pose_delta": 1e-06
+    },
+    "memory_measured": false,
+    "scope": "small-sample configured solver runs; no SOTA or general speed ranking"
+  },
+  "cases": {
+    "ropt_dense": {
+      "timing": {
+        "samples": 30,
+        "median_ms": 3.4422300000000003,
+        "min_ms": 3.154706,
+        "max_ms": 4.7192,
+        "mean_ms": 3.5625632,
+        "stdev_ms": 0.3395662169933281
+      },
+      "quality": {
+        "eligible": true,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": true
+        },
+        "independent_cost": 0.08290751089989236,
+        "stored_gradient_inf": 1.4779844015322396e-09,
+        "max_pose_difference_to_dense": 0.0
+      },
+      "nonlinear_trials": [
+        7
+      ],
+      "linear_iterations": [
+        0
+      ]
+    },
+    "ropt_qr": {
+      "timing": {
+        "samples": 30,
+        "median_ms": 11.548506,
+        "min_ms": 10.7035,
+        "max_ms": 18.989037,
+        "mean_ms": 12.060214266666666,
+        "stdev_ms": 1.7266872047334445
+      },
+      "quality": {
+        "eligible": true,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": true
+        },
+        "independent_cost": 0.08290751089989236,
+        "stored_gradient_inf": 1.4779844015322396e-09,
+        "max_pose_difference_to_dense": 3.8266474299528865e-15
+      },
+      "nonlinear_trials": [
+        7
+      ],
+      "linear_iterations": [
+        0
+      ]
+    },
+    "ropt_scalar_cg": {
+      "timing": {
+        "samples": 30,
+        "median_ms": 4.352835499999999,
+        "min_ms": 3.854463,
+        "max_ms": 5.55955,
+        "mean_ms": 4.431913866666666,
+        "stdev_ms": 0.4419480208632182
+      },
+      "quality": {
+        "eligible": true,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": true
+        },
+        "independent_cost": 0.08290751089989239,
+        "stored_gradient_inf": 1.4641066137244252e-09,
+        "max_pose_difference_to_dense": 2.1130120748224915e-11
+      },
+      "nonlinear_trials": [
+        7
+      ],
+      "linear_iterations": [
+        443
+      ]
+    },
+    "ropt_block_cg": {
+      "timing": {
+        "samples": 30,
+        "median_ms": 5.0173095,
+        "min_ms": 4.680951,
+        "max_ms": 6.259236,
+        "mean_ms": 5.1366228,
+        "stdev_ms": 0.37809815827607507
+      },
+      "quality": {
+        "eligible": true,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": true,
+          "gradient": true,
+          "pose_agreement": true
+        },
+        "independent_cost": 0.08290751089989239,
+        "stored_gradient_inf": 1.4710455076283324e-09,
+        "max_pose_difference_to_dense": 1.475464092014146e-11
+      },
+      "nonlinear_trials": [
+        7
+      ],
+      "linear_iterations": [
+        406
+      ]
+    },
+    "gtsam_native": {
+      "timing": {
+        "samples": 30,
+        "median_ms": 4.1384775000000005,
+        "min_ms": 3.834062,
+        "max_ms": 6.460359,
+        "mean_ms": 4.2831241,
+        "stdev_ms": 0.5073154232818967
+      },
+      "quality": {
+        "eligible": false,
+        "checks": {
+          "finite": true,
+          "anchor": true,
+          "cost": false,
+          "gradient": false,
+          "pose_agreement": false
+        },
+        "independent_cost": 0.08291675444042225,
+        "stored_gradient_inf": 0.0035768965150895227,
+        "max_pose_difference_to_dense": 0.0010792559024463998
+      },
+      "versions": {
+        "gtsam": "4.2.1",
+        "numpy": "1.26.4",
+        "pyparsing": "3.3.3"
+      },
+      "native_module_sha256": "a57adfe20d3613292daf2b91492162153bdd0bce2b00299d67d212f41555021c",
+      "diagnostics": {
+        "probe_native_vs_central_jacobian_max_difference": 1.2471940330628444
+      },
+      "optimizer_iterations": [
+        5
+      ],
+      "iteration_semantics": "GTSAM optimizer iterations, not ropt LM trial counts"
+    }
+  },
+  "all_quality_gates_passed": false,
+  "cross_library_quality_eligible": false
+}

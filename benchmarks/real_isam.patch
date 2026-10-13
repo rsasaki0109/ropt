@@ -1,0 +1,778 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -271,6 +271,16 @@
+         cg: CgOptions,
+     },
+ }
++#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
++pub enum GradientNorm {
++    #[default]
++    Absolute,
++    /// Infinity norm of g_i / ||weighted J[:, i]||_2. Uses stable column
++    /// norms, without constructing a normal matrix. A zero column has zero
++    /// gradient and contributes zero; observability checks remain separate.
++    ColumnNormalized,
++}
++
+ #[derive(Debug, Clone)]
+ pub struct Options {
+     pub linear_solver: LinearSolver,
+@@ -278,6 +288,9 @@
+     pub loss: Loss,
+     pub max_iterations: usize,
+     pub gradient_tolerance: f64,
++    /// Absolute tangent gradient by default. ColumnNormalized measures each
++    /// component in units of its weighted Jacobian column norm.
++    pub gradient_norm: GradientNorm,
+     pub step_tolerance: f64,
+     pub cost_tolerance: f64,
+     pub initial_damping: f64,
+@@ -290,6 +303,7 @@
+             loss: Loss::Squared,
+             max_iterations: 100,
+             gradient_tolerance: 1e-10,
++            gradient_norm: GradientNorm::Absolute,
+             step_tolerance: 1e-10,
+             cost_tolerance: 1e-12,
+             initial_damping: 1e-3,
+@@ -403,6 +417,20 @@
+             return Err(Error::NonFinite);
+         }
+         Ok(g)
++    }
++    fn gradient_norm(&self, gradient: &DVector<f64>, kind: GradientNorm) -> Result<f64, Error> {
++        if kind == GradientNorm::Absolute {
++            return Ok(gradient.amax());
++        }
++        match &self.jacobian {
++            Jacobian::Dense(j) => column_normalized_norm(
++                gradient,
++                j.iter().enumerate().map(|(i, &v)| (i / j.nrows(), v)),
++            ),
++            Jacobian::Sparse(j) => {
++                column_normalized_norm(gradient, j.entries().map(|(_, c, v)| (c, v)))
++            }
++        }
+     }
+     fn predicted(&self, g: &DVector<f64>, step: &DVector<f64>) -> Result<f64, Error> {
+         let js = match &self.jacobian {
+@@ -643,13 +671,89 @@
+     initial: DVector<f64>,
+     options: &Options,
+ ) -> Result<Report, Error> {
+-    solve_local_model(problem, initial, options).map(|(report, _, _)| report)
++    solve_local_model(problem, initial, options).map(|(report, _, _, _)| report)
+ }
+ pub(crate) struct GaussianSolution {
+     pub report: Report,
+     pub residual: DVector<f64>,
+     pub jacobian: CsrMatrix,
+     pub final_damping: f64,
++    pub column_permutation: Option<Vec<usize>>,
++}
++pub(crate) fn gaussian_reduction(
++    before: &DVector<f64>,
++    after: &DVector<f64>,
++) -> Result<f64, Error> {
++    if before.len() != after.len() {
++        return Err(Error::InvalidDimensions);
++    }
++    let mut sum = CompensatedSum::default();
++    for (&a, &b) in before.iter().zip(after.iter()) {
++        sum.add(Loss::Squared.reduction(a.abs(), b.abs()))?;
++    }
++    sum.total()
++}
++pub(crate) fn gaussian_gradient_norm(
++    j: &CsrMatrix,
++    r: &DVector<f64>,
++    kind: GradientNorm,
++) -> Result<f64, Error> {
++    let gradient = j.transpose_multiply(r)?;
++    gaussian_gradient_measure(j, &gradient, kind)
++}
++pub(crate) fn gaussian_gradient_measure(
++    j: &CsrMatrix,
++    gradient: &DVector<f64>,
++    kind: GradientNorm,
++) -> Result<f64, Error> {
++    if kind == GradientNorm::Absolute {
++        return Ok(gradient.amax());
++    }
++    column_normalized_norm(gradient, j.entries().map(|(_, c, v)| (c, v)))
++}
++// Safe squared accumulation has ample exponent margin even for usize::MAX
++// entries. An extreme coefficient switches that column to scaled hypot.
++fn column_normalized_norm(
++    gradient: &DVector<f64>,
++    entries: impl Iterator<Item = (usize, f64)>,
++) -> Result<f64, Error> {
++    const LOW: f64 = f64::from_bits((1023 - 450) << 52);
++    const HIGH: f64 = f64::from_bits((1023 + 450) << 52);
++    let mut values = DVector::<f64>::zeros(gradient.len());
++    let mut scaled = vec![false; gradient.len()];
++    for (column, value) in entries {
++        if scaled[column] {
++            values[column] = values[column].hypot(value);
++        } else if value == 0. || (LOW..=HIGH).contains(&value.abs()) {
++            values[column] += value * value;
++        } else {
++            values[column] = values[column].sqrt().hypot(value);
++            scaled[column] = true;
++        }
++    }
++    let mut result = 0.0_f64;
++    for (i, &g) in gradient.iter().enumerate() {
++        if !g.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        let scale = if scaled[i] {
++            values[i]
++        } else {
++            values[i].sqrt()
++        };
++        if !scale.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        result = result.max(if scale == 0. {
++            g.abs()
++        } else {
++            g.abs() / scale
++        });
++    }
++    if !result.is_finite() {
++        return Err(Error::NonFinite);
++    }
++    Ok(result)
+ }
+ /// Return the final accepted whitened Gaussian model for undamped square-root
+ /// rebuilds. General robust callers must not treat an IRLS model as Gaussian.
+@@ -657,6 +761,7 @@
+     problem: &impl LocalProblem,
+     initial: DVector<f64>,
+     options: &Options,
++    capture_ordering: bool,
+ ) -> Result<GaussianSolution, Error> {
+     if !matches!(options.loss, Loss::Squared)
+         || problem
+@@ -666,20 +771,37 @@
+     {
+         return Err(Error::InvalidOptions);
+     }
+-    let (report, model, final_damping) = solve_local_model(problem, initial, options)?;
++    let (report, model, final_damping, workspace) = solve_local_model(problem, initial, options)?;
++    let column_permutation = if capture_ordering {
++        workspace
++            .as_ref()
++            .and_then(|w| w.symbolic())
++            .map(|s| s.permutation().to_vec())
++    } else {
++        None
++    };
+     let (r, j) = model.into_sparse()?;
+     Ok(GaussianSolution {
+         report,
+         residual: r,
+         jacobian: j,
+         final_damping,
++        column_permutation,
+     })
+ }
+ fn solve_local_model(
+     problem: &impl LocalProblem,
+     initial: DVector<f64>,
+     options: &Options,
+-) -> Result<(Report, Linearization, f64), Error> {
++) -> Result<
++    (
++        Report,
++        Linearization,
++        f64,
++        Option<crate::sparse_direct::SparseLdlWorkspace>,
++    ),
++    Error,
++> {
+     let (ambient, n, m) = problem.dimensions();
+     if ambient == 0 || m == 0 || initial.len() != ambient {
+         return Err(Error::InvalidDimensions);
+@@ -763,6 +885,7 @@
+             },
+             model,
+             options.initial_damping,
++            None,
+         ));
+     }
+     let mut damping = options.initial_damping;
+@@ -776,7 +899,7 @@
+     let mut termination = Termination::MaxIterations;
+     for iteration in 0..options.max_iterations {
+         let gradient = model.gradient()?;
+-        let gradient_norm = gradient.amax();
++        let gradient_norm = model.gradient_norm(&gradient, options.gradient_norm)?;
+         if !gradient_norm.is_finite() {
+             return Err(Error::NonFinite);
+         }
+@@ -875,12 +998,41 @@
+         },
+         model,
+         damping,
++        ldl_workspace,
+     ))
+ }
+ 
+ #[cfg(test)]
+ mod stable_loss_tests {
+     use super::*;
++    #[test]
++    fn normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients() {
++        for coefficients in [
++            vec![3., 4.],
++            vec![3e-200, 4e-200],
++            vec![3e200, 4e200],
++            vec![3., 4e200, 3e200],
++            vec![3e200, 4e200, 3.],
++        ] {
++            let reference = coefficients.iter().copied().fold(0.0_f64, f64::hypot);
++            let g = DVector::from_element(1, 2. * reference);
++            let norm =
++                column_normalized_norm(&g, coefficients.iter().copied().map(|v| (0, v))).unwrap();
++            assert!((norm - 2.).abs() < 1e-14);
++        }
++        assert_eq!(
++            column_normalized_norm(
++                &DVector::from_vec(vec![0., 7.]),
++                [(0, 0.), (1, 0.)].into_iter()
++            )
++            .unwrap(),
++            7.
++        );
++        assert_eq!(
++            column_normalized_norm(&DVector::zeros(1), [(0, f64::INFINITY)].into_iter()),
++            Err(Error::NonFinite)
++        );
++    }
+     #[test]
+     fn squared_and_huber_differences_preserve_small_changes_and_transition_signs() {
+         assert_eq!(
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -67,6 +67,12 @@
+     constant_cost: f64,
+     entries: usize,
+     options: IncrementalQrOptions,
++    column_order: Option<ColumnOrder>,
++}
++#[derive(Debug, Clone)]
++struct ColumnOrder {
++    to_original: Vec<usize>,
++    to_internal: Vec<usize>,
+ }
+ impl IncrementalQr {
+     pub fn new(columns: usize, options: IncrementalQrOptions) -> Result<Self, Error> {
+@@ -83,6 +89,7 @@
+             constant_cost: 0.,
+             entries: 0,
+             options,
++            column_order: None,
+         };
+         out.extend_columns(columns)?;
+         Ok(out)
+@@ -102,6 +109,10 @@
+             return Err(Error::SparseFillLimit {
+                 limit: self.options.max_entries,
+             });
++        }
++        if let Some(order) = &mut self.column_order {
++            order.to_original.extend(self.rows.len()..columns);
++            order.to_internal.extend(self.rows.len()..columns);
+         }
+         self.rows.resize_with(columns, Vec::new);
+         self.rhs.resize_vertically_mut(columns, 0.);
+@@ -138,11 +149,44 @@
+         rows.sort_by_key(|&r| {
+             if offsets[r] == offsets[r + 1] {
+                 j.shape().1
++            } else if let Some(order) = &self.column_order {
++                indices[offsets[r]..offsets[r + 1]]
++                    .iter()
++                    .map(|&c| order.to_internal[c])
++                    .min()
++                    .unwrap()
+             } else {
+                 indices[offsets[r]]
+             }
+         });
+         self.append_rows_in_place(j, residual, rows.into_iter())
++    }
++    /// Internal column ordering only. Input Jacobians, returned steps, supplied
++    /// cost vectors and future appended columns retain original coordinates.
++    pub(crate) fn set_column_order(&mut self, permutation: Vec<usize>) -> Result<(), Error> {
++        if self.entries != 0 || self.constant_cost != 0. || self.rhs.iter().any(|&v| v != 0.) {
++            return Err(Error::InvalidOptions);
++        }
++        if permutation.len() != self.dimension() {
++            return Err(Error::InvalidDimensions);
++        }
++        let mut inverse = vec![usize::MAX; permutation.len()];
++        for (internal, &original) in permutation.iter().enumerate() {
++            if original >= inverse.len() || inverse[original] != usize::MAX {
++                return Err(Error::InvalidDimensions);
++            }
++            inverse[original] = internal;
++        }
++        self.column_order = Some(ColumnOrder {
++            to_original: permutation,
++            to_internal: inverse,
++        });
++        Ok(())
++    }
++    pub(crate) fn column_permutation(&self) -> Option<&[usize]> {
++        self.column_order
++            .as_ref()
++            .map(|order| order.to_original.as_slice())
+     }
+     fn append_rows_in_place(
+         &mut self,
+@@ -165,6 +209,12 @@
+             let residual = residual[r];
+             row.clear();
+             row.extend(j.row(r)?);
++            if let Some(order) = &self.column_order {
++                for (column, _) in &mut row {
++                    *column = order.to_internal[*column];
++                }
++                row.sort_unstable_by_key(|&(column, _)| column);
++            }
+             let mut b = -residual;
+             let mut row_start = 0;
+             while let Some(&(k, below)) = row.get(row_start) {
+@@ -387,6 +437,18 @@
+                 parameters: self.dimension(),
+             });
+         }
++        if let Some(order) = &self.column_order {
++            let mut x = DVector::zeros(self.dimension());
++            for k in (0..self.dimension()).rev() {
++                let mut value = self.rhs[k];
++                for &(col, coefficient) in self.rows[k].iter().skip(1) {
++                    value -= coefficient * x[order.to_original[col]];
++                }
++                x[order.to_original[k]] = value / self.rows[k][0].1;
++            }
++            finite_vector(&x)?;
++            return Ok(x);
++        }
+         let mut x = self.rhs.clone();
+         for k in (0..self.dimension()).rev() {
+             for &(col, value) in self.rows[k].iter().skip(1) {
+@@ -396,6 +458,62 @@
+         }
+         finite_vector(&x)?;
+         Ok(x)
++    }
++    /// Solve R^T R * step = -gradient without forming the normal matrix.
++    /// Used only for opt-in near-solution refinement with a frozen QR factor.
++    pub(crate) fn solve_gradient(&self, gradient: &DVector<f64>) -> Result<DVector<f64>, Error> {
++        if gradient.len() != self.dimension() {
++            return Err(Error::InvalidDimensions);
++        }
++        finite_vector(gradient)?;
++        let largest = self
++            .rows
++            .iter()
++            .map(|row| row.first().map_or(0., |&(_, v)| v.abs()))
++            .fold(0.0_f64, f64::max);
++        let cutoff = largest * self.options.relative_rank_tolerance;
++        let rank = self
++            .rows
++            .iter()
++            .filter(|row| row.first().is_some_and(|&(_, v)| v.abs() > cutoff))
++            .count();
++        if rank < self.dimension() {
++            return Err(Error::RankDeficient {
++                rank,
++                parameters: self.dimension(),
++            });
++        }
++        let original = |col: usize| {
++            self.column_order
++                .as_ref()
++                .map_or(col, |order| order.to_original[col])
++        };
++        let mut internal = DVector::from_iterator(
++            self.dimension(),
++            (0..self.dimension()).map(|k| -gradient[original(k)]),
++        );
++        for k in 0..self.dimension() {
++            internal[k] /= self.rows[k][0].1;
++            let value = internal[k];
++            for &(col, coefficient) in self.rows[k].iter().skip(1) {
++                internal[col] -= coefficient * value;
++            }
++        }
++        for k in (0..self.dimension()).rev() {
++            for &(col, coefficient) in self.rows[k].iter().skip(1) {
++                internal[k] -= coefficient * internal[col];
++            }
++            internal[k] /= self.rows[k][0].1;
++        }
++        finite_vector(&internal)?;
++        if self.column_order.is_none() {
++            return Ok(internal);
++        }
++        let mut result = DVector::zeros(self.dimension());
++        for k in 0..self.dimension() {
++            result[original(k)] = internal[k];
++        }
++        Ok(result)
+     }
+     /// Squared residual cost of the cached linear model at a supplied delta.
+     pub fn cost(&self, x: &DVector<f64>) -> Result<f64, Error> {
+@@ -419,7 +537,13 @@
+             };
+         }
+         for (k, row) in self.rows.iter().enumerate() {
+-            let residual = row.iter().fold(-self.rhs[k], |r, &(col, a)| r + a * x[col]);
++            let residual = row.iter().fold(-self.rhs[k], |r, &(col, a)| {
++                let original = self
++                    .column_order
++                    .as_ref()
++                    .map_or(col, |order| order.to_original[col]);
++                r + a * x[original]
++            });
+             cost += 0.5 * residual * residual;
+         }
+         if !cost.is_finite() {
+@@ -565,6 +689,93 @@
+                 .collect(),
+         )
+         .unwrap()
++    }
++
++    #[test]
++    fn arbitrary_column_orders_keep_external_coordinates_through_append_and_extension() {
++        for n in [4, 7, 16] {
++            let dense = DMatrix::from_fn(3 * n, n, |r, c| {
++                if r == c {
++                    3.
++                } else if (r + 2 * c) % 5 == 0 {
++                    ((r + c + 1) as f64).sin()
++                } else {
++                    0.
++                }
++            });
++            let residual = DVector::from_fn(3 * n, |r, _| ((r + 1) as f64).cos());
++            let mut qr = IncrementalQr::new(n, Default::default()).unwrap();
++            let mut order = (0..n).rev().collect::<Vec<_>>();
++            order.rotate_left(1);
++            qr.set_column_order(order.clone()).unwrap();
++            qr.rebuild_in_place(&csr(&dense), &residual).unwrap();
++            let expected = reference(&dense, &residual);
++            let gradient = dense.transpose() * &residual;
++            assert!((&qr.solve_gradient(&gradient).unwrap() - &expected).norm() < 1e-10);
++            assert!((&qr.solve().unwrap() - &expected).norm() < 1e-11);
++            for x in [
++                expected,
++                DVector::zeros(n),
++                DVector::from_fn(n, |i, _| 0.1 * (i + 1) as f64),
++            ] {
++                assert!(
++                    (qr.cost(&x).unwrap() - 0.5 * (&dense * &x + &residual).norm_squared()).abs()
++                        < 1e-10
++                );
++            }
++            qr.extend_columns(n + 1).unwrap();
++            assert_eq!(qr.column_permutation().unwrap(), [order, vec![n]].concat());
++            assert!(matches!(qr.solve(), Err(Error::RankDeficient { .. })));
++            let extra = CsrMatrix::from_triplets(1, n + 1, vec![(0, 0, 0.5), (0, n, 2.)]).unwrap();
++            qr.append(&extra, &DVector::from_element(1, -0.7)).unwrap();
++            let combined = DMatrix::from_fn(3 * n + 1, n + 1, |r, c| {
++                if r < 3 * n {
++                    if c < n { dense[(r, c)] } else { 0. }
++                } else if c == 0 {
++                    0.5
++                } else if c == n {
++                    2.
++                } else {
++                    0.
++                }
++            });
++            let r = DVector::from_fn(3 * n + 1, |i, _| if i < 3 * n { residual[i] } else { -0.7 });
++            let expected = reference(&combined, &r);
++            let actual = qr.solve().unwrap();
++            assert!((&actual - &expected).norm() < 1e-11);
++            assert!(
++                (qr.cost(&actual).unwrap() - 0.5 * (&combined * actual + r).norm_squared()).abs()
++                    < 1e-10
++            );
++            let before = qr.solve().unwrap();
++            assert_eq!(
++                qr.append(&extra, &DVector::from_element(1, f64::INFINITY))
++                    .unwrap_err(),
++                Error::NonFinite
++            );
++            assert_eq!(qr.solve().unwrap(), before);
++        }
++    }
++
++    #[test]
++    fn invalid_column_orders_leave_a_fresh_order_unchanged() {
++        let mut qr = IncrementalQr::new(3, Default::default()).unwrap();
++        qr.set_column_order(vec![2, 0, 1]).unwrap();
++        for bad in [vec![], vec![0, 1], vec![0, 1, 3], vec![0, 1, 1]] {
++            assert_eq!(
++                qr.set_column_order(bad).unwrap_err(),
++                Error::InvalidDimensions
++            );
++            assert_eq!(qr.column_permutation(), Some([2, 0, 1].as_slice()));
++        }
++        let j = CsrMatrix::from_triplets(3, 3, vec![(0, 0, 1.), (1, 1, 1.), (2, 2, 1.)]).unwrap();
++        qr.rebuild_in_place(&j, &DVector::from_vec(vec![-1., -2., -3.]))
++            .unwrap();
++        assert_eq!(qr.solve().unwrap(), DVector::from_vec(vec![1., 2., 3.]));
++        assert_eq!(
++            qr.set_column_order(vec![0, 1, 2]).unwrap_err(),
++            Error::InvalidOptions
++        );
+     }
+ 
+     fn reference(j: &DMatrix<f64>, residual: &DVector<f64>) -> DVector<f64> {
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -60,6 +60,8 @@
+     /// Effective initial/final LM damping; None on cached updates and Gauss-Newton.
+     pub batch_initial_damping: Option<f64>,
+     pub batch_final_damping: Option<f64>,
++    /// Accepted optional frozen-QR Gaussian refinement steps after batch LM.
++    pub refinement_steps: usize,
+ }
+ pub struct IsamSmoother {
+     options: IsamOptions,
+@@ -70,6 +72,8 @@
+     qr: IncrementalQr,
+     updates: usize,
+     next_batch_damping: Option<f64>,
++    reuse_batch_ordering: bool,
++    max_refinement_steps: usize,
+ }
+ impl IsamSmoother {
+     pub fn new(options: IsamOptions) -> Result<Self, Error> {
+@@ -90,6 +94,8 @@
+             qr,
+             updates: 0,
+             next_batch_damping: None,
++            reuse_batch_ordering: false,
++            max_refinement_steps: 0,
+         })
+     }
+     /// Opt into carrying adaptive LM damping between successful full refreshes.
+@@ -113,6 +119,32 @@
+     /// None means the default restart policy; Some is the next refresh's LM damping.
+     pub fn next_batch_damping(&self) -> Option<f64> {
+         self.next_batch_damping
++    }
++    /// Opt into using the sparse batch solver's elimination ordering for fresh
++    /// QR caches. Original parameter coordinates and column extension are kept.
++    /// A refresh converged without a linear solve extends the previous ordering.
++    pub fn with_batch_ordering_reuse(mut self) -> Result<Self, Error> {
++        if !matches!(
++            self.options.batch_solver.linear_solver,
++            LinearSolver::SparseLdl(_)
++        ) {
++            return Err(Error::InvalidOptions);
++        }
++        self.reuse_batch_ordering = true;
++        Ok(self)
++    }
++    /// Opt into bounded frozen-QR refinement of an accepted Gaussian batch
++    /// solution. Every accepted step requires positive predicted and actual
++    /// improvement and a smaller gradient measure. The QR factor stays at the
++    /// batch solution's anchor; cached updates and linearized cost use that anchor.
++    /// Backtracking is bounded to eight trials per step. Refinement stops at
++    /// one hundredth of the configured gradient tolerance, or on a small step.
++    pub fn with_final_refinement(mut self, max_steps: usize) -> Result<Self, Error> {
++        if max_steps == 0 || max_steps > 200 {
++            return Err(Error::InvalidOptions);
++        }
++        self.max_refinement_steps = max_steps;
++        Ok(self)
+     }
+     pub fn estimate(&self, key: Key) -> Option<&DVector<f64>> {
+         self.variables.get(&key).map(|v| &v.value)
+@@ -205,6 +237,7 @@
+         let mut next_batch_damping = self.next_batch_damping;
+         let (mut batch_trials, mut batch_initial_damping, mut batch_final_damping) =
+             (0, None, None);
++        let mut refinement_steps = 0;
+         if refresh {
+             // Keep the committed recipes untouched until success; ordinary
+             // updates never clone or register the old factor history.
+@@ -234,14 +267,20 @@
+             }
+             let GaussianSolution {
+                 report: solved,
+-                residual: r,
+-                jacobian: j,
++                residual: mut r,
++                jacobian: mut j,
+                 final_damping,
+-            } = solve_local_gaussian_model(&graph, graph.initial(), &batch_options)?;
+-            if matches!(
+-                solved.termination,
+-                Termination::NoProgress | Termination::MaxIterations
+-            ) {
++                column_permutation,
++            } = solve_local_gaussian_model(
++                &graph,
++                graph.initial(),
++                &batch_options,
++                self.reuse_batch_ordering,
++            )?;
++            let stalled = solved.termination == Termination::NoProgress;
++            if solved.termination == Termination::MaxIterations
++                || (stalled && self.max_refinement_steps == 0)
++            {
+                 return Err(Error::Evaluation(format!(
+                     "iSAM batch refresh did not converge: {:?}, trials={}, cost={:.17e}, last gradient={:?}",
+                     solved.termination,
+@@ -258,16 +297,127 @@
+             if next_batch_damping.is_some() {
+                 next_batch_damping = Some(final_damping);
+             }
+-            for (&key, &id) in &ids {
+-                variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
+-            }
+-            anchors = variables.clone();
++            let mut state = solved.x;
++            let cache_state = (self.max_refinement_steps != 0).then(|| state.clone());
++            let mut final_gradient_norm = if stalled {
++                crate::solver::gaussian_gradient_norm(&j, &r, batch_options.gradient_norm)?
++            } else {
++                0.
++            };
+             // The solver already evaluated the model at its final accepted state.
+             // Squared loss leaves whitening intact with unit IRLS weights.
+             qr = IncrementalQr::new(n, self.options.qr)?;
++            if self.reuse_batch_ordering {
++                if let Some(permutation) = column_permutation {
++                    qr.set_column_order(permutation)?;
++                } else if let Some(previous) = self.qr.column_permutation() {
++                    if previous.len() > n {
++                        return Err(Error::InvalidDimensions);
++                    }
++                    let mut permutation = previous.to_vec();
++                    permutation.extend(previous.len()..n);
++                    qr.set_column_order(permutation)?;
++                }
++            }
+             qr.rebuild_in_place(&j, &r)?;
+             // Require an observable undamped model even when batch LM used damping.
+-            qr.solve()?;
++            let mut step = qr.solve()?;
++            let mut gradient = if self.max_refinement_steps != 0 {
++                j.transpose_multiply(&r)?
++            } else {
++                DVector::zeros(0)
++            };
++            let mut previous_gradient_norm = if self.max_refinement_steps != 0 {
++                crate::solver::gaussian_gradient_measure(
++                    &j,
++                    &gradient,
++                    batch_options.gradient_norm,
++                )?
++            } else {
++                0.
++            };
++            for _ in 0..self.max_refinement_steps {
++                if step.norm() <= self.options.batch_solver.step_tolerance {
++                    break;
++                }
++                if previous_gradient_norm <= batch_options.gradient_tolerance * 1e-2 {
++                    break;
++                }
++                let js = j.multiply(&step)?;
++                let predicted = -gradient.dot(&step) - 0.5 * js.norm_squared();
++                if !predicted.is_finite() {
++                    return Err(Error::NonFinite);
++                }
++                if predicted <= 0. {
++                    break;
++                }
++                let mut accepted = None;
++                let mut fraction = 1.0;
++                for _ in 0..8 {
++                    let scaled = &step * fraction;
++                    let scaled_prediction = -fraction * gradient.dot(&step)
++                        - 0.5 * fraction * fraction * js.norm_squared();
++                    if !scaled_prediction.is_finite() {
++                        return Err(Error::NonFinite);
++                    }
++                    if scaled_prediction <= 0. {
++                        break;
++                    }
++                    let trial = graph.retract(&state, &scaled)?;
++                    let (trial_r, trial_j) = graph.evaluate_sparse(&trial)?;
++                    let actual = crate::solver::gaussian_reduction(&r, &trial_r)?;
++                    let gain_ratio = actual / scaled_prediction;
++                    if !gain_ratio.is_finite() {
++                        return Err(Error::NonFinite);
++                    }
++                    let trial_gradient = trial_j.transpose_multiply(&trial_r)?;
++                    let trial_gradient_norm = crate::solver::gaussian_gradient_measure(
++                        &trial_j,
++                        &trial_gradient,
++                        batch_options.gradient_norm,
++                    )?;
++                    if actual > 0.
++                        && gain_ratio > 0.
++                        && trial_gradient_norm < previous_gradient_norm
++                    {
++                        accepted =
++                            Some((trial, trial_r, trial_j, trial_gradient, trial_gradient_norm));
++                        break;
++                    }
++                    fraction *= 0.5;
++                }
++                let Some((trial, trial_r, trial_j, trial_gradient, trial_gradient_norm)) = accepted
++                else {
++                    break;
++                };
++                final_gradient_norm = trial_gradient_norm;
++                previous_gradient_norm = trial_gradient_norm;
++                state = trial;
++                j = trial_j;
++                r = trial_r;
++                gradient = trial_gradient;
++                step = qr.solve_gradient(&gradient)?;
++                refinement_steps += 1;
++            }
++            if stalled {
++                let norm = final_gradient_norm;
++                if norm > batch_options.gradient_tolerance {
++                    return Err(Error::Evaluation(format!(
++                        "iSAM Gaussian refinement did not meet gradient target: norm={norm:.17e}, target={:.17e}, accepted={refinement_steps}",
++                        batch_options.gradient_tolerance
++                    )));
++                }
++            }
++            for (&key, &id) in &ids {
++                variables.get_mut(&key).unwrap().value = graph.value(&state, id)?;
++            }
++            anchors = variables.clone();
++            if refinement_steps != 0 {
++                for (&key, &id) in &ids {
++                    anchors.get_mut(&key).unwrap().value =
++                        graph.value(cache_state.as_ref().unwrap(), id)?;
++                }
++            }
+         }
+         // Share principal local coordinates between threshold, report and cost.
+         // The raw QR step can wind beyond the principal chart; keep its separate
+@@ -309,6 +459,7 @@
+             batch_trials,
+             batch_initial_damping,
+             batch_final_damping,
++            refinement_steps,
+         })
+     }
+ }

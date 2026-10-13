@@ -1,0 +1,22 @@
+{
+  "purpose": "instrumented frozen predecessor structure diagnostic, not primary timing",
+  "frames": 300,
+  "warmup_streams": 0,
+  "measured_streams": 1,
+  "counts": {
+    "rotations": 2998044,
+    "existing_tail_entries": 41152491,
+    "prefix_entries": 41152491,
+    "complete_existing_rotations": 1966104
+  },
+  "means_match_uninstrumented_predecessor": true,
+  "means_sha256": "17138f42e5e723374c961d09e3624231c399bde0d60c94c03b9e7e81b3903733",
+  "max_original_gradient": 2.963925807564216e-07,
+  "source_sha256": {
+    "before": "54aa16cb8687c670088e9513d422f081983f76d8446587ecbc52ba0d2b1d7c6b",
+    "instrumented": "55ad99520a222396e093643913dea8972f82aa9667e23bfad13fa973151d8870"
+  },
+  "executable_sha256": "fd94ae3a62f8538cd33d0d4e8527e364a97a07f96d86df9c540ec260bcbdfb63",
+  "input_sha256": "c5279a37487b60e7235885efcb4dad0ed782836705ddcc1747bba7a82c998678",
+  "profile_patch_sha256": "65d0384e185ab39b2f7887aa7bc4b1f4c824c69f4911fba88938d3fd2634b33d"
+}

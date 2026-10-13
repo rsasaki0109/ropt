@@ -1,0 +1,1683 @@
+
+/workspace/ropt/target/release/examples/benchmark_warm_isam_se2:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000073950 <<ropt::incremental_qr::IncrementalQr>::append_in_place>:
+   73950:	55                   	push   %rbp
+   73951:	41 57                	push   %r15
+   73953:	41 56                	push   %r14
+   73955:	41 55                	push   %r13
+   73957:	41 54                	push   %r12
+   73959:	53                   	push   %rbx
+   7395a:	48 81 ec 98 01 00 00 	sub    $0x198,%rsp
+   73961:	49 89 ff             	mov    %rdi,%r15
+   73964:	4c 8b 52 50          	mov    0x50(%rdx),%r10
+   73968:	4c 3b 56 10          	cmp    0x10(%rsi),%r10
+   7396c:	0f 85 58 18 00 00    	jne    751ca <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x187a>
+   73972:	49 89 d5             	mov    %rdx,%r13
+   73975:	4c 8b 72 48          	mov    0x48(%rdx),%r14
+   73979:	4c 3b 71 18          	cmp    0x18(%rcx),%r14
+   7397d:	0f 85 47 18 00 00    	jne    751ca <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x187a>
+   73983:	4c 8b 61 08          	mov    0x8(%rcx),%r12
+   73987:	4b 8d 1c f4          	lea    (%r12,%r14,8),%rbx
+   7398b:	4d 85 f6             	test   %r14,%r14
+   7398e:	74 5c                	je     739ec <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x9c>
+   73990:	4c 89 f0             	mov    %r14,%rax
+   73993:	4d 89 e3             	mov    %r12,%r11
+   73996:	48 89 d9             	mov    %rbx,%rcx
+   73999:	4c 89 e2             	mov    %r12,%rdx
+   7399c:	0f 1f 40 00          	nopl   0x0(%rax)
+   739a0:	49 39 cb             	cmp    %rcx,%r11
+   739a3:	4e 8d 04 f2          	lea    (%rdx,%r14,8),%r8
+   739a7:	4c 89 df             	mov    %r11,%rdi
+   739aa:	49 0f 44 f8          	cmove  %r8,%rdi
+   739ae:	4c 8b 0f             	mov    (%rdi),%r9
+   739b1:	49 c1 e9 34          	shr    $0x34,%r9
+   739b5:	41 81 e1 ff 07 00 00 	and    $0x7ff,%r9d
+   739bc:	41 81 f9 ff 07 00 00 	cmp    $0x7ff,%r9d
+   739c3:	0f 83 27 18 00 00    	jae    751f0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18a0>
+   739c9:	45 31 c9             	xor    %r9d,%r9d
+   739cc:	48 83 f8 01          	cmp    $0x1,%rax
+   739d0:	41 0f 95 c1          	setne  %r9b
+   739d4:	49 39 cb             	cmp    %rcx,%r11
+   739d7:	4f 8d 1c f3          	lea    (%r11,%r14,8),%r11
+   739db:	49 0f 44 cb          	cmove  %r11,%rcx
+   739df:	49 0f 44 d0          	cmove  %r8,%rdx
+   739e3:	4e 8d 1c cf          	lea    (%rdi,%r9,8),%r11
+   739e7:	48 ff c8             	dec    %rax
+   739ea:	75 b4                	jne    739a0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x50>
+   739ec:	4c 89 94 24 b0 00 00 	mov    %r10,0xb0(%rsp)
+   739f3:	00 
+   739f4:	4c 89 7c 24 18       	mov    %r15,0x18(%rsp)
+   739f9:	48 c7 44 24 38 00 00 	movq   $0x0,0x38(%rsp)
+   73a00:	00 00 
+   73a02:	48 c7 44 24 40 08 00 	movq   $0x8,0x40(%rsp)
+   73a09:	00 00 
+   73a0b:	48 c7 44 24 48 00 00 	movq   $0x0,0x48(%rsp)
+   73a12:	00 00 
+   73a14:	48 c7 44 24 20 00 00 	movq   $0x0,0x20(%rsp)
+   73a1b:	00 00 
+   73a1d:	48 c7 44 24 28 08 00 	movq   $0x8,0x28(%rsp)
+   73a24:	00 00 
+   73a26:	48 c7 44 24 30 00 00 	movq   $0x0,0x30(%rsp)
+   73a2d:	00 00 
+   73a2f:	48 c7 44 24 70 00 00 	movq   $0x0,0x70(%rsp)
+   73a36:	00 00 
+   73a38:	48 c7 44 24 78 08 00 	movq   $0x8,0x78(%rsp)
+   73a3f:	00 00 
+   73a41:	48 c7 84 24 80 00 00 	movq   $0x0,0x80(%rsp)
+   73a48:	00 00 00 00 00 
+   73a4d:	49 8b 45 10          	mov    0x10(%r13),%rax
+   73a51:	31 c9                	xor    %ecx,%ecx
+   73a53:	48 89 84 24 d8 00 00 	mov    %rax,0xd8(%rsp)
+   73a5a:	00 
+   73a5b:	48 83 e8 01          	sub    $0x1,%rax
+   73a5f:	48 0f 43 c8          	cmovae %rax,%rcx
+   73a63:	48 89 8c 24 48 01 00 	mov    %rcx,0x148(%rsp)
+   73a6a:	00 
+   73a6b:	4d 85 f6             	test   %r14,%r14
+   73a6e:	0f 84 ee 16 00 00    	je     75162 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1812>
+   73a74:	48 8b 46 50          	mov    0x50(%rsi),%rax
+   73a78:	48 89 44 24 50       	mov    %rax,0x50(%rsp)
+   73a7d:	49 8b 45 08          	mov    0x8(%r13),%rax
+   73a81:	48 89 84 24 40 01 00 	mov    %rax,0x140(%rsp)
+   73a88:	00 
+   73a89:	48 8b 46 08          	mov    0x8(%rsi),%rax
+   73a8d:	48 89 84 24 28 01 00 	mov    %rax,0x128(%rsp)
+   73a94:	00 
+   73a95:	48 8b 46 20          	mov    0x20(%rsi),%rax
+   73a99:	48 89 84 24 10 01 00 	mov    %rax,0x110(%rsp)
+   73aa0:	00 
+   73aa1:	48 8b 46 30          	mov    0x30(%rsi),%rax
+   73aa5:	48 89 84 24 c8 00 00 	mov    %rax,0xc8(%rsp)
+   73aac:	00 
+   73aad:	f2 0f 10 46 38       	movsd  0x38(%rsi),%xmm0
+   73ab2:	4c 8b 7e 40          	mov    0x40(%rsi),%r15
+   73ab6:	48 8d 05 ab a1 07 00 	lea    0x7a1ab(%rip),%rax        # edc68 <anon.b6e3507f4bd100d934f469375f77cb9a.7.llvm.30799557767561583+0x450>
+   73abd:	48 89 84 24 e0 00 00 	mov    %rax,0xe0(%rsp)
+   73ac4:	00 
+   73ac5:	48 8d 05 a4 a2 07 00 	lea    0x7a2a4(%rip),%rax        # edd70 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x48>
+   73acc:	48 89 84 24 b8 00 00 	mov    %rax,0xb8(%rsp)
+   73ad3:	00 
+   73ad4:	4c 89 e2             	mov    %r12,%rdx
+   73ad7:	4c 89 f7             	mov    %r14,%rdi
+   73ada:	31 c0                	xor    %eax,%eax
+   73adc:	4c 89 ac 24 38 01 00 	mov    %r13,0x138(%rsp)
+   73ae3:	00 
+   73ae4:	48 89 b4 24 c0 00 00 	mov    %rsi,0xc0(%rsp)
+   73aeb:	00 
+   73aec:	4c 89 b4 24 30 01 00 	mov    %r14,0x130(%rsp)
+   73af3:	00 
+   73af4:	48 89 d9             	mov    %rbx,%rcx
+   73af7:	31 db                	xor    %ebx,%ebx
+   73af9:	48 ff cf             	dec    %rdi
+   73afc:	48 89 bc 24 70 01 00 	mov    %rdi,0x170(%rsp)
+   73b03:	00 
+   73b04:	40 0f 95 c5          	setne  %bpl
+   73b08:	49 39 cc             	cmp    %rcx,%r12
+   73b0b:	4b 8d 34 f4          	lea    (%r12,%r14,8),%rsi
+   73b0f:	48 89 d7             	mov    %rdx,%rdi
+   73b12:	4a 8d 14 f2          	lea    (%rdx,%r14,8),%rdx
+   73b16:	48 0f 45 f1          	cmovne %rcx,%rsi
+   73b1a:	48 0f 44 fa          	cmove  %rdx,%rdi
+   73b1e:	48 89 bc 24 78 01 00 	mov    %rdi,0x178(%rsp)
+   73b25:	00 
+   73b26:	4c 0f 44 e2          	cmove  %rdx,%r12
+   73b2a:	f2 41 0f 10 0c 24    	movsd  (%r12),%xmm1
+   73b30:	48 c7 84 24 80 00 00 	movq   $0x0,0x80(%rsp)
+   73b37:	00 00 00 00 00 
+   73b3c:	4c 39 f0             	cmp    %r14,%rax
+   73b3f:	0f 84 3f 17 00 00    	je     75284 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1934>
+   73b45:	48 3b 84 24 d8 00 00 	cmp    0xd8(%rsp),%rax
+   73b4c:	00 
+   73b4d:	0f 84 37 18 00 00    	je     7538a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a3a>
+   73b53:	66 0f 29 8c 24 00 01 	movapd %xmm1,0x100(%rsp)
+   73b5a:	00 00 
+   73b5c:	f2 0f 11 84 24 68 01 	movsd  %xmm0,0x168(%rsp)
+   73b63:	00 00 
+   73b65:	48 8d 78 01          	lea    0x1(%rax),%rdi
+   73b69:	48 3b 84 24 48 01 00 	cmp    0x148(%rsp),%rax
+   73b70:	00 
+   73b71:	0f 84 1d 18 00 00    	je     75394 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a44>
+   73b77:	48 89 b4 24 60 01 00 	mov    %rsi,0x160(%rsp)
+   73b7e:	00 
+   73b7f:	48 8b 8c 24 40 01 00 	mov    0x140(%rsp),%rcx
+   73b86:	00 
+   73b87:	48 8b 04 c1          	mov    (%rcx,%rax,8),%rax
+   73b8b:	48 89 bc 24 58 01 00 	mov    %rdi,0x158(%rsp)
+   73b92:	00 
+   73b93:	48 8b 0c f9          	mov    (%rcx,%rdi,8),%rcx
+   73b97:	4c 89 ac 24 80 01 00 	mov    %r13,0x180(%rsp)
+   73b9e:	00 
+   73b9f:	48 89 84 24 20 01 00 	mov    %rax,0x120(%rsp)
+   73ba6:	00 
+   73ba7:	48 89 84 24 88 01 00 	mov    %rax,0x188(%rsp)
+   73bae:	00 
+   73baf:	48 89 8c 24 18 01 00 	mov    %rcx,0x118(%rsp)
+   73bb6:	00 
+   73bb7:	48 89 8c 24 90 01 00 	mov    %rcx,0x190(%rsp)
+   73bbe:	00 
+   73bbf:	48 8d 7c 24 70       	lea    0x70(%rsp),%rdi
+   73bc4:	48 8d b4 24 80 01 00 	lea    0x180(%rsp),%rsi
+   73bcb:	00 
+   73bcc:	e8 9f 90 fd ff       	call   4cc70 <<alloc::vec::Vec<(usize, f64)>>::extend_trusted::<core::iter::adapters::map::Map<core::ops::range::Range<usize>, <ropt::sparse::CsrMatrix>::row::{closure#0}>>>
+   73bd1:	40 88 eb             	mov    %bpl,%bl
+   73bd4:	4d 8d 24 dc          	lea    (%r12,%rbx,8),%r12
+   73bd8:	66 0f 28 9c 24 00 01 	movapd 0x100(%rsp),%xmm3
+   73bdf:	00 00 
+   73be1:	66 0f 57 1d 37 e1 f9 	xorpd  -0x61ec9(%rip),%xmm3        # 11d20 <anon.ecd23e98f399f5c0453ba372c2973f18.4.llvm.13954439057034743015+0x290>
+   73be8:	ff 
+   73be9:	45 31 f6             	xor    %r14d,%r14d
+   73bec:	4c 89 a4 24 50 01 00 	mov    %r12,0x150(%rsp)
+   73bf3:	00 
+   73bf4:	4c 89 7c 24 08       	mov    %r15,0x8(%rsp)
+   73bf9:	48 8b 84 24 80 00 00 	mov    0x80(%rsp),%rax
+   73c00:	00 
+   73c01:	49 39 c6             	cmp    %rax,%r14
+   73c04:	0f 83 cb 14 00 00    	jae    750d5 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1785>
+   73c0a:	48 8b 4c 24 78       	mov    0x78(%rsp),%rcx
+   73c0f:	4d 89 f7             	mov    %r14,%r15
+   73c12:	49 c1 e7 04          	shl    $0x4,%r15
+   73c16:	4c 89 f5             	mov    %r14,%rbp
+   73c19:	48 f7 d5             	not    %rbp
+   73c1c:	4d 8d 67 18          	lea    0x18(%r15),%r12
+   73c20:	45 31 ed             	xor    %r13d,%r13d
+   73c23:	4c 89 f3             	mov    %r14,%rbx
+   73c26:	66 2e 0f 1f 84 00 00 	cs nopw 0x0(%rax,%rax,1)
+   73c2d:	00 00 00 
+   73c30:	48 89 da             	mov    %rbx,%rdx
+   73c33:	48 c1 e2 04          	shl    $0x4,%rdx
+   73c37:	f2 0f 10 64 11 08    	movsd  0x8(%rcx,%rdx,1),%xmm4
+   73c3d:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   73c41:	66 0f 2e e0          	ucomisd %xmm0,%xmm4
+   73c45:	75 1d                	jne    73c64 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x314>
+   73c47:	7a 1b                	jp     73c64 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x314>
+   73c49:	48 ff c3             	inc    %rbx
+   73c4c:	49 ff c5             	inc    %r13
+   73c4f:	49 83 c7 10          	add    $0x10,%r15
+   73c53:	48 ff cd             	dec    %rbp
+   73c56:	49 83 c4 10          	add    $0x10,%r12
+   73c5a:	48 39 c3             	cmp    %rax,%rbx
+   73c5d:	75 d1                	jne    73c30 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x2e0>
+   73c5f:	e9 71 14 00 00       	jmp    750d5 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1785>
+   73c64:	48 01 d1             	add    %rdx,%rcx
+   73c67:	48 8b 39             	mov    (%rcx),%rdi
+   73c6a:	48 3b bc 24 b0 00 00 	cmp    0xb0(%rsp),%rdi
+   73c71:	00 
+   73c72:	0f 83 99 17 00 00    	jae    75411 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ac1>
+   73c78:	48 89 bc 24 e8 00 00 	mov    %rdi,0xe8(%rsp)
+   73c7f:	00 
+   73c80:	48 8d 04 7f          	lea    (%rdi,%rdi,2),%rax
+   73c84:	48 8b 8c 24 28 01 00 	mov    0x128(%rsp),%rcx
+   73c8b:	00 
+   73c8c:	48 8d 14 c1          	lea    (%rcx,%rax,8),%rdx
+   73c90:	48 83 7c c1 10 00    	cmpq   $0x0,0x10(%rcx,%rax,8)
+   73c96:	48 89 54 24 10       	mov    %rdx,0x10(%rsp)
+   73c9b:	66 0f 29 9c 24 00 01 	movapd %xmm3,0x100(%rsp)
+   73ca2:	00 00 
+   73ca4:	74 0b                	je     73cb1 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x361>
+   73ca6:	48 8b 42 08          	mov    0x8(%rdx),%rax
+   73caa:	f2 0f 10 48 08       	movsd  0x8(%rax),%xmm1
+   73caf:	eb 04                	jmp    73cb5 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x365>
+   73cb1:	66 0f 57 c9          	xorpd  %xmm1,%xmm1
+   73cb5:	66 0f 29 8c 24 f0 00 	movapd %xmm1,0xf0(%rsp)
+   73cbc:	00 00 
+   73cbe:	66 0f 28 05 fa dc f9 	movapd -0x62306(%rip),%xmm0        # 119c0 <GCC_except_table145+0x30>
+   73cc5:	ff 
+   73cc6:	66 0f 54 c8          	andpd  %xmm0,%xmm1
+   73cca:	66 0f 28 d4          	movapd %xmm4,%xmm2
+   73cce:	66 0f 54 d0          	andpd  %xmm0,%xmm2
+   73cd2:	66 0f 28 c2          	movapd %xmm2,%xmm0
+   73cd6:	f2 0f c2 c2 03       	cmpunordsd %xmm2,%xmm0
+   73cdb:	66 0f 28 d8          	movapd %xmm0,%xmm3
+   73cdf:	66 0f 54 d9          	andpd  %xmm1,%xmm3
+   73ce3:	f2 0f 5f ca          	maxsd  %xmm2,%xmm1
+   73ce7:	66 0f 55 c1          	andnpd %xmm1,%xmm0
+   73ceb:	66 0f 56 c3          	orpd   %xmm3,%xmm0
+   73cef:	66 0f 2e 05 d9 07 fa 	ucomisd -0x5f827(%rip),%xmm0        # 144d0 <anon.78be766de06bf9b2fc5ac4aca45dc8c0.28.llvm.16961363317406328107+0x2fd>
+   73cf6:	ff 
+   73cf7:	72 30                	jb     73d29 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x3d9>
+   73cf9:	f2 0f 10 0d cf 08 fa 	movsd  -0x5f731(%rip),%xmm1        # 145d0 <anon.78be766de06bf9b2fc5ac4aca45dc8c0.28.llvm.16961363317406328107+0x3fd>
+   73d00:	ff 
+   73d01:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   73d05:	72 22                	jb     73d29 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x3d9>
+   73d07:	66 0f 28 84 24 f0 00 	movapd 0xf0(%rsp),%xmm0
+   73d0e:	00 00 
+   73d10:	f2 0f 59 c0          	mulsd  %xmm0,%xmm0
+   73d14:	66 0f 28 cc          	movapd %xmm4,%xmm1
+   73d18:	f2 0f 59 cc          	mulsd  %xmm4,%xmm1
+   73d1c:	f2 0f 58 c8          	addsd  %xmm0,%xmm1
+   73d20:	0f 57 c0             	xorps  %xmm0,%xmm0
+   73d23:	f2 0f 51 c1          	sqrtsd %xmm1,%xmm0
+   73d27:	eb 25                	jmp    73d4e <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x3fe>
+   73d29:	66 0f 28 84 24 f0 00 	movapd 0xf0(%rsp),%xmm0
+   73d30:	00 00 
+   73d32:	66 0f 28 cc          	movapd %xmm4,%xmm1
+   73d36:	66 0f 29 a4 24 90 00 	movapd %xmm4,0x90(%rsp)
+   73d3d:	00 00 
+   73d3f:	ff 15 33 de 07 00    	call   *0x7de33(%rip)        # f1b78 <hypot@GLIBC_2.35>
+   73d45:	66 0f 28 a4 24 90 00 	movapd 0x90(%rsp),%xmm4
+   73d4c:	00 00 
+   73d4e:	66 48 0f 7e c0       	movq   %xmm0,%rax
+   73d53:	48 b9 ff ff ff ff ff 	movabs $0x7fffffffffffffff,%rcx
+   73d5a:	ff ff 7f 
+   73d5d:	48 21 c8             	and    %rcx,%rax
+   73d60:	48 b9 00 00 00 00 00 	movabs $0x7ff0000000000000,%rcx
+   73d67:	00 f0 7f 
+   73d6a:	48 39 c8             	cmp    %rcx,%rax
+   73d6d:	0f 95 c1             	setne  %cl
+   73d70:	48 85 c0             	test   %rax,%rax
+   73d73:	0f 95 c2             	setne  %dl
+   73d76:	20 ca                	and    %cl,%dl
+   73d78:	48 b9 01 00 00 00 00 	movabs $0x7ff0000000000001,%rcx
+   73d7f:	00 f0 7f 
+   73d82:	48 39 c8             	cmp    %rcx,%rax
+   73d85:	0f 9c c0             	setl   %al
+   73d88:	84 c2                	test   %al,%dl
+   73d8a:	0f 84 cf 14 00 00    	je     7525f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x190f>
+   73d90:	4c 89 74 24 60       	mov    %r14,0x60(%rsp)
+   73d95:	66 0f 28 8c 24 f0 00 	movapd 0xf0(%rsp),%xmm1
+   73d9c:	00 00 
+   73d9e:	66 0f 14 cc          	unpcklpd %xmm4,%xmm1
+   73da2:	66 0f 28 d0          	movapd %xmm0,%xmm2
+   73da6:	66 0f 14 d0          	unpcklpd %xmm0,%xmm2
+   73daa:	66 0f 5e ca          	divpd  %xmm2,%xmm1
+   73dae:	66 0f 29 8c 24 a0 00 	movapd %xmm1,0xa0(%rsp)
+   73db5:	00 00 
+   73db7:	66 0f 15 c9          	unpckhpd %xmm1,%xmm1
+   73dbb:	66 0f 29 8c 24 90 00 	movapd %xmm1,0x90(%rsp)
+   73dc2:	00 00 
+   73dc4:	48 c7 44 24 48 00 00 	movq   $0x0,0x48(%rsp)
+   73dcb:	00 00 
+   73dcd:	48 c7 44 24 30 00 00 	movq   $0x0,0x30(%rsp)
+   73dd4:	00 00 
+   73dd6:	4c 8d 43 01          	lea    0x1(%rbx),%r8
+   73dda:	45 31 f6             	xor    %r14d,%r14d
+   73ddd:	48 8b 4c 24 10       	mov    0x10(%rsp),%rcx
+   73de2:	48 83 79 10 00       	cmpq   $0x0,0x10(%rcx)
+   73de7:	40 0f 95 c7          	setne  %dil
+   73deb:	0f 84 ba 00 00 00    	je     73eab <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x55b>
+   73df1:	48 8b 41 08          	mov    0x8(%rcx),%rax
+   73df5:	f2 0f 11 40 08       	movsd  %xmm0,0x8(%rax)
+   73dfa:	48 8b 51 10          	mov    0x10(%rcx),%rdx
+   73dfe:	48 8b b4 24 80 00 00 	mov    0x80(%rsp),%rsi
+   73e05:	00 
+   73e06:	48 89 d8             	mov    %rbx,%rax
+   73e09:	48 29 f0             	sub    %rsi,%rax
+   73e0c:	48 01 d0             	add    %rdx,%rax
+   73e0f:	0f 85 08 01 00 00    	jne    73f1d <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x5cd>
+   73e15:	48 85 d2             	test   %rdx,%rdx
+   73e18:	0f 84 25 15 00 00    	je     75343 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x19f3>
+   73e1e:	48 39 f3             	cmp    %rsi,%rbx
+   73e21:	48 89 f3             	mov    %rsi,%rbx
+   73e24:	0f 83 2b 15 00 00    	jae    75355 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a05>
+   73e2a:	48 8d 72 ff          	lea    -0x1(%rdx),%rsi
+   73e2e:	48 b8 ff ff ff ff ff 	movabs $0xfffffffffffffff,%rax
+   73e35:	ff ff 0f 
+   73e38:	48 21 c6             	and    %rax,%rsi
+   73e3b:	48 89 d9             	mov    %rbx,%rcx
+   73e3e:	4d 89 c3             	mov    %r8,%r11
+   73e41:	4c 29 c1             	sub    %r8,%rcx
+   73e44:	48 39 f1             	cmp    %rsi,%rcx
+   73e47:	48 0f 43 ce          	cmovae %rsi,%rcx
+   73e4b:	48 85 c9             	test   %rcx,%rcx
+   73e4e:	0f 84 a3 00 00 00    	je     73ef7 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x5a7>
+   73e54:	4c 8b 54 24 78       	mov    0x78(%rsp),%r10
+   73e59:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   73e5e:	48 8b 40 08          	mov    0x8(%rax),%rax
+   73e62:	4d 89 d9             	mov    %r11,%r9
+   73e65:	49 c1 e1 04          	shl    $0x4,%r9
+   73e69:	4c 89 94 24 88 00 00 	mov    %r10,0x88(%rsp)
+   73e70:	00 
+   73e71:	4d 01 d7             	add    %r10,%r15
+   73e74:	48 01 eb             	add    %rbp,%rbx
+   73e77:	48 39 f3             	cmp    %rsi,%rbx
+   73e7a:	49 89 f2             	mov    %rsi,%r10
+   73e7d:	48 89 5c 24 58       	mov    %rbx,0x58(%rsp)
+   73e82:	4c 0f 42 d3          	cmovb  %rbx,%r10
+   73e86:	41 bb 10 00 00 00    	mov    $0x10,%r11d
+   73e8c:	31 db                	xor    %ebx,%ebx
+   73e8e:	66 90                	xchg   %ax,%ax
+   73e90:	4a 8b 2c 18          	mov    (%rax,%r11,1),%rbp
+   73e94:	4b 3b 2c 1f          	cmp    (%r15,%r11,1),%rbp
+   73e98:	75 7a                	jne    73f14 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x5c4>
+   73e9a:	48 ff c3             	inc    %rbx
+   73e9d:	49 83 c3 10          	add    $0x10,%r11
+   73ea1:	49 39 da             	cmp    %rbx,%r10
+   73ea4:	75 ea                	jne    73e90 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x540>
+   73ea6:	e9 66 02 00 00       	jmp    74111 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x7c1>
+   73eab:	0f 29 44 24 60       	movaps %xmm0,0x60(%rsp)
+   73eb0:	48 83 7c 24 38 00    	cmpq   $0x0,0x38(%rsp)
+   73eb6:	4c 8b 7c 24 08       	mov    0x8(%rsp),%r15
+   73ebb:	4c 89 c5             	mov    %r8,%rbp
+   73ebe:	75 0b                	jne    73ecb <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x57b>
+   73ec0:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   73ec5:	ff 15 15 de 07 00    	call   *0x7de15(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   73ecb:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+   73ed0:	48 8b 8c 24 e8 00 00 	mov    0xe8(%rsp),%rcx
+   73ed7:	00 
+   73ed8:	48 89 08             	mov    %rcx,(%rax)
+   73edb:	66 0f 28 44 24 60    	movapd 0x60(%rsp),%xmm0
+   73ee1:	f2 0f 11 40 08       	movsd  %xmm0,0x8(%rax)
+   73ee6:	48 c7 44 24 48 01 00 	movq   $0x1,0x48(%rsp)
+   73eed:	00 00 
+   73eef:	45 31 f6             	xor    %r14d,%r14d
+   73ef2:	e9 53 04 00 00       	jmp    7434a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x9fa>
+   73ef7:	4c 8b 8c 24 c0 00 00 	mov    0xc0(%rsp),%r9
+   73efe:	00 
+   73eff:	4c 8b 94 24 c8 00 00 	mov    0xc8(%rsp),%r10
+   73f06:	00 
+   73f07:	4c 8b 7c 24 08       	mov    0x8(%rsp),%r15
+   73f0c:	4c 89 dd             	mov    %r11,%rbp
+   73f0f:	e9 fc 10 00 00       	jmp    75010 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x16c0>
+   73f14:	48 39 cb             	cmp    %rcx,%rbx
+   73f17:	0f 83 f4 01 00 00    	jae    74111 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x7c1>
+   73f1d:	41 88 fe             	mov    %dil,%r14b
+   73f20:	4c 39 f2             	cmp    %r14,%rdx
+   73f23:	0f 86 a9 01 00 00    	jbe    740d2 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x782>
+   73f29:	45 89 f7             	mov    %r14d,%r15d
+   73f2c:	41 c1 e7 04          	shl    $0x4,%r15d
+   73f30:	4c 89 f3             	mov    %r14,%rbx
+   73f33:	4c 89 c5             	mov    %r8,%rbp
+   73f36:	eb 48                	jmp    73f80 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x630>
+   73f38:	0f 1f 84 00 00 00 00 	nopl   0x0(%rax,%rax,1)
+   73f3f:	00 
+   73f40:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   73f45:	4c 89 e1             	mov    %r12,%rcx
+   73f48:	48 c1 e1 04          	shl    $0x4,%rcx
+   73f4c:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   73f50:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   73f56:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   73f5c:	49 ff c4             	inc    %r12
+   73f5f:	4c 89 64 24 30       	mov    %r12,0x30(%rsp)
+   73f64:	49 ff c6             	inc    %r14
+   73f67:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   73f6c:	48 8b 50 10          	mov    0x10(%rax),%rdx
+   73f70:	49 83 c7 10          	add    $0x10,%r15
+   73f74:	49 39 d6             	cmp    %rdx,%r14
+   73f77:	4c 89 eb             	mov    %r13,%rbx
+   73f7a:	0f 83 58 01 00 00    	jae    740d8 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x788>
+   73f80:	48 8b 8c 24 80 00 00 	mov    0x80(%rsp),%rcx
+   73f87:	00 
+   73f88:	48 39 cd             	cmp    %rcx,%rbp
+   73f8b:	75 13                	jne    73fa0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x650>
+   73f8d:	49 89 dd             	mov    %rbx,%r13
+   73f90:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   73f95:	48 8b 40 08          	mov    0x8(%rax),%rax
+   73f99:	4a 8b 1c 38          	mov    (%rax,%r15,1),%rbx
+   73f9d:	eb 2d                	jmp    73fcc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x67c>
+   73f9f:	90                   	nop
+   73fa0:	0f 83 15 14 00 00    	jae    753bb <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a6b>
+   73fa6:	49 89 dd             	mov    %rbx,%r13
+   73fa9:	48 8b 74 24 78       	mov    0x78(%rsp),%rsi
+   73fae:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   73fb3:	48 8b 40 08          	mov    0x8(%rax),%rax
+   73fb7:	4a 8b 1c 38          	mov    (%rax,%r15,1),%rbx
+   73fbb:	48 89 ef             	mov    %rbp,%rdi
+   73fbe:	48 c1 e7 04          	shl    $0x4,%rdi
+   73fc2:	48 3b 1c 3e          	cmp    (%rsi,%rdi,1),%rbx
+   73fc6:	0f 87 4e 03 00 00    	ja     7431a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x9ca>
+   73fcc:	66 0f 57 ed          	xorpd  %xmm5,%xmm5
+   73fd0:	48 39 cd             	cmp    %rcx,%rbp
+   73fd3:	73 1d                	jae    73ff2 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x6a2>
+   73fd5:	48 8b 4c 24 78       	mov    0x78(%rsp),%rcx
+   73fda:	48 89 ee             	mov    %rbp,%rsi
+   73fdd:	48 c1 e6 04          	shl    $0x4,%rsi
+   73fe1:	48 39 1c 31          	cmp    %rbx,(%rcx,%rsi,1)
+   73fe5:	75 0b                	jne    73ff2 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x6a2>
+   73fe7:	48 01 f1             	add    %rsi,%rcx
+   73fea:	f2 0f 10 69 08       	movsd  0x8(%rcx),%xmm5
+   73fef:	48 ff c5             	inc    %rbp
+   73ff2:	f2 42 0f 10 4c 38 08 	movsd  0x8(%rax,%r15,1),%xmm1
+   73ff9:	66 0f 28 9c 24 a0 00 	movapd 0xa0(%rsp),%xmm3
+   74000:	00 00 
+   74002:	66 0f 28 d3          	movapd %xmm3,%xmm2
+   74006:	f2 0f 59 d1          	mulsd  %xmm1,%xmm2
+   7400a:	66 0f 28 a4 24 90 00 	movapd 0x90(%rsp),%xmm4
+   74011:	00 00 
+   74013:	66 0f 28 c4          	movapd %xmm4,%xmm0
+   74017:	f2 0f 59 c5          	mulsd  %xmm5,%xmm0
+   7401b:	f2 0f 58 c2          	addsd  %xmm2,%xmm0
+   7401f:	66 48 0f 7e c6       	movq   %xmm0,%rsi
+   74024:	f2 0f 59 eb          	mulsd  %xmm3,%xmm5
+   74028:	f2 0f 59 cc          	mulsd  %xmm4,%xmm1
+   7402c:	f2 0f 5c e9          	subsd  %xmm1,%xmm5
+   74030:	f2 0f 11 6c 24 60    	movsd  %xmm5,0x60(%rsp)
+   74036:	66 48 0f 7e e9       	movq   %xmm5,%rcx
+   7403b:	48 c1 ee 34          	shr    $0x34,%rsi
+   7403f:	81 e6 ff 07 00 00    	and    $0x7ff,%esi
+   74045:	48 c1 e9 34          	shr    $0x34,%rcx
+   74049:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   7404f:	81 f9 ff 07 00 00    	cmp    $0x7ff,%ecx
+   74055:	0f 92 c1             	setb   %cl
+   74058:	81 fe fe 07 00 00    	cmp    $0x7fe,%esi
+   7405e:	0f 87 d6 11 00 00    	ja     7523a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ea>
+   74064:	84 c9                	test   %cl,%cl
+   74066:	0f 84 ce 11 00 00    	je     7523a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ea>
+   7406c:	66 0f 57 c9          	xorpd  %xmm1,%xmm1
+   74070:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   74074:	75 09                	jne    7407f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x72f>
+   74076:	7a 07                	jp     7407f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x72f>
+   74078:	48 ff 4c 24 08       	decq   0x8(%rsp)
+   7407d:	eb 1d                	jmp    7409c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x74c>
+   7407f:	49 39 d5             	cmp    %rdx,%r13
+   74082:	0f 83 5b 13 00 00    	jae    753e3 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a93>
+   74088:	4c 89 e9             	mov    %r13,%rcx
+   7408b:	48 c1 e1 04          	shl    $0x4,%rcx
+   7408f:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   74093:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   74099:	49 ff c5             	inc    %r13
+   7409c:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   740a0:	f2 0f 10 4c 24 60    	movsd  0x60(%rsp),%xmm1
+   740a6:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   740aa:	75 06                	jne    740b2 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x762>
+   740ac:	0f 8b b2 fe ff ff    	jnp    73f64 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x614>
+   740b2:	4c 8b 64 24 30       	mov    0x30(%rsp),%r12
+   740b7:	4c 3b 64 24 20       	cmp    0x20(%rsp),%r12
+   740bc:	0f 85 7e fe ff ff    	jne    73f40 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x5f0>
+   740c2:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   740c7:	ff 15 13 dc 07 00    	call   *0x7dc13(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   740cd:	e9 6e fe ff ff       	jmp    73f40 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x5f0>
+   740d2:	4c 89 f3             	mov    %r14,%rbx
+   740d5:	4c 89 c5             	mov    %r8,%rbp
+   740d8:	49 39 d6             	cmp    %rdx,%r14
+   740db:	0f 85 45 02 00 00    	jne    74326 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x9d6>
+   740e1:	4c 39 f3             	cmp    %r14,%rbx
+   740e4:	4c 8b 7c 24 08       	mov    0x8(%rsp),%r15
+   740e9:	77 09                	ja     740f4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x7a4>
+   740eb:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   740f0:	48 89 58 10          	mov    %rbx,0x10(%rax)
+   740f4:	48 8b 84 24 80 00 00 	mov    0x80(%rsp),%rax
+   740fb:	00 
+   740fc:	48 89 c3             	mov    %rax,%rbx
+   740ff:	48 39 c5             	cmp    %rax,%rbp
+   74102:	0f 87 67 12 00 00    	ja     7536f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a1f>
+   74108:	75 7c                	jne    74186 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x836>
+   7410a:	b1 01                	mov    $0x1,%cl
+   7410c:	e9 fb 06 00 00       	jmp    7480c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xebc>
+   74111:	b2 01                	mov    $0x1,%dl
+   74113:	48 83 f9 05          	cmp    $0x5,%rcx
+   74117:	73 14                	jae    7412d <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x7dd>
+   74119:	31 db                	xor    %ebx,%ebx
+   7411b:	45 31 f6             	xor    %r14d,%r14d
+   7411e:	31 c9                	xor    %ecx,%ecx
+   74120:	4c 8b 4c 24 18       	mov    0x18(%rsp),%r9
+   74125:	4c 89 c5             	mov    %r8,%rbp
+   74128:	e9 33 0d 00 00       	jmp    74e60 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1510>
+   7412d:	4c 8d 50 18          	lea    0x18(%rax),%r10
+   74131:	48 89 cf             	mov    %rcx,%rdi
+   74134:	48 c1 e7 04          	shl    $0x4,%rdi
+   74138:	4c 8b 9c 24 88 00 00 	mov    0x88(%rsp),%r11
+   7413f:	00 
+   74140:	4d 01 d9             	add    %r11,%r9
+   74143:	49 01 f9             	add    %rdi,%r9
+   74146:	4d 39 ca             	cmp    %r9,%r10
+   74149:	4c 8b 4c 24 18       	mov    0x18(%rsp),%r9
+   7414e:	4c 89 c5             	mov    %r8,%rbp
+   74151:	0f 83 c4 0a 00 00    	jae    74c1b <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x12cb>
+   74157:	48 01 c7             	add    %rax,%rdi
+   7415a:	48 83 c7 10          	add    $0x10,%rdi
+   7415e:	4c 8b 44 24 60       	mov    0x60(%rsp),%r8
+   74163:	4d 01 e8             	add    %r13,%r8
+   74166:	49 c1 e0 04          	shl    $0x4,%r8
+   7416a:	4d 01 d8             	add    %r11,%r8
+   7416d:	49 83 c0 18          	add    $0x18,%r8
+   74171:	49 39 f8             	cmp    %rdi,%r8
+   74174:	0f 83 a1 0a 00 00    	jae    74c1b <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x12cb>
+   7417a:	31 db                	xor    %ebx,%ebx
+   7417c:	45 31 f6             	xor    %r14d,%r14d
+   7417f:	31 c9                	xor    %ecx,%ecx
+   74181:	e9 da 0c 00 00       	jmp    74e60 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1510>
+   74186:	48 8b 44 24 78       	mov    0x78(%rsp),%rax
+   7418b:	48 c1 e3 04          	shl    $0x4,%rbx
+   7418f:	48 01 c3             	add    %rax,%rbx
+   74192:	48 c1 e5 04          	shl    $0x4,%rbp
+   74196:	48 01 c5             	add    %rax,%rbp
+   74199:	66 0f 28 8c 24 a0 00 	movapd 0xa0(%rsp),%xmm1
+   741a0:	00 00 
+   741a2:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   741a6:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   741aa:	f2 0f 11 4c 24 58    	movsd  %xmm1,0x58(%rsp)
+   741b0:	66 0f 28 8c 24 90 00 	movapd 0x90(%rsp),%xmm1
+   741b7:	00 00 
+   741b9:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   741bd:	f2 0f 11 8c 24 88 00 	movsd  %xmm1,0x88(%rsp)
+   741c4:	00 00 
+   741c6:	eb 37                	jmp    741ff <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x8af>
+   741c8:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   741cd:	4c 89 f9             	mov    %r15,%rcx
+   741d0:	48 c1 e1 04          	shl    $0x4,%rcx
+   741d4:	4c 89 34 08          	mov    %r14,(%rax,%rcx,1)
+   741d8:	f2 0f 10 44 24 08    	movsd  0x8(%rsp),%xmm0
+   741de:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   741e4:	49 ff c7             	inc    %r15
+   741e7:	4c 89 7c 24 30       	mov    %r15,0x30(%rsp)
+   741ec:	49 89 ef             	mov    %rbp,%r15
+   741ef:	4c 89 ed             	mov    %r13,%rbp
+   741f2:	48 83 c5 10          	add    $0x10,%rbp
+   741f6:	48 39 dd             	cmp    %rbx,%rbp
+   741f9:	0f 84 0b ff ff ff    	je     7410a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x7ba>
+   741ff:	f2 0f 10 4d 08       	movsd  0x8(%rbp),%xmm1
+   74204:	66 0f 28 84 24 90 00 	movapd 0x90(%rsp),%xmm0
+   7420b:	00 00 
+   7420d:	f2 0f 59 c1          	mulsd  %xmm1,%xmm0
+   74211:	f2 0f 58 44 24 58    	addsd  0x58(%rsp),%xmm0
+   74217:	f2 0f 11 44 24 60    	movsd  %xmm0,0x60(%rsp)
+   7421d:	66 48 0f 7e c1       	movq   %xmm0,%rcx
+   74222:	f2 0f 59 8c 24 a0 00 	mulsd  0xa0(%rsp),%xmm1
+   74229:	00 00 
+   7422b:	f2 0f 5c 8c 24 88 00 	subsd  0x88(%rsp),%xmm1
+   74232:	00 00 
+   74234:	f2 0f 11 4c 24 08    	movsd  %xmm1,0x8(%rsp)
+   7423a:	66 48 0f 7e c8       	movq   %xmm1,%rax
+   7423f:	48 c1 e9 34          	shr    $0x34,%rcx
+   74243:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   74249:	48 c1 e8 34          	shr    $0x34,%rax
+   7424d:	25 ff 07 00 00       	and    $0x7ff,%eax
+   74252:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   74257:	0f 92 c0             	setb   %al
+   7425a:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   74260:	0f 87 d4 0f 00 00    	ja     7523a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ea>
+   74266:	84 c0                	test   %al,%al
+   74268:	0f 84 cc 0f 00 00    	je     7523a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ea>
+   7426e:	4c 8b 75 00          	mov    0x0(%rbp),%r14
+   74272:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74276:	f2 0f 10 4c 24 60    	movsd  0x60(%rsp),%xmm1
+   7427c:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74280:	75 02                	jne    74284 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x934>
+   74282:	7b 5a                	jnp    742de <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x98e>
+   74284:	4c 3b 7c 24 50       	cmp    0x50(%rsp),%r15
+   74289:	0f 83 79 0f 00 00    	jae    75208 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18b8>
+   7428f:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   74294:	49 89 ed             	mov    %rbp,%r13
+   74297:	4c 89 fd             	mov    %r15,%rbp
+   7429a:	4c 8b 78 10          	mov    0x10(%rax),%r15
+   7429e:	4c 3b 38             	cmp    (%rax),%r15
+   742a1:	75 0b                	jne    742ae <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x95e>
+   742a3:	48 8b 7c 24 10       	mov    0x10(%rsp),%rdi
+   742a8:	ff 15 32 da 07 00    	call   *0x7da32(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   742ae:	48 ff c5             	inc    %rbp
+   742b1:	48 8b 54 24 10       	mov    0x10(%rsp),%rdx
+   742b6:	48 8b 42 08          	mov    0x8(%rdx),%rax
+   742ba:	4c 89 f9             	mov    %r15,%rcx
+   742bd:	48 c1 e1 04          	shl    $0x4,%rcx
+   742c1:	4c 89 34 08          	mov    %r14,(%rax,%rcx,1)
+   742c5:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   742cb:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   742d1:	49 ff c7             	inc    %r15
+   742d4:	4c 89 7a 10          	mov    %r15,0x10(%rdx)
+   742d8:	49 89 ef             	mov    %rbp,%r15
+   742db:	4c 89 ed             	mov    %r13,%rbp
+   742de:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   742e2:	f2 0f 10 4c 24 08    	movsd  0x8(%rsp),%xmm1
+   742e8:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   742ec:	75 06                	jne    742f4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x9a4>
+   742ee:	0f 8b fe fe ff ff    	jnp    741f2 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x8a2>
+   742f4:	49 89 ed             	mov    %rbp,%r13
+   742f7:	4c 89 fd             	mov    %r15,%rbp
+   742fa:	4c 8b 7c 24 30       	mov    0x30(%rsp),%r15
+   742ff:	4c 3b 7c 24 20       	cmp    0x20(%rsp),%r15
+   74304:	0f 85 be fe ff ff    	jne    741c8 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x878>
+   7430a:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   7430f:	ff 15 cb d9 07 00    	call   *0x7d9cb(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74315:	e9 ae fe ff ff       	jmp    741c8 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x878>
+   7431a:	4c 89 eb             	mov    %r13,%rbx
+   7431d:	49 39 d6             	cmp    %rdx,%r14
+   74320:	0f 84 bb fd ff ff    	je     740e1 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x791>
+   74326:	48 39 d3             	cmp    %rdx,%rbx
+   74329:	4c 8b 7c 24 08       	mov    0x8(%rsp),%r15
+   7432e:	0f 87 30 10 00 00    	ja     75364 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a14>
+   74334:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   74339:	48 8b 70 08          	mov    0x8(%rax),%rsi
+   7433d:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   74342:	48 89 da             	mov    %rbx,%rdx
+   74345:	e8 86 f5 ff ff       	call   738d0 <<alloc::vec::Vec<(usize, f64)>>::append_elements>
+   7434a:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   7434f:	48 8b 58 10          	mov    0x10(%rax),%rbx
+   74353:	49 39 de             	cmp    %rbx,%r14
+   74356:	0f 83 88 04 00 00    	jae    747e4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe94>
+   7435c:	48 3b ac 24 80 00 00 	cmp    0x80(%rsp),%rbp
+   74363:	00 
+   74364:	0f 83 7a 04 00 00    	jae    747e4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe94>
+   7436a:	66 0f 28 8c 24 a0 00 	movapd 0xa0(%rsp),%xmm1
+   74371:	00 00 
+   74373:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74377:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   7437b:	f2 0f 11 8c 24 88 00 	movsd  %xmm1,0x88(%rsp)
+   74382:	00 00 
+   74384:	66 0f 28 8c 24 90 00 	movapd 0x90(%rsp),%xmm1
+   7438b:	00 00 
+   7438d:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   74391:	f2 0f 11 8c 24 d0 00 	movsd  %xmm1,0xd0(%rsp)
+   74398:	00 00 
+   7439a:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+   743a0:	48 89 ea             	mov    %rbp,%rdx
+   743a3:	4c 89 fd             	mov    %r15,%rbp
+   743a6:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   743ab:	48 8b 40 08          	mov    0x8(%rax),%rax
+   743af:	4c 89 f1             	mov    %r14,%rcx
+   743b2:	48 c1 e1 04          	shl    $0x4,%rcx
+   743b6:	4c 8b 3c 08          	mov    (%rax,%rcx,1),%r15
+   743ba:	f2 0f 10 44 08 08    	movsd  0x8(%rax,%rcx,1),%xmm0
+   743c0:	48 8b 44 24 78       	mov    0x78(%rsp),%rax
+   743c5:	48 89 54 24 58       	mov    %rdx,0x58(%rsp)
+   743ca:	48 89 d1             	mov    %rdx,%rcx
+   743cd:	48 c1 e1 04          	shl    $0x4,%rcx
+   743d1:	48 8b 1c 08          	mov    (%rax,%rcx,1),%rbx
+   743d5:	f2 0f 10 64 08 08    	movsd  0x8(%rax,%rcx,1),%xmm4
+   743db:	49 39 df             	cmp    %rbx,%r15
+   743de:	0f 97 c0             	seta   %al
+   743e1:	1c 00                	sbb    $0x0,%al
+   743e3:	0f 84 30 01 00 00    	je     74519 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xbc9>
+   743e9:	0f b6 c0             	movzbl %al,%eax
+   743ec:	83 f8 01             	cmp    $0x1,%eax
+   743ef:	0f 85 7c 02 00 00    	jne    74671 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xd21>
+   743f5:	66 0f 28 84 24 90 00 	movapd 0x90(%rsp),%xmm0
+   743fc:	00 00 
+   743fe:	f2 0f 59 c4          	mulsd  %xmm4,%xmm0
+   74402:	f2 0f 58 84 24 88 00 	addsd  0x88(%rsp),%xmm0
+   74409:	00 00 
+   7440b:	f2 0f 11 44 24 08    	movsd  %xmm0,0x8(%rsp)
+   74411:	66 48 0f 7e c1       	movq   %xmm0,%rcx
+   74416:	f2 0f 59 a4 24 a0 00 	mulsd  0xa0(%rsp),%xmm4
+   7441d:	00 00 
+   7441f:	f2 0f 5c a4 24 d0 00 	subsd  0xd0(%rsp),%xmm4
+   74426:	00 00 
+   74428:	f2 0f 11 64 24 60    	movsd  %xmm4,0x60(%rsp)
+   7442e:	66 48 0f 7e e0       	movq   %xmm4,%rax
+   74433:	48 c1 e9 34          	shr    $0x34,%rcx
+   74437:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   7443d:	48 c1 e8 34          	shr    $0x34,%rax
+   74441:	25 ff 07 00 00       	and    $0x7ff,%eax
+   74446:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   7444b:	0f 92 c0             	setb   %al
+   7444e:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   74454:	4c 8b 7c 24 18       	mov    0x18(%rsp),%r15
+   74459:	0f 87 66 0e 00 00    	ja     752c5 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1975>
+   7445f:	84 c0                	test   %al,%al
+   74461:	0f 84 5e 0e 00 00    	je     752c5 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1975>
+   74467:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   7446b:	f2 0f 10 4c 24 08    	movsd  0x8(%rsp),%xmm1
+   74471:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74475:	75 02                	jne    74479 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xb29>
+   74477:	7b 49                	jnp    744c2 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xb72>
+   74479:	48 3b 6c 24 50       	cmp    0x50(%rsp),%rbp
+   7447e:	0f 83 50 0e 00 00    	jae    752d4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1984>
+   74484:	4c 8b 7c 24 48       	mov    0x48(%rsp),%r15
+   74489:	4c 3b 7c 24 38       	cmp    0x38(%rsp),%r15
+   7448e:	75 0b                	jne    7449b <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xb4b>
+   74490:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   74495:	ff 15 45 d8 07 00    	call   *0x7d845(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   7449b:	48 ff c5             	inc    %rbp
+   7449e:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+   744a3:	4c 89 f9             	mov    %r15,%rcx
+   744a6:	48 c1 e1 04          	shl    $0x4,%rcx
+   744aa:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   744ae:	f2 0f 10 44 24 08    	movsd  0x8(%rsp),%xmm0
+   744b4:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   744ba:	49 ff c7             	inc    %r15
+   744bd:	4c 89 7c 24 48       	mov    %r15,0x48(%rsp)
+   744c2:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   744c6:	f2 0f 10 4c 24 60    	movsd  0x60(%rsp),%xmm1
+   744cc:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   744d0:	75 02                	jne    744d4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xb84>
+   744d2:	7b 3b                	jnp    7450f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xbbf>
+   744d4:	4c 8b 7c 24 30       	mov    0x30(%rsp),%r15
+   744d9:	4c 3b 7c 24 20       	cmp    0x20(%rsp),%r15
+   744de:	75 0b                	jne    744eb <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xb9b>
+   744e0:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   744e5:	ff 15 f5 d7 07 00    	call   *0x7d7f5(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   744eb:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   744f0:	4c 89 f9             	mov    %r15,%rcx
+   744f3:	48 c1 e1 04          	shl    $0x4,%rcx
+   744f7:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   744fb:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   74501:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   74507:	49 ff c7             	inc    %r15
+   7450a:	4c 89 7c 24 30       	mov    %r15,0x30(%rsp)
+   7450f:	48 ff 44 24 58       	incq   0x58(%rsp)
+   74514:	e9 a0 02 00 00       	jmp    747b9 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe69>
+   74519:	66 0f 28 94 24 a0 00 	movapd 0xa0(%rsp),%xmm2
+   74520:	00 00 
+   74522:	66 0f 28 ca          	movapd %xmm2,%xmm1
+   74526:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   7452a:	66 0f 28 9c 24 90 00 	movapd 0x90(%rsp),%xmm3
+   74531:	00 00 
+   74533:	66 0f 28 eb          	movapd %xmm3,%xmm5
+   74537:	f2 0f 59 ec          	mulsd  %xmm4,%xmm5
+   7453b:	f2 0f 58 e9          	addsd  %xmm1,%xmm5
+   7453f:	f2 0f 11 6c 24 08    	movsd  %xmm5,0x8(%rsp)
+   74545:	66 48 0f 7e e9       	movq   %xmm5,%rcx
+   7454a:	f2 0f 59 e2          	mulsd  %xmm2,%xmm4
+   7454e:	66 0f 28 cb          	movapd %xmm3,%xmm1
+   74552:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   74556:	f2 0f 5c e1          	subsd  %xmm1,%xmm4
+   7455a:	f2 0f 11 64 24 60    	movsd  %xmm4,0x60(%rsp)
+   74560:	66 48 0f 7e e0       	movq   %xmm4,%rax
+   74565:	48 c1 e9 34          	shr    $0x34,%rcx
+   74569:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   7456f:	48 c1 e8 34          	shr    $0x34,%rax
+   74573:	25 ff 07 00 00       	and    $0x7ff,%eax
+   74578:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   7457d:	0f 92 c0             	setb   %al
+   74580:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   74586:	0f 87 70 0c 00 00    	ja     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   7458c:	84 c0                	test   %al,%al
+   7458e:	0f 84 68 0c 00 00    	je     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   74594:	66 0f 57 c9          	xorpd  %xmm1,%xmm1
+   74598:	f2 0f 10 54 24 08    	movsd  0x8(%rsp),%xmm2
+   7459e:	66 0f 2e d1          	ucomisd %xmm1,%xmm2
+   745a2:	0f 9b c0             	setnp  %al
+   745a5:	0f 94 c1             	sete   %cl
+   745a8:	20 c1                	and    %al,%cl
+   745aa:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   745ae:	0f 9a c0             	setp   %al
+   745b1:	0f 95 c2             	setne  %dl
+   745b4:	08 c2                	or     %al,%dl
+   745b6:	20 ca                	and    %cl,%dl
+   745b8:	0f b6 c2             	movzbl %dl,%eax
+   745bb:	48 29 c5             	sub    %rax,%rbp
+   745be:	66 0f 2e d1          	ucomisd %xmm1,%xmm2
+   745c2:	75 02                	jne    745c6 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xc76>
+   745c4:	7b 51                	jnp    74617 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xcc7>
+   745c6:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   745ca:	75 10                	jne    745dc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xc8c>
+   745cc:	7a 0e                	jp     745dc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xc8c>
+   745ce:	48 3b 6c 24 50       	cmp    0x50(%rsp),%rbp
+   745d3:	0f 83 2f 0c 00 00    	jae    75208 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18b8>
+   745d9:	48 ff c5             	inc    %rbp
+   745dc:	48 8b 5c 24 48       	mov    0x48(%rsp),%rbx
+   745e1:	48 3b 5c 24 38       	cmp    0x38(%rsp),%rbx
+   745e6:	75 0b                	jne    745f3 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xca3>
+   745e8:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   745ed:	ff 15 ed d6 07 00    	call   *0x7d6ed(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   745f3:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+   745f8:	48 89 d9             	mov    %rbx,%rcx
+   745fb:	48 c1 e1 04          	shl    $0x4,%rcx
+   745ff:	4c 89 3c 08          	mov    %r15,(%rax,%rcx,1)
+   74603:	f2 0f 10 44 24 08    	movsd  0x8(%rsp),%xmm0
+   74609:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   7460f:	48 ff c3             	inc    %rbx
+   74612:	48 89 5c 24 48       	mov    %rbx,0x48(%rsp)
+   74617:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   7461b:	f2 0f 10 4c 24 60    	movsd  0x60(%rsp),%xmm1
+   74621:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74625:	75 02                	jne    74629 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xcd9>
+   74627:	7b 3b                	jnp    74664 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xd14>
+   74629:	48 8b 5c 24 30       	mov    0x30(%rsp),%rbx
+   7462e:	48 3b 5c 24 20       	cmp    0x20(%rsp),%rbx
+   74633:	75 0b                	jne    74640 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xcf0>
+   74635:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   7463a:	ff 15 a0 d6 07 00    	call   *0x7d6a0(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74640:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   74645:	48 89 d9             	mov    %rbx,%rcx
+   74648:	48 c1 e1 04          	shl    $0x4,%rcx
+   7464c:	4c 89 3c 08          	mov    %r15,(%rax,%rcx,1)
+   74650:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   74656:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   7465c:	48 ff c3             	inc    %rbx
+   7465f:	48 89 5c 24 30       	mov    %rbx,0x30(%rsp)
+   74664:	49 ff c6             	inc    %r14
+   74667:	48 ff 44 24 58       	incq   0x58(%rsp)
+   7466c:	e9 48 01 00 00       	jmp    747b9 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe69>
+   74671:	66 0f 28 8c 24 a0 00 	movapd 0xa0(%rsp),%xmm1
+   74678:	00 00 
+   7467a:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   7467e:	f2 0f 58 8c 24 d0 00 	addsd  0xd0(%rsp),%xmm1
+   74685:	00 00 
+   74687:	f2 0f 11 4c 24 60    	movsd  %xmm1,0x60(%rsp)
+   7468d:	66 48 0f 7e c9       	movq   %xmm1,%rcx
+   74692:	66 0f 28 8c 24 90 00 	movapd 0x90(%rsp),%xmm1
+   74699:	00 00 
+   7469b:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   7469f:	f2 0f 10 94 24 88 00 	movsd  0x88(%rsp),%xmm2
+   746a6:	00 00 
+   746a8:	f2 0f 5c d1          	subsd  %xmm1,%xmm2
+   746ac:	f2 0f 11 54 24 08    	movsd  %xmm2,0x8(%rsp)
+   746b2:	66 48 0f 7e d0       	movq   %xmm2,%rax
+   746b7:	48 c1 e9 34          	shr    $0x34,%rcx
+   746bb:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   746c1:	48 c1 e8 34          	shr    $0x34,%rax
+   746c5:	25 ff 07 00 00       	and    $0x7ff,%eax
+   746ca:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   746cf:	0f 92 c0             	setb   %al
+   746d2:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   746d8:	0f 87 1e 0b 00 00    	ja     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   746de:	84 c0                	test   %al,%al
+   746e0:	0f 84 16 0b 00 00    	je     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   746e6:	66 0f 57 c9          	xorpd  %xmm1,%xmm1
+   746ea:	f2 0f 10 54 24 60    	movsd  0x60(%rsp),%xmm2
+   746f0:	66 0f 2e d1          	ucomisd %xmm1,%xmm2
+   746f4:	0f 9b c0             	setnp  %al
+   746f7:	0f 94 c1             	sete   %cl
+   746fa:	20 c1                	and    %al,%cl
+   746fc:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   74700:	0f 9a c0             	setp   %al
+   74703:	0f 95 c2             	setne  %dl
+   74706:	08 c2                	or     %al,%dl
+   74708:	20 ca                	and    %cl,%dl
+   7470a:	0f b6 c2             	movzbl %dl,%eax
+   7470d:	48 29 c5             	sub    %rax,%rbp
+   74710:	66 0f 2e d1          	ucomisd %xmm1,%xmm2
+   74714:	75 02                	jne    74718 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xdc8>
+   74716:	7b 51                	jnp    74769 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe19>
+   74718:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   7471c:	75 10                	jne    7472e <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xdde>
+   7471e:	7a 0e                	jp     7472e <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xdde>
+   74720:	48 3b 6c 24 50       	cmp    0x50(%rsp),%rbp
+   74725:	0f 83 dd 0a 00 00    	jae    75208 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18b8>
+   7472b:	48 ff c5             	inc    %rbp
+   7472e:	48 8b 5c 24 48       	mov    0x48(%rsp),%rbx
+   74733:	48 3b 5c 24 38       	cmp    0x38(%rsp),%rbx
+   74738:	75 0b                	jne    74745 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xdf5>
+   7473a:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   7473f:	ff 15 9b d5 07 00    	call   *0x7d59b(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74745:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+   7474a:	48 89 d9             	mov    %rbx,%rcx
+   7474d:	48 c1 e1 04          	shl    $0x4,%rcx
+   74751:	4c 89 3c 08          	mov    %r15,(%rax,%rcx,1)
+   74755:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   7475b:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   74761:	48 ff c3             	inc    %rbx
+   74764:	48 89 5c 24 48       	mov    %rbx,0x48(%rsp)
+   74769:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   7476d:	f2 0f 10 4c 24 08    	movsd  0x8(%rsp),%xmm1
+   74773:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74777:	75 02                	jne    7477b <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe2b>
+   74779:	7b 3b                	jnp    747b6 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe66>
+   7477b:	48 8b 5c 24 30       	mov    0x30(%rsp),%rbx
+   74780:	48 3b 5c 24 20       	cmp    0x20(%rsp),%rbx
+   74785:	75 0b                	jne    74792 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe42>
+   74787:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   7478c:	ff 15 4e d5 07 00    	call   *0x7d54e(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74792:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   74797:	48 89 d9             	mov    %rbx,%rcx
+   7479a:	48 c1 e1 04          	shl    $0x4,%rcx
+   7479e:	4c 89 3c 08          	mov    %r15,(%rax,%rcx,1)
+   747a2:	f2 0f 10 44 24 08    	movsd  0x8(%rsp),%xmm0
+   747a8:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   747ae:	48 ff c3             	inc    %rbx
+   747b1:	48 89 5c 24 30       	mov    %rbx,0x30(%rsp)
+   747b6:	49 ff c6             	inc    %r14
+   747b9:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   747be:	48 8b 58 10          	mov    0x10(%rax),%rbx
+   747c2:	49 39 de             	cmp    %rbx,%r14
+   747c5:	49 89 ef             	mov    %rbp,%r15
+   747c8:	73 15                	jae    747df <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe8f>
+   747ca:	48 8b 6c 24 58       	mov    0x58(%rsp),%rbp
+   747cf:	48 3b ac 24 80 00 00 	cmp    0x80(%rsp),%rbp
+   747d6:	00 
+   747d7:	0f 82 c3 fb ff ff    	jb     743a0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xa50>
+   747dd:	eb 05                	jmp    747e4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xe94>
+   747df:	48 8b 6c 24 58       	mov    0x58(%rsp),%rbp
+   747e4:	49 39 de             	cmp    %rbx,%r14
+   747e7:	0f 87 3b 0b 00 00    	ja     75328 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x19d8>
+   747ed:	0f 85 c6 00 00 00    	jne    748b9 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xf69>
+   747f3:	48 8b 9c 24 80 00 00 	mov    0x80(%rsp),%rbx
+   747fa:	00 
+   747fb:	48 39 dd             	cmp    %rbx,%rbp
+   747fe:	0f 87 33 0b 00 00    	ja     75337 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x19e7>
+   74804:	0f 85 85 02 00 00    	jne    74a8f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x113f>
+   7480a:	31 c9                	xor    %ecx,%ecx
+   7480c:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74810:	66 0f 28 8c 24 f0 00 	movapd 0xf0(%rsp),%xmm1
+   74817:	00 00 
+   74819:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   7481d:	75 10                	jne    7482f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xedf>
+   7481f:	7a 0e                	jp     7482f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xedf>
+   74821:	4c 3b 7c 24 50       	cmp    0x50(%rsp),%r15
+   74826:	0f 83 dc 09 00 00    	jae    75208 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18b8>
+   7482c:	49 ff c7             	inc    %r15
+   7482f:	48 8b 84 24 c0 00 00 	mov    0xc0(%rsp),%rax
+   74836:	00 
+   74837:	4c 89 78 40          	mov    %r15,0x40(%rax)
+   7483b:	84 c9                	test   %cl,%cl
+   7483d:	75 39                	jne    74878 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xf28>
+   7483f:	48 8b 54 24 10       	mov    0x10(%rsp),%rdx
+   74844:	48 8b 02             	mov    (%rdx),%rax
+   74847:	48 8b 4c 24 38       	mov    0x38(%rsp),%rcx
+   7484c:	48 89 0a             	mov    %rcx,(%rdx)
+   7484f:	48 89 44 24 38       	mov    %rax,0x38(%rsp)
+   74854:	48 8b 42 08          	mov    0x8(%rdx),%rax
+   74858:	48 8b 4c 24 40       	mov    0x40(%rsp),%rcx
+   7485d:	48 89 4a 08          	mov    %rcx,0x8(%rdx)
+   74861:	48 89 44 24 40       	mov    %rax,0x40(%rsp)
+   74866:	48 8b 42 10          	mov    0x10(%rdx),%rax
+   7486a:	48 8b 4c 24 48       	mov    0x48(%rsp),%rcx
+   7486f:	48 89 4a 10          	mov    %rcx,0x10(%rdx)
+   74873:	48 89 44 24 48       	mov    %rax,0x48(%rsp)
+   74878:	66 0f 28 44 24 20    	movapd 0x20(%rsp),%xmm0
+   7487e:	66 0f 28 4c 24 70    	movapd 0x70(%rsp),%xmm1
+   74884:	66 0f 29 44 24 70    	movapd %xmm0,0x70(%rsp)
+   7488a:	66 0f 29 4c 24 20    	movapd %xmm1,0x20(%rsp)
+   74890:	48 8b 84 24 80 00 00 	mov    0x80(%rsp),%rax
+   74897:	00 
+   74898:	48 8b 4c 24 30       	mov    0x30(%rsp),%rcx
+   7489d:	48 89 8c 24 80 00 00 	mov    %rcx,0x80(%rsp)
+   748a4:	00 
+   748a5:	48 89 44 24 30       	mov    %rax,0x30(%rsp)
+   748aa:	31 ed                	xor    %ebp,%ebp
+   748ac:	4c 8b 94 24 c8 00 00 	mov    0xc8(%rsp),%r10
+   748b3:	00 
+   748b4:	e9 5b 07 00 00       	jmp    75014 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x16c4>
+   748b9:	48 8b 44 24 10       	mov    0x10(%rsp),%rax
+   748be:	48 8b 40 08          	mov    0x8(%rax),%rax
+   748c2:	48 c1 e3 04          	shl    $0x4,%rbx
+   748c6:	48 01 c3             	add    %rax,%rbx
+   748c9:	49 c1 e6 04          	shl    $0x4,%r14
+   748cd:	49 01 c6             	add    %rax,%r14
+   748d0:	66 0f 28 8c 24 90 00 	movapd 0x90(%rsp),%xmm1
+   748d7:	00 00 
+   748d9:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   748dd:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   748e1:	f2 0f 11 8c 24 88 00 	movsd  %xmm1,0x88(%rsp)
+   748e8:	00 00 
+   748ea:	66 0f 28 8c 24 a0 00 	movapd 0xa0(%rsp),%xmm1
+   748f1:	00 00 
+   748f3:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   748f7:	f2 0f 11 8c 24 d0 00 	movsd  %xmm1,0xd0(%rsp)
+   748fe:	00 00 
+   74900:	48 89 6c 24 58       	mov    %rbp,0x58(%rsp)
+   74905:	eb 45                	jmp    7494c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xffc>
+   74907:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+   7490e:	00 00 
+   74910:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   74915:	4c 89 f9             	mov    %r15,%rcx
+   74918:	48 c1 e1 04          	shl    $0x4,%rcx
+   7491c:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   74920:	f2 0f 10 44 24 08    	movsd  0x8(%rsp),%xmm0
+   74926:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   7492c:	49 ff c7             	inc    %r15
+   7492f:	4c 89 7c 24 30       	mov    %r15,0x30(%rsp)
+   74934:	49 89 ef             	mov    %rbp,%r15
+   74937:	49 83 c6 10          	add    $0x10,%r14
+   7493b:	4c 89 eb             	mov    %r13,%rbx
+   7493e:	4d 39 ee             	cmp    %r13,%r14
+   74941:	48 8b 6c 24 58       	mov    0x58(%rsp),%rbp
+   74946:	0f 84 a7 fe ff ff    	je     747f3 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xea3>
+   7494c:	f2 41 0f 10 46 08    	movsd  0x8(%r14),%xmm0
+   74952:	66 0f 28 8c 24 a0 00 	movapd 0xa0(%rsp),%xmm1
+   74959:	00 00 
+   7495b:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   7495f:	f2 0f 58 8c 24 88 00 	addsd  0x88(%rsp),%xmm1
+   74966:	00 00 
+   74968:	f2 0f 11 4c 24 60    	movsd  %xmm1,0x60(%rsp)
+   7496e:	66 48 0f 7e c9       	movq   %xmm1,%rcx
+   74973:	66 0f 28 8c 24 90 00 	movapd 0x90(%rsp),%xmm1
+   7497a:	00 00 
+   7497c:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   74980:	f2 0f 10 94 24 d0 00 	movsd  0xd0(%rsp),%xmm2
+   74987:	00 00 
+   74989:	f2 0f 5c d1          	subsd  %xmm1,%xmm2
+   7498d:	f2 0f 11 54 24 08    	movsd  %xmm2,0x8(%rsp)
+   74993:	66 48 0f 7e d0       	movq   %xmm2,%rax
+   74998:	48 c1 e9 34          	shr    $0x34,%rcx
+   7499c:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   749a2:	48 c1 e8 34          	shr    $0x34,%rax
+   749a6:	25 ff 07 00 00       	and    $0x7ff,%eax
+   749ab:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   749b0:	0f 92 c0             	setb   %al
+   749b3:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   749b9:	0f 87 3d 08 00 00    	ja     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   749bf:	84 c0                	test   %al,%al
+   749c1:	0f 84 35 08 00 00    	je     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   749c7:	49 89 dd             	mov    %rbx,%r13
+   749ca:	49 8b 1e             	mov    (%r14),%rbx
+   749cd:	66 0f 57 c9          	xorpd  %xmm1,%xmm1
+   749d1:	f2 0f 10 54 24 60    	movsd  0x60(%rsp),%xmm2
+   749d7:	66 0f 2e d1          	ucomisd %xmm1,%xmm2
+   749db:	0f 9b c0             	setnp  %al
+   749de:	0f 94 c1             	sete   %cl
+   749e1:	20 c1                	and    %al,%cl
+   749e3:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   749e7:	0f 9a c0             	setp   %al
+   749ea:	0f 95 c2             	setne  %dl
+   749ed:	08 c2                	or     %al,%dl
+   749ef:	20 ca                	and    %cl,%dl
+   749f1:	0f b6 c2             	movzbl %dl,%eax
+   749f4:	49 29 c7             	sub    %rax,%r15
+   749f7:	66 0f 2e d1          	ucomisd %xmm1,%xmm2
+   749fb:	75 02                	jne    749ff <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x10af>
+   749fd:	7b 57                	jnp    74a56 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1106>
+   749ff:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   74a03:	75 10                	jne    74a15 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x10c5>
+   74a05:	7a 0e                	jp     74a15 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x10c5>
+   74a07:	4c 3b 7c 24 50       	cmp    0x50(%rsp),%r15
+   74a0c:	0f 83 f6 07 00 00    	jae    75208 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18b8>
+   74a12:	49 ff c7             	inc    %r15
+   74a15:	4c 89 fd             	mov    %r15,%rbp
+   74a18:	4c 8b 7c 24 48       	mov    0x48(%rsp),%r15
+   74a1d:	4c 3b 7c 24 38       	cmp    0x38(%rsp),%r15
+   74a22:	75 0b                	jne    74a2f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x10df>
+   74a24:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   74a29:	ff 15 b1 d2 07 00    	call   *0x7d2b1(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74a2f:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+   74a34:	4c 89 f9             	mov    %r15,%rcx
+   74a37:	48 c1 e1 04          	shl    $0x4,%rcx
+   74a3b:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   74a3f:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   74a45:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   74a4b:	49 ff c7             	inc    %r15
+   74a4e:	4c 89 7c 24 48       	mov    %r15,0x48(%rsp)
+   74a53:	49 89 ef             	mov    %rbp,%r15
+   74a56:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74a5a:	f2 0f 10 4c 24 08    	movsd  0x8(%rsp),%xmm1
+   74a60:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74a64:	75 06                	jne    74a6c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x111c>
+   74a66:	0f 8b cb fe ff ff    	jnp    74937 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xfe7>
+   74a6c:	4c 89 fd             	mov    %r15,%rbp
+   74a6f:	4c 8b 7c 24 30       	mov    0x30(%rsp),%r15
+   74a74:	4c 3b 7c 24 20       	cmp    0x20(%rsp),%r15
+   74a79:	0f 85 91 fe ff ff    	jne    74910 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xfc0>
+   74a7f:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   74a84:	ff 15 56 d2 07 00    	call   *0x7d256(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74a8a:	e9 81 fe ff ff       	jmp    74910 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xfc0>
+   74a8f:	48 8b 44 24 78       	mov    0x78(%rsp),%rax
+   74a94:	48 c1 e3 04          	shl    $0x4,%rbx
+   74a98:	48 01 c3             	add    %rax,%rbx
+   74a9b:	48 c1 e5 04          	shl    $0x4,%rbp
+   74a9f:	48 01 c5             	add    %rax,%rbp
+   74aa2:	66 0f 28 8c 24 a0 00 	movapd 0xa0(%rsp),%xmm1
+   74aa9:	00 00 
+   74aab:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74aaf:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   74ab3:	f2 0f 11 4c 24 58    	movsd  %xmm1,0x58(%rsp)
+   74ab9:	66 0f 28 8c 24 90 00 	movapd 0x90(%rsp),%xmm1
+   74ac0:	00 00 
+   74ac2:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   74ac6:	f2 0f 11 8c 24 88 00 	movsd  %xmm1,0x88(%rsp)
+   74acd:	00 00 
+   74acf:	eb 43                	jmp    74b14 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x11c4>
+   74ad1:	66 66 66 66 66 66 2e 	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   74ad8:	0f 1f 84 00 00 00 00 
+   74adf:	00 
+   74ae0:	48 8b 44 24 28       	mov    0x28(%rsp),%rax
+   74ae5:	4c 89 f1             	mov    %r14,%rcx
+   74ae8:	48 c1 e1 04          	shl    $0x4,%rcx
+   74aec:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   74af0:	f2 0f 10 44 24 08    	movsd  0x8(%rsp),%xmm0
+   74af6:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   74afc:	49 ff c6             	inc    %r14
+   74aff:	4c 89 74 24 30       	mov    %r14,0x30(%rsp)
+   74b04:	48 83 c5 10          	add    $0x10,%rbp
+   74b08:	4c 89 eb             	mov    %r13,%rbx
+   74b0b:	4c 39 ed             	cmp    %r13,%rbp
+   74b0e:	0f 84 f6 fc ff ff    	je     7480a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0xeba>
+   74b14:	f2 0f 10 4d 08       	movsd  0x8(%rbp),%xmm1
+   74b19:	66 0f 28 84 24 90 00 	movapd 0x90(%rsp),%xmm0
+   74b20:	00 00 
+   74b22:	f2 0f 59 c1          	mulsd  %xmm1,%xmm0
+   74b26:	f2 0f 58 44 24 58    	addsd  0x58(%rsp),%xmm0
+   74b2c:	f2 0f 11 44 24 60    	movsd  %xmm0,0x60(%rsp)
+   74b32:	66 48 0f 7e c1       	movq   %xmm0,%rcx
+   74b37:	f2 0f 59 8c 24 a0 00 	mulsd  0xa0(%rsp),%xmm1
+   74b3e:	00 00 
+   74b40:	f2 0f 5c 8c 24 88 00 	subsd  0x88(%rsp),%xmm1
+   74b47:	00 00 
+   74b49:	f2 0f 11 4c 24 08    	movsd  %xmm1,0x8(%rsp)
+   74b4f:	66 48 0f 7e c8       	movq   %xmm1,%rax
+   74b54:	48 c1 e9 34          	shr    $0x34,%rcx
+   74b58:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   74b5e:	48 c1 e8 34          	shr    $0x34,%rax
+   74b62:	25 ff 07 00 00       	and    $0x7ff,%eax
+   74b67:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   74b6c:	0f 92 c0             	setb   %al
+   74b6f:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   74b75:	0f 87 81 06 00 00    	ja     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   74b7b:	84 c0                	test   %al,%al
+   74b7d:	0f 84 79 06 00 00    	je     751fc <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18ac>
+   74b83:	49 89 dd             	mov    %rbx,%r13
+   74b86:	48 8b 5d 00          	mov    0x0(%rbp),%rbx
+   74b8a:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74b8e:	f2 0f 10 4c 24 60    	movsd  0x60(%rsp),%xmm1
+   74b94:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74b98:	75 02                	jne    74b9c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x124c>
+   74b9a:	7b 49                	jnp    74be5 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1295>
+   74b9c:	4c 3b 7c 24 50       	cmp    0x50(%rsp),%r15
+   74ba1:	0f 83 61 06 00 00    	jae    75208 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18b8>
+   74ba7:	4c 8b 74 24 48       	mov    0x48(%rsp),%r14
+   74bac:	4c 3b 74 24 38       	cmp    0x38(%rsp),%r14
+   74bb1:	75 0b                	jne    74bbe <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x126e>
+   74bb3:	48 8d 7c 24 38       	lea    0x38(%rsp),%rdi
+   74bb8:	ff 15 22 d1 07 00    	call   *0x7d122(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74bbe:	49 ff c7             	inc    %r15
+   74bc1:	48 8b 44 24 40       	mov    0x40(%rsp),%rax
+   74bc6:	4c 89 f1             	mov    %r14,%rcx
+   74bc9:	48 c1 e1 04          	shl    $0x4,%rcx
+   74bcd:	48 89 1c 08          	mov    %rbx,(%rax,%rcx,1)
+   74bd1:	f2 0f 10 44 24 60    	movsd  0x60(%rsp),%xmm0
+   74bd7:	f2 0f 11 44 08 08    	movsd  %xmm0,0x8(%rax,%rcx,1)
+   74bdd:	49 ff c6             	inc    %r14
+   74be0:	4c 89 74 24 48       	mov    %r14,0x48(%rsp)
+   74be5:	66 0f 57 c0          	xorpd  %xmm0,%xmm0
+   74be9:	f2 0f 10 4c 24 08    	movsd  0x8(%rsp),%xmm1
+   74bef:	66 0f 2e c8          	ucomisd %xmm0,%xmm1
+   74bf3:	75 06                	jne    74bfb <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x12ab>
+   74bf5:	0f 8b 09 ff ff ff    	jnp    74b04 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x11b4>
+   74bfb:	4c 8b 74 24 30       	mov    0x30(%rsp),%r14
+   74c00:	4c 3b 74 24 20       	cmp    0x20(%rsp),%r14
+   74c05:	0f 85 d5 fe ff ff    	jne    74ae0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1190>
+   74c0b:	48 8d 7c 24 20       	lea    0x20(%rsp),%rdi
+   74c10:	ff 15 ca d0 07 00    	call   *0x7d0ca(%rip)        # f1ce0 <_DYNAMIC+0x668>
+   74c16:	e9 c5 fe ff ff       	jmp    74ae0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1190>
+   74c1b:	89 ca                	mov    %ecx,%edx
+   74c1d:	83 e2 03             	and    $0x3,%edx
+   74c20:	bf 04 00 00 00       	mov    $0x4,%edi
+   74c25:	48 0f 44 d7          	cmove  %rdi,%rdx
+   74c29:	48 29 d1             	sub    %rdx,%rcx
+   74c2c:	0f 28 84 24 a0 00 00 	movaps 0xa0(%rsp),%xmm0
+   74c33:	00 
+   74c34:	0f 16 c0             	movlhps %xmm0,%xmm0
+   74c37:	0f 29 44 24 60       	movaps %xmm0,0x60(%rsp)
+   74c3c:	4c 8b 44 24 58       	mov    0x58(%rsp),%r8
+   74c41:	49 39 f0             	cmp    %rsi,%r8
+   74c44:	48 89 f7             	mov    %rsi,%rdi
+   74c47:	49 0f 42 f8          	cmovb  %r8,%rdi
+   74c4b:	48 29 fa             	sub    %rdi,%rdx
+   74c4e:	66 0f 57 db          	xorpd  %xmm3,%xmm3
+   74c52:	bf 48 00 00 00       	mov    $0x48,%edi
+   74c57:	66 0f ef f6          	pxor   %xmm6,%xmm6
+   74c5b:	66 0f 57 ed          	xorpd  %xmm5,%xmm5
+   74c5f:	66 0f 57 e4          	xorpd  %xmm4,%xmm4
+   74c63:	66 0f 28 05 15 d1 f9 	movapd -0x62eeb(%rip),%xmm0        # 11d80 <anon.ecd23e98f399f5c0453ba372c2973f18.4.llvm.13954439057034743015+0x2f0>
+   74c6a:	ff 
+   74c6b:	66 0f 28 d0          	movapd %xmm0,%xmm2
+   74c6f:	66 0f 28 0d 69 d0 f9 	movapd -0x62f97(%rip),%xmm1        # 11ce0 <anon.ecd23e98f399f5c0453ba372c2973f18.4.llvm.13954439057034743015+0x250>
+   74c76:	ff 
+   74c77:	66 0f 1f 84 00 00 00 	nopw   0x0(%rax,%rax,1)
+   74c7e:	00 00 
+   74c80:	f2 44 0f 10 64 38 d0 	movsd  -0x30(%rax,%rdi,1),%xmm12
+   74c87:	f2 44 0f 10 5c 38 f0 	movsd  -0x10(%rax,%rdi,1),%xmm11
+   74c8e:	66 44 0f 16 64 38 e0 	movhpd -0x20(%rax,%rdi,1),%xmm12
+   74c95:	66 44 0f 16 1c 38    	movhpd (%rax,%rdi,1),%xmm11
+   74c9b:	66 44 0f 28 74 24 60 	movapd 0x60(%rsp),%xmm14
+   74ca2:	66 45 0f 28 ce       	movapd %xmm14,%xmm9
+   74ca7:	66 45 0f 59 cc       	mulpd  %xmm12,%xmm9
+   74cac:	66 45 0f 28 ee       	movapd %xmm14,%xmm13
+   74cb1:	66 45 0f 59 eb       	mulpd  %xmm11,%xmm13
+   74cb6:	f2 45 0f 10 44 3f d0 	movsd  -0x30(%r15,%rdi,1),%xmm8
+   74cbd:	f2 41 0f 10 7c 3f f0 	movsd  -0x10(%r15,%rdi,1),%xmm7
+   74cc4:	66 45 0f 16 44 3f e0 	movhpd -0x20(%r15,%rdi,1),%xmm8
+   74ccb:	66 41 0f 16 3c 3f    	movhpd (%r15,%rdi,1),%xmm7
+   74cd1:	66 44 0f 28 bc 24 90 	movapd 0x90(%rsp),%xmm15
+   74cd8:	00 00 00 
+   74cdb:	66 45 0f 28 d7       	movapd %xmm15,%xmm10
+   74ce0:	66 45 0f 59 d0       	mulpd  %xmm8,%xmm10
+   74ce5:	66 45 0f 58 d1       	addpd  %xmm9,%xmm10
+   74cea:	66 45 0f 28 cf       	movapd %xmm15,%xmm9
+   74cef:	66 44 0f 59 cf       	mulpd  %xmm7,%xmm9
+   74cf4:	66 45 0f 58 cd       	addpd  %xmm13,%xmm9
+   74cf9:	66 45 0f 59 c6       	mulpd  %xmm14,%xmm8
+   74cfe:	66 41 0f 59 fe       	mulpd  %xmm14,%xmm7
+   74d03:	66 45 0f 59 e7       	mulpd  %xmm15,%xmm12
+   74d08:	66 45 0f 5c c4       	subpd  %xmm12,%xmm8
+   74d0d:	66 45 0f 59 df       	mulpd  %xmm15,%xmm11
+   74d12:	66 41 0f 5c fb       	subpd  %xmm11,%xmm7
+   74d17:	66 45 0f 28 da       	movapd %xmm10,%xmm11
+   74d1c:	66 44 0f 28 3d 9b cc 	movapd -0x63365(%rip),%xmm15        # 119c0 <GCC_except_table145+0x30>
+   74d23:	f9 ff 
+   74d25:	66 45 0f 54 df       	andpd  %xmm15,%xmm11
+   74d2a:	66 45 0f 28 e3       	movapd %xmm11,%xmm12
+   74d2f:	66 44 0f c2 e1 04    	cmpneqpd %xmm1,%xmm12
+   74d35:	66 44 0f c2 d9 07    	cmpordpd %xmm1,%xmm11
+   74d3b:	66 45 0f 54 dc       	andpd  %xmm12,%xmm11
+   74d40:	66 45 0f 28 e1       	movapd %xmm9,%xmm12
+   74d45:	66 45 0f 54 e7       	andpd  %xmm15,%xmm12
+   74d4a:	66 45 0f 28 ec       	movapd %xmm12,%xmm13
+   74d4f:	66 44 0f c2 e9 04    	cmpneqpd %xmm1,%xmm13
+   74d55:	66 44 0f c2 e1 07    	cmpordpd %xmm1,%xmm12
+   74d5b:	66 45 0f 54 e5       	andpd  %xmm13,%xmm12
+   74d60:	66 45 0f 28 e8       	movapd %xmm8,%xmm13
+   74d65:	66 45 0f 54 ef       	andpd  %xmm15,%xmm13
+   74d6a:	66 45 0f 28 f5       	movapd %xmm13,%xmm14
+   74d6f:	66 44 0f c2 f1 04    	cmpneqpd %xmm1,%xmm14
+   74d75:	66 44 0f c2 e9 07    	cmpordpd %xmm1,%xmm13
+   74d7b:	66 45 0f 54 ee       	andpd  %xmm14,%xmm13
+   74d80:	66 45 0f 54 eb       	andpd  %xmm11,%xmm13
+   74d85:	66 41 0f 54 d5       	andpd  %xmm13,%xmm2
+   74d8a:	66 44 0f 28 df       	movapd %xmm7,%xmm11
+   74d8f:	66 45 0f 54 df       	andpd  %xmm15,%xmm11
+   74d94:	66 45 0f 28 eb       	movapd %xmm11,%xmm13
+   74d99:	66 44 0f c2 e9 04    	cmpneqpd %xmm1,%xmm13
+   74d9f:	66 44 0f c2 d9 07    	cmpordpd %xmm1,%xmm11
+   74da5:	66 45 0f 54 dd       	andpd  %xmm13,%xmm11
+   74daa:	66 45 0f 54 dc       	andpd  %xmm12,%xmm11
+   74daf:	66 41 0f 54 c3       	andpd  %xmm11,%xmm0
+   74db4:	66 44 0f 13 54 38 d0 	movlpd %xmm10,-0x30(%rax,%rdi,1)
+   74dbb:	66 44 0f 17 54 38 e0 	movhpd %xmm10,-0x20(%rax,%rdi,1)
+   74dc2:	66 45 0f 57 db       	xorpd  %xmm11,%xmm11
+   74dc7:	66 45 0f c2 d3 00    	cmpeqpd %xmm11,%xmm10
+   74dcd:	66 41 0f fb f2       	psubq  %xmm10,%xmm6
+   74dd2:	66 44 0f 13 4c 38 f0 	movlpd %xmm9,-0x10(%rax,%rdi,1)
+   74dd9:	66 44 0f 17 0c 38    	movhpd %xmm9,(%rax,%rdi,1)
+   74ddf:	66 45 0f c2 cb 00    	cmpeqpd %xmm11,%xmm9
+   74de5:	66 41 0f fb d9       	psubq  %xmm9,%xmm3
+   74dea:	66 45 0f 13 44 3f d0 	movlpd %xmm8,-0x30(%r15,%rdi,1)
+   74df1:	66 45 0f 17 44 3f e0 	movhpd %xmm8,-0x20(%r15,%rdi,1)
+   74df8:	66 45 0f c2 c3 00    	cmpeqpd %xmm11,%xmm8
+   74dfe:	66 41 0f 56 e8       	orpd   %xmm8,%xmm5
+   74e03:	66 41 0f 13 7c 3f f0 	movlpd %xmm7,-0x10(%r15,%rdi,1)
+   74e0a:	66 41 0f 17 3c 3f    	movhpd %xmm7,(%r15,%rdi,1)
+   74e10:	66 41 0f c2 fb 00    	cmpeqpd %xmm11,%xmm7
+   74e16:	66 0f 56 e7          	orpd   %xmm7,%xmm4
+   74e1a:	48 83 c7 40          	add    $0x40,%rdi
+   74e1e:	48 83 c2 04          	add    $0x4,%rdx
+   74e22:	0f 85 58 fe ff ff    	jne    74c80 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1330>
+   74e28:	66 0f d4 de          	paddq  %xmm6,%xmm3
+   74e2c:	66 0f 70 cb ee       	pshufd $0xee,%xmm3,%xmm1
+   74e31:	66 0f d4 cb          	paddq  %xmm3,%xmm1
+   74e35:	66 48 0f 7e cb       	movq   %xmm1,%rbx
+   74e3a:	66 0f 56 e5          	orpd   %xmm5,%xmm4
+   74e3e:	66 0f 73 f4 3f       	psllq  $0x3f,%xmm4
+   74e43:	66 0f 50 d4          	movmskpd %xmm4,%edx
+   74e47:	85 d2                	test   %edx,%edx
+   74e49:	41 0f 95 c6          	setne  %r14b
+   74e4d:	66 0f 54 c2          	andpd  %xmm2,%xmm0
+   74e51:	66 0f 73 f0 3f       	psllq  $0x3f,%xmm0
+   74e56:	66 0f 50 d0          	movmskpd %xmm0,%edx
+   74e5a:	83 fa 03             	cmp    $0x3,%edx
+   74e5d:	0f 94 c2             	sete   %dl
+   74e60:	48 8b 7c 24 10       	mov    0x10(%rsp),%rdi
+   74e65:	4c 8b 44 24 58       	mov    0x58(%rsp),%r8
+   74e6a:	49 39 f0             	cmp    %rsi,%r8
+   74e6d:	49 0f 42 f0          	cmovb  %r8,%rsi
+   74e71:	49 89 ca             	mov    %rcx,%r10
+   74e74:	49 29 f2             	sub    %rsi,%r10
+   74e77:	48 c1 e1 04          	shl    $0x4,%rcx
+   74e7b:	48 83 c1 18          	add    $0x18,%rcx
+   74e7f:	66 0f 57 e4          	xorpd  %xmm4,%xmm4
+   74e83:	66 0f 28 ac 24 a0 00 	movapd 0xa0(%rsp),%xmm5
+   74e8a:	00 00 
+   74e8c:	66 0f 28 b4 24 90 00 	movapd 0x90(%rsp),%xmm6
+   74e93:	00 00 
+   74e95:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+   74e9c:	00 00 00 00 
+   74ea0:	f2 0f 10 14 08       	movsd  (%rax,%rcx,1),%xmm2
+   74ea5:	66 0f 28 dd          	movapd %xmm5,%xmm3
+   74ea9:	f2 0f 59 da          	mulsd  %xmm2,%xmm3
+   74ead:	f2 41 0f 10 04 0f    	movsd  (%r15,%rcx,1),%xmm0
+   74eb3:	66 0f 28 ce          	movapd %xmm6,%xmm1
+   74eb7:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   74ebb:	f2 0f 58 cb          	addsd  %xmm3,%xmm1
+   74ebf:	66 48 0f 7e ce       	movq   %xmm1,%rsi
+   74ec4:	f2 0f 59 c5          	mulsd  %xmm5,%xmm0
+   74ec8:	f2 0f 59 d6          	mulsd  %xmm6,%xmm2
+   74ecc:	f2 0f 5c c2          	subsd  %xmm2,%xmm0
+   74ed0:	66 49 0f 7e c0       	movq   %xmm0,%r8
+   74ed5:	48 c1 ee 34          	shr    $0x34,%rsi
+   74ed9:	81 e6 ff 07 00 00    	and    $0x7ff,%esi
+   74edf:	81 fe ff 07 00 00    	cmp    $0x7ff,%esi
+   74ee5:	40 0f 92 c6          	setb   %sil
+   74ee9:	49 c1 e8 34          	shr    $0x34,%r8
+   74eed:	41 81 e0 ff 07 00 00 	and    $0x7ff,%r8d
+   74ef4:	41 81 f8 ff 07 00 00 	cmp    $0x7ff,%r8d
+   74efb:	41 0f 92 c0          	setb   %r8b
+   74eff:	41 20 f0             	and    %sil,%r8b
+   74f02:	44 20 c2             	and    %r8b,%dl
+   74f05:	66 0f 28 d1          	movapd %xmm1,%xmm2
+   74f09:	f2 0f c2 d4 00       	cmpeqsd %xmm4,%xmm2
+   74f0e:	66 48 0f 7e d6       	movq   %xmm2,%rsi
+   74f13:	48 29 f3             	sub    %rsi,%rbx
+   74f16:	66 0f 2e c4          	ucomisd %xmm4,%xmm0
+   74f1a:	f2 0f 11 0c 08       	movsd  %xmm1,(%rax,%rcx,1)
+   74f1f:	40 0f 9b c6          	setnp  %sil
+   74f23:	41 0f 94 c0          	sete   %r8b
+   74f27:	41 20 f0             	and    %sil,%r8b
+   74f2a:	45 08 c6             	or     %r8b,%r14b
+   74f2d:	f2 41 0f 11 04 0f    	movsd  %xmm0,(%r15,%rcx,1)
+   74f33:	48 83 c1 10          	add    $0x10,%rcx
+   74f37:	49 ff c2             	inc    %r10
+   74f3a:	0f 85 60 ff ff ff    	jne    74ea0 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1550>
+   74f40:	84 d2                	test   %dl,%dl
+   74f42:	0f 84 9f 03 00 00    	je     752e7 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1997>
+   74f48:	48 85 db             	test   %rbx,%rbx
+   74f4b:	74 05                	je     74f52 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1602>
+   74f4d:	e8 5e 7b fd ff       	call   4cab0 <<alloc::vec::Vec<(usize, f64)>>::retain::<<ropt::incremental_qr::IncrementalQr>::append_in_place::{closure#2}>>
+   74f52:	4c 8b 7c 24 08       	mov    0x8(%rsp),%r15
+   74f57:	49 29 df             	sub    %rbx,%r15
+   74f5a:	41 f6 c6 01          	test   $0x1,%r14b
+   74f5e:	0f 84 85 00 00 00    	je     74fe9 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1699>
+   74f64:	48 8b 84 24 80 00 00 	mov    0x80(%rsp),%rax
+   74f6b:	00 
+   74f6c:	48 89 ea             	mov    %rbp,%rdx
+   74f6f:	48 89 e9             	mov    %rbp,%rcx
+   74f72:	48 39 c5             	cmp    %rax,%rbp
+   74f75:	4c 8b 8c 24 c0 00 00 	mov    0xc0(%rsp),%r9
+   74f7c:	00 
+   74f7d:	4c 8b 94 24 c8 00 00 	mov    0xc8(%rsp),%r10
+   74f84:	00 
+   74f85:	72 15                	jb     74f9c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x164c>
+   74f87:	48 89 e9             	mov    %rbp,%rcx
+   74f8a:	eb 77                	jmp    75003 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x16b3>
+   74f8c:	0f 1f 40 00          	nopl   0x0(%rax)
+   74f90:	48 ff c2             	inc    %rdx
+   74f93:	49 83 c4 10          	add    $0x10,%r12
+   74f97:	48 39 d0             	cmp    %rdx,%rax
+   74f9a:	74 5f                	je     74ffb <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x16ab>
+   74f9c:	48 8b b4 24 80 00 00 	mov    0x80(%rsp),%rsi
+   74fa3:	00 
+   74fa4:	48 39 f2             	cmp    %rsi,%rdx
+   74fa7:	0f 83 22 04 00 00    	jae    753cf <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a7f>
+   74fad:	48 8b 7c 24 78       	mov    0x78(%rsp),%rdi
+   74fb2:	f2 42 0f 10 04 27    	movsd  (%rdi,%r12,1),%xmm0
+   74fb8:	66 0f 57 c9          	xorpd  %xmm1,%xmm1
+   74fbc:	66 0f 2e c1          	ucomisd %xmm1,%xmm0
+   74fc0:	75 02                	jne    74fc4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1674>
+   74fc2:	7b cc                	jnp    74f90 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1640>
+   74fc4:	48 39 f1             	cmp    %rsi,%rcx
+   74fc7:	0f 83 2a 04 00 00    	jae    753f7 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1aa7>
+   74fcd:	4a 8b 74 27 f8       	mov    -0x8(%rdi,%r12,1),%rsi
+   74fd2:	49 89 c8             	mov    %rcx,%r8
+   74fd5:	49 c1 e0 04          	shl    $0x4,%r8
+   74fd9:	4a 89 34 07          	mov    %rsi,(%rdi,%r8,1)
+   74fdd:	f2 42 0f 11 44 07 08 	movsd  %xmm0,0x8(%rdi,%r8,1)
+   74fe4:	48 ff c1             	inc    %rcx
+   74fe7:	eb a7                	jmp    74f90 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1640>
+   74fe9:	4c 8b 8c 24 c0 00 00 	mov    0xc0(%rsp),%r9
+   74ff0:	00 
+   74ff1:	4c 8b 94 24 c8 00 00 	mov    0xc8(%rsp),%r10
+   74ff8:	00 
+   74ff9:	eb 15                	jmp    75010 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x16c0>
+   74ffb:	48 8b 84 24 80 00 00 	mov    0x80(%rsp),%rax
+   75002:	00 
+   75003:	48 39 c1             	cmp    %rax,%rcx
+   75006:	77 08                	ja     75010 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x16c0>
+   75008:	48 89 8c 24 80 00 00 	mov    %rcx,0x80(%rsp)
+   7500f:	00 
+   75010:	4d 89 79 40          	mov    %r15,0x40(%r9)
+   75014:	49 83 fa 01          	cmp    $0x1,%r10
+   75018:	b8 00 00 00 00       	mov    $0x0,%eax
+   7501d:	48 8b 94 24 e8 00 00 	mov    0xe8(%rsp),%rdx
+   75024:	00 
+   75025:	48 0f 45 c2          	cmovne %rdx,%rax
+   75029:	0f 94 c1             	sete   %cl
+   7502c:	48 85 d2             	test   %rdx,%rdx
+   7502f:	0f 95 c2             	setne  %dl
+   75032:	84 d1                	test   %dl,%cl
+   75034:	0f 85 d0 02 00 00    	jne    7530a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x19ba>
+   7503a:	4c 39 d0             	cmp    %r10,%rax
+   7503d:	0f 83 c7 02 00 00    	jae    7530a <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x19ba>
+   75043:	48 8b 94 24 10 01 00 	mov    0x110(%rsp),%rdx
+   7504a:	00 
+   7504b:	f2 0f 10 04 c2       	movsd  (%rdx,%rax,8),%xmm0
+   75050:	66 0f 28 a4 24 a0 00 	movapd 0xa0(%rsp),%xmm4
+   75057:	00 00 
+   75059:	66 0f 28 cc          	movapd %xmm4,%xmm1
+   7505d:	f2 0f 59 c8          	mulsd  %xmm0,%xmm1
+   75061:	66 0f 28 9c 24 00 01 	movapd 0x100(%rsp),%xmm3
+   75068:	00 00 
+   7506a:	66 0f 28 d3          	movapd %xmm3,%xmm2
+   7506e:	f2 0f 59 94 24 90 00 	mulsd  0x90(%rsp),%xmm2
+   75075:	00 00 
+   75077:	f2 0f 58 d1          	addsd  %xmm1,%xmm2
+   7507b:	66 48 0f 7e d1       	movq   %xmm2,%rcx
+   75080:	f2 0f 11 14 c2       	movsd  %xmm2,(%rdx,%rax,8)
+   75085:	66 0f 14 d8          	unpcklpd %xmm0,%xmm3
+   75089:	66 0f 59 dc          	mulpd  %xmm4,%xmm3
+   7508d:	66 0f 28 c3          	movapd %xmm3,%xmm0
+   75091:	66 0f 15 c3          	unpckhpd %xmm3,%xmm0
+   75095:	f2 0f 5c d8          	subsd  %xmm0,%xmm3
+   75099:	66 48 0f 7e d8       	movq   %xmm3,%rax
+   7509e:	48 c1 e9 34          	shr    $0x34,%rcx
+   750a2:	81 e1 ff 07 00 00    	and    $0x7ff,%ecx
+   750a8:	48 c1 e8 34          	shr    $0x34,%rax
+   750ac:	25 ff 07 00 00       	and    $0x7ff,%eax
+   750b1:	3d ff 07 00 00       	cmp    $0x7ff,%eax
+   750b6:	0f 93 c0             	setae  %al
+   750b9:	81 f9 fe 07 00 00    	cmp    $0x7fe,%ecx
+   750bf:	0f 87 9a 01 00 00    	ja     7525f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x190f>
+   750c5:	49 89 ee             	mov    %rbp,%r14
+   750c8:	84 c0                	test   %al,%al
+   750ca:	0f 84 24 eb ff ff    	je     73bf4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x2a4>
+   750d0:	e9 8a 01 00 00       	jmp    7525f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x190f>
+   750d5:	66 0f 28 c3          	movapd %xmm3,%xmm0
+   750d9:	f2 0f 59 05 af f4 f9 	mulsd  -0x60b51(%rip),%xmm0        # 14590 <anon.78be766de06bf9b2fc5ac4aca45dc8c0.28.llvm.16961363317406328107+0x3bd>
+   750e0:	ff 
+   750e1:	f2 0f 59 c3          	mulsd  %xmm3,%xmm0
+   750e5:	f2 0f 10 8c 24 68 01 	movsd  0x168(%rsp),%xmm1
+   750ec:	00 00 
+   750ee:	f2 0f 58 c8          	addsd  %xmm0,%xmm1
+   750f2:	66 48 0f 7e c8       	movq   %xmm1,%rax
+   750f7:	48 8b b4 24 c0 00 00 	mov    0xc0(%rsp),%rsi
+   750fe:	00 
+   750ff:	f2 0f 11 4e 38       	movsd  %xmm1,0x38(%rsi)
+   75104:	48 c1 e8 34          	shr    $0x34,%rax
+   75108:	25 ff 07 00 00       	and    $0x7ff,%eax
+   7510d:	3d fe 07 00 00       	cmp    $0x7fe,%eax
+   75112:	0f 87 47 01 00 00    	ja     7525f <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x190f>
+   75118:	66 0f 28 c1          	movapd %xmm1,%xmm0
+   7511c:	48 8b 84 24 58 01 00 	mov    0x158(%rsp),%rax
+   75123:	00 
+   75124:	48 8b bc 24 70 01 00 	mov    0x170(%rsp),%rdi
+   7512b:	00 
+   7512c:	48 85 ff             	test   %rdi,%rdi
+   7512f:	4c 8b ac 24 38 01 00 	mov    0x138(%rsp),%r13
+   75136:	00 
+   75137:	4c 8b b4 24 30 01 00 	mov    0x130(%rsp),%r14
+   7513e:	00 
+   7513f:	4c 8b a4 24 50 01 00 	mov    0x150(%rsp),%r12
+   75146:	00 
+   75147:	48 8b 9c 24 60 01 00 	mov    0x160(%rsp),%rbx
+   7514e:	00 
+   7514f:	4c 8b 7c 24 08       	mov    0x8(%rsp),%r15
+   75154:	48 8b 94 24 78 01 00 	mov    0x178(%rsp),%rdx
+   7515b:	00 
+   7515c:	0f 85 92 e9 ff ff    	jne    73af4 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a4>
+   75162:	4c 8b 7c 24 18       	mov    0x18(%rsp),%r15
+   75167:	49 c7 07 ff ff ff ff 	movq   $0xffffffffffffffff,(%r15)
+   7516e:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   75173:	48 85 f6             	test   %rsi,%rsi
+   75176:	74 14                	je     7518c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x183c>
+   75178:	48 8b 7c 24 78       	mov    0x78(%rsp),%rdi
+   7517d:	48 c1 e6 04          	shl    $0x4,%rsi
+   75181:	ba 08 00 00 00       	mov    $0x8,%edx
+   75186:	ff 15 fc c6 07 00    	call   *0x7c6fc(%rip)        # f1888 <_DYNAMIC+0x210>
+   7518c:	48 8b 74 24 20       	mov    0x20(%rsp),%rsi
+   75191:	48 85 f6             	test   %rsi,%rsi
+   75194:	74 14                	je     751aa <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x185a>
+   75196:	48 8b 7c 24 28       	mov    0x28(%rsp),%rdi
+   7519b:	48 c1 e6 04          	shl    $0x4,%rsi
+   7519f:	ba 08 00 00 00       	mov    $0x8,%edx
+   751a4:	ff 15 de c6 07 00    	call   *0x7c6de(%rip)        # f1888 <_DYNAMIC+0x210>
+   751aa:	48 8b 74 24 38       	mov    0x38(%rsp),%rsi
+   751af:	48 85 f6             	test   %rsi,%rsi
+   751b2:	74 27                	je     751db <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x188b>
+   751b4:	48 8b 7c 24 40       	mov    0x40(%rsp),%rdi
+   751b9:	48 c1 e6 04          	shl    $0x4,%rsi
+   751bd:	ba 08 00 00 00       	mov    $0x8,%edx
+   751c2:	ff 15 c0 c6 07 00    	call   *0x7c6c0(%rip)        # f1888 <_DYNAMIC+0x210>
+   751c8:	eb 11                	jmp    751db <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x188b>
+   751ca:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   751d1:	00 00 80 
+   751d4:	48 83 c0 fe          	add    $0xfffffffffffffffe,%rax
+   751d8:	49 89 07             	mov    %rax,(%r15)
+   751db:	4c 89 f8             	mov    %r15,%rax
+   751de:	48 81 c4 98 01 00 00 	add    $0x198,%rsp
+   751e5:	5b                   	pop    %rbx
+   751e6:	41 5c                	pop    %r12
+   751e8:	41 5d                	pop    %r13
+   751ea:	41 5e                	pop    %r14
+   751ec:	41 5f                	pop    %r15
+   751ee:	5d                   	pop    %rbp
+   751ef:	c3                   	ret
+   751f0:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   751f7:	00 00 80 
+   751fa:	eb dc                	jmp    751d8 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1888>
+   751fc:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   75203:	00 00 80 
+   75206:	eb 0e                	jmp    75216 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18c6>
+   75208:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   7520f:	00 00 80 
+   75212:	48 83 c0 02          	add    $0x2,%rax
+   75216:	4c 8b 7c 24 18       	mov    0x18(%rsp),%r15
+   7521b:	49 89 07             	mov    %rax,(%r15)
+   7521e:	48 8b 44 24 50       	mov    0x50(%rsp),%rax
+   75223:	49 89 47 08          	mov    %rax,0x8(%r15)
+   75227:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   7522c:	48 85 f6             	test   %rsi,%rsi
+   7522f:	0f 85 43 ff ff ff    	jne    75178 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1828>
+   75235:	e9 52 ff ff ff       	jmp    7518c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x183c>
+   7523a:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   75241:	00 00 80 
+   75244:	4c 8b 7c 24 18       	mov    0x18(%rsp),%r15
+   75249:	49 89 07             	mov    %rax,(%r15)
+   7524c:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   75251:	48 85 f6             	test   %rsi,%rsi
+   75254:	0f 85 1e ff ff ff    	jne    75178 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1828>
+   7525a:	e9 2d ff ff ff       	jmp    7518c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x183c>
+   7525f:	4c 8b 7c 24 18       	mov    0x18(%rsp),%r15
+   75264:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   7526b:	00 00 80 
+   7526e:	49 89 07             	mov    %rax,(%r15)
+   75271:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   75276:	48 85 f6             	test   %rsi,%rsi
+   75279:	0f 85 f9 fe ff ff    	jne    75178 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1828>
+   7527f:	e9 08 ff ff ff       	jmp    7518c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x183c>
+   75284:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   7528b:	00 00 80 
+   7528e:	48 83 c0 fe          	add    $0xfffffffffffffffe,%rax
+   75292:	4c 8b 7c 24 18       	mov    0x18(%rsp),%r15
+   75297:	49 89 07             	mov    %rax,(%r15)
+   7529a:	48 8b 84 24 20 01 00 	mov    0x120(%rsp),%rax
+   752a1:	00 
+   752a2:	49 89 47 08          	mov    %rax,0x8(%r15)
+   752a6:	48 8b 84 24 18 01 00 	mov    0x118(%rsp),%rax
+   752ad:	00 
+   752ae:	49 89 47 10          	mov    %rax,0x10(%r15)
+   752b2:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   752b7:	48 85 f6             	test   %rsi,%rsi
+   752ba:	0f 85 b8 fe ff ff    	jne    75178 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1828>
+   752c0:	e9 c7 fe ff ff       	jmp    7518c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x183c>
+   752c5:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   752cc:	00 00 80 
+   752cf:	e9 47 ff ff ff       	jmp    7521b <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18cb>
+   752d4:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   752db:	00 00 80 
+   752de:	48 83 c0 02          	add    $0x2,%rax
+   752e2:	e9 34 ff ff ff       	jmp    7521b <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x18cb>
+   752e7:	48 b8 02 00 00 00 00 	movabs $0x8000000000000002,%rax
+   752ee:	00 00 80 
+   752f1:	4d 89 cf             	mov    %r9,%r15
+   752f4:	49 89 01             	mov    %rax,(%r9)
+   752f7:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   752fc:	48 85 f6             	test   %rsi,%rsi
+   752ff:	0f 85 73 fe ff ff    	jne    75178 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1828>
+   75305:	e9 82 fe ff ff       	jmp    7518c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x183c>
+   7530a:	48 8d 3d 26 06 fa ff 	lea    -0x5f9da(%rip),%rdi        # 15937 <anon.b6e3507f4bd100d934f469375f77cb9a.6.llvm.30799557767561583+0x3eb>
+   75311:	48 8d 15 00 8b 07 00 	lea    0x78b00(%rip),%rdx        # ede18 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0xf0>
+   75318:	be 37 00 00 00       	mov    $0x37,%esi
+   7531d:	ff 15 75 c6 07 00    	call   *0x7c675(%rip)        # f1998 <_DYNAMIC+0x320>
+   75323:	e9 ff 00 00 00       	jmp    75427 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ad7>
+   75328:	4c 89 f5             	mov    %r14,%rbp
+   7532b:	48 89 da             	mov    %rbx,%rdx
+   7532e:	48 8d 0d 83 8a 07 00 	lea    0x78a83(%rip),%rcx        # eddb8 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x90>
+   75335:	eb 42                	jmp    75379 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a29>
+   75337:	48 89 da             	mov    %rbx,%rdx
+   7533a:	48 8d 0d 5f 8a 07 00 	lea    0x78a5f(%rip),%rcx        # edda0 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x78>
+   75341:	eb 36                	jmp    75379 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a29>
+   75343:	bd 01 00 00 00       	mov    $0x1,%ebp
+   75348:	31 db                	xor    %ebx,%ebx
+   7534a:	31 d2                	xor    %edx,%edx
+   7534c:	48 8d 0d 25 8b 07 00 	lea    0x78b25(%rip),%rcx        # ede78 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x150>
+   75353:	eb 24                	jmp    75379 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a29>
+   75355:	48 89 da             	mov    %rbx,%rdx
+   75358:	48 8d 0d 01 8b 07 00 	lea    0x78b01(%rip),%rcx        # ede60 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x138>
+   7535f:	4c 89 c5             	mov    %r8,%rbp
+   75362:	eb 15                	jmp    75379 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a29>
+   75364:	31 ed                	xor    %ebp,%ebp
+   75366:	48 8d 0d 63 8a 07 00 	lea    0x78a63(%rip),%rcx        # eddd0 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0xa8>
+   7536d:	eb 0a                	jmp    75379 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a29>
+   7536f:	48 89 da             	mov    %rbx,%rdx
+   75372:	48 8d 0d 6f 8a 07 00 	lea    0x78a6f(%rip),%rcx        # edde8 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0xc0>
+   75379:	48 89 ef             	mov    %rbp,%rdi
+   7537c:	48 89 de             	mov    %rbx,%rsi
+   7537f:	ff 15 23 c7 07 00    	call   *0x7c723(%rip)        # f1aa8 <_DYNAMIC+0x430>
+   75385:	e9 9d 00 00 00       	jmp    75427 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ad7>
+   7538a:	48 8b bc 24 d8 00 00 	mov    0xd8(%rsp),%rdi
+   75391:	00 
+   75392:	eb 0f                	jmp    753a3 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1a53>
+   75394:	48 8d 05 e5 88 07 00 	lea    0x788e5(%rip),%rax        # edc80 <anon.b6e3507f4bd100d934f469375f77cb9a.7.llvm.30799557767561583+0x468>
+   7539b:	48 89 84 24 e0 00 00 	mov    %rax,0xe0(%rsp)
+   753a2:	00 
+   753a3:	48 8b b4 24 d8 00 00 	mov    0xd8(%rsp),%rsi
+   753aa:	00 
+   753ab:	48 8b 94 24 e0 00 00 	mov    0xe0(%rsp),%rdx
+   753b2:	00 
+   753b3:	ff 15 e7 c5 07 00    	call   *0x7c5e7(%rip)        # f19a0 <_DYNAMIC+0x328>
+   753b9:	eb 6c                	jmp    75427 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ad7>
+   753bb:	48 89 ef             	mov    %rbp,%rdi
+   753be:	48 89 8c 24 b0 00 00 	mov    %rcx,0xb0(%rsp)
+   753c5:	00 
+   753c6:	48 8d 05 bb 89 07 00 	lea    0x789bb(%rip),%rax        # edd88 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x60>
+   753cd:	eb 3a                	jmp    75409 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ab9>
+   753cf:	48 89 d7             	mov    %rdx,%rdi
+   753d2:	48 89 b4 24 b0 00 00 	mov    %rsi,0xb0(%rsp)
+   753d9:	00 
+   753da:	48 8d 05 4f 8a 07 00 	lea    0x78a4f(%rip),%rax        # ede30 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x108>
+   753e1:	eb 26                	jmp    75409 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ab9>
+   753e3:	4c 89 ef             	mov    %r13,%rdi
+   753e6:	48 89 94 24 b0 00 00 	mov    %rdx,0xb0(%rsp)
+   753ed:	00 
+   753ee:	48 8d 05 0b 8a 07 00 	lea    0x78a0b(%rip),%rax        # ede00 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0xd8>
+   753f5:	eb 12                	jmp    75409 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ab9>
+   753f7:	48 89 cf             	mov    %rcx,%rdi
+   753fa:	48 89 b4 24 b0 00 00 	mov    %rsi,0xb0(%rsp)
+   75401:	00 
+   75402:	48 8d 05 3f 8a 07 00 	lea    0x78a3f(%rip),%rax        # ede48 <anon.cf753362dbb52f32185636b8aca47df3.48.llvm.8500038337053370796+0x120>
+   75409:	48 89 84 24 b8 00 00 	mov    %rax,0xb8(%rsp)
+   75410:	00 
+   75411:	48 8b b4 24 b0 00 00 	mov    0xb0(%rsp),%rsi
+   75418:	00 
+   75419:	48 8b 94 24 b8 00 00 	mov    0xb8(%rsp),%rdx
+   75420:	00 
+   75421:	ff 15 79 c5 07 00    	call   *0x7c579(%rip)        # f19a0 <_DYNAMIC+0x328>
+   75427:	0f 0b                	ud2
+   75429:	eb 0c                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   7542b:	eb 0a                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   7542d:	eb 08                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   7542f:	eb 06                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   75431:	eb 04                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   75433:	eb 02                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   75435:	eb 00                	jmp    75437 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1ae7>
+   75437:	48 89 c3             	mov    %rax,%rbx
+   7543a:	48 8b 74 24 70       	mov    0x70(%rsp),%rsi
+   7543f:	48 85 f6             	test   %rsi,%rsi
+   75442:	75 1c                	jne    75460 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1b10>
+   75444:	48 8b 74 24 20       	mov    0x20(%rsp),%rsi
+   75449:	48 85 f6             	test   %rsi,%rsi
+   7544c:	75 30                	jne    7547e <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1b2e>
+   7544e:	48 8b 74 24 38       	mov    0x38(%rsp),%rsi
+   75453:	48 85 f6             	test   %rsi,%rsi
+   75456:	75 44                	jne    7549c <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1b4c>
+   75458:	48 89 df             	mov    %rbx,%rdi
+   7545b:	e8 10 5f 07 00       	call   eb370 <_Unwind_Resume@plt>
+   75460:	48 8b 7c 24 78       	mov    0x78(%rsp),%rdi
+   75465:	48 c1 e6 04          	shl    $0x4,%rsi
+   75469:	ba 08 00 00 00       	mov    $0x8,%edx
+   7546e:	ff 15 14 c4 07 00    	call   *0x7c414(%rip)        # f1888 <_DYNAMIC+0x210>
+   75474:	48 8b 74 24 20       	mov    0x20(%rsp),%rsi
+   75479:	48 85 f6             	test   %rsi,%rsi
+   7547c:	74 d0                	je     7544e <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1afe>
+   7547e:	48 8b 7c 24 28       	mov    0x28(%rsp),%rdi
+   75483:	48 c1 e6 04          	shl    $0x4,%rsi
+   75487:	ba 08 00 00 00       	mov    $0x8,%edx
+   7548c:	ff 15 f6 c3 07 00    	call   *0x7c3f6(%rip)        # f1888 <_DYNAMIC+0x210>
+   75492:	48 8b 74 24 38       	mov    0x38(%rsp),%rsi
+   75497:	48 85 f6             	test   %rsi,%rsi
+   7549a:	74 bc                	je     75458 <<ropt::incremental_qr::IncrementalQr>::append_in_place+0x1b08>
+   7549c:	48 8b 7c 24 40       	mov    0x40(%rsp),%rdi
+   754a1:	48 c1 e6 04          	shl    $0x4,%rsi
+   754a5:	ba 08 00 00 00       	mov    $0x8,%edx
+   754aa:	ff 15 d8 c3 07 00    	call   *0x7c3d8(%rip)        # f1888 <_DYNAMIC+0x210>
+   754b0:	48 89 df             	mov    %rbx,%rdi
+   754b3:	e8 b8 5e 07 00       	call   eb370 <_Unwind_Resume@plt>
+   754b8:	cc                   	int3
+   754b9:	cc                   	int3
+   754ba:	cc                   	int3
+   754bb:	cc                   	int3
+   754bc:	cc                   	int3
+   754bd:	cc                   	int3
+   754be:	cc                   	int3
+   754bf:	cc                   	int3

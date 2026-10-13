@@ -1,0 +1,19 @@
+{
+  "scope": "single-threaded diagnostic; timing pass separate from counted solve; allocator wrapper still present in diagnostic binary; allocation traffic is not live/peak memory",
+  "counter_source_sha256": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+  "profile_source_sha256": "75eae14dbe4e9368d2d7d6d40dcd77a4969269d7f7fd419f06fc5c9776edb562",
+  "executables_sha256": {
+    "allocating": "fc9449676acfbe87a503aa960accbd4ac2dca132711fa1f8c08c029052a809f9",
+    "buffered": "95bf28742897003de46e6b921ae011f69dabcf9cb8f8110976eaa83e3a4dfcff"
+  },
+  "prepared_apply_into_checks": {
+    "normal": 100,
+    "jacobi": 100,
+    "block_jacobi": 100,
+    "allocation_calls": 0
+  },
+  "source_fingerprints": {
+    "allocating": "58606788a1929f199e738b72aae606343e9ed9b7b64a41c57d3f47a92fb7312e",
+    "buffered": "8babcaf94af300ba14a75ddf13fbfd01eed83ed838be2a7ae14f0f23154cdab7"
+  }
+}

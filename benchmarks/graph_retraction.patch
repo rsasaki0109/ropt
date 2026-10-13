@@ -1,0 +1,127 @@
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -78,7 +78,9 @@
+         let out = match self {
+             Self::Euclidean(_) => x + d,
+             Self::SO2 => DVector::from_element(1, SO2::exp(x[0]).retract(d[0]).log()),
+-            Self::SO3 => so3_values(decode_so3(x, 0).retract(Vector3::new(d[0], d[1], d[2]))),
++            Self::SO3 => {
++                so3_values(decode_so3(x.as_slice(), 0).retract(Vector3::new(d[0], d[1], d[2])))
++            }
+             Self::SE2 => se2_values(read_se2(x)?.retract(Vector3::new(d[0], d[1], d[2]))),
+             Self::SE3 => {
+                 se3_values(read_se3(x)?.retract(Tangent6::from_column_slice(d.as_slice())))
+@@ -86,6 +88,56 @@
+         };
+         self.validate(&out)?;
+         Ok(out)
++    }
++    // Private graph path: x is already validated, and storage ranges have the
++    // kind's dimensions. Use the same Lie operations as the owned public API.
++    fn retract_validated_into(self, x: &[f64], d: &[f64], out: &mut [f64]) -> Result<(), Error> {
++        if !d.iter().all(|v| v.is_finite()) {
++            return Err(Error::NonFinite);
++        }
++        match self {
++            Self::Euclidean(_) => {
++                for ((result, &value), &delta) in out.iter_mut().zip(x).zip(d) {
++                    *result = value + delta;
++                }
++            }
++            Self::SO2 => out[0] = SO2::exp(x[0]).retract(d[0]).log(),
++            Self::SO3 => {
++                let rotation = decode_so3(x, 0).retract(Vector3::new(d[0], d[1], d[2]));
++                let q = rotation.0.quaternion();
++                out.copy_from_slice(&[q.w, q.i, q.j, q.k]);
++            }
++            Self::SE2 => {
++                let pose = SE2 {
++                    translation: Vector2::new(x[0], x[1]),
++                    rotation: SO2::exp(x[2]),
++                }
++                .retract(Vector3::new(d[0], d[1], d[2]));
++                out.copy_from_slice(&[
++                    pose.translation[0],
++                    pose.translation[1],
++                    pose.rotation.log(),
++                ]);
++            }
++            Self::SE3 => {
++                let pose = SE3 {
++                    translation: Vector3::new(x[0], x[1], x[2]),
++                    rotation: decode_so3(x, 3),
++                }
++                .retract(Tangent6::from_column_slice(d));
++                let q = pose.rotation.0.quaternion();
++                out.copy_from_slice(&[
++                    pose.translation[0],
++                    pose.translation[1],
++                    pose.translation[2],
++                    q.w,
++                    q.i,
++                    q.j,
++                    q.k,
++                ]);
++            }
++        }
++        self.validate_slice(out)
+     }
+     /// Principal right-local coordinates Log(anchor^-1 * value).
+     pub fn local(self, anchor: &DVector<f64>, value: &DVector<f64>) -> Result<DVector<f64>, Error> {
+@@ -119,7 +171,7 @@
+         crate::manifold_autodiff::local(self, anchor, value)
+     }
+ }
+-fn decode_so3(x: &DVector<f64>, k: usize) -> SO3 {
++fn decode_so3(x: &[f64], k: usize) -> SO3 {
+     SO3(UnitQuaternion::new_normalize(Quaternion::new(
+         x[k],
+         x[k + 1],
+@@ -129,7 +181,7 @@
+ }
+ pub fn read_so3(x: &DVector<f64>) -> Result<SO3, Error> {
+     VariableKind::SO3.validate(x)?;
+-    Ok(decode_so3(x, 0))
++    Ok(decode_so3(x.as_slice(), 0))
+ }
+ pub fn so3_values(r: SO3) -> DVector<f64> {
+     let q = r.0.quaternion();
+@@ -161,7 +213,7 @@
+     VariableKind::SE3.validate(x)?;
+     Ok(SE3 {
+         translation: Vector3::new(x[0], x[1], x[2]),
+-        rotation: decode_so3(x, 3),
++        rotation: decode_so3(x.as_slice(), 3),
+     })
+ }
+ 
+@@ -576,19 +628,17 @@
+             return Err(Error::InvalidDimensions);
+         }
+         let mut out = x.clone();
+-        for (i, v) in self.variables.iter().enumerate() {
+-            let value = self.value(
+-                x,
+-                VariableId {
+-                    graph: self.identity,
+-                    index: i,
+-                },
+-            )?;
++        for v in &self.variables {
++            let value = &x.as_slice()[v.ambient.clone()];
++            // Preserve validation and failure order, including fixed/disconnected
++            // blocks. A failed update never escapes this owned output.
++            v.kind.validate_slice(value)?;
+             if let Some(t) = &v.tangent {
+-                let delta = d.rows(t.start, t.len()).into_owned();
+-                let updated = v.kind.retract(&value, &delta)?;
+-                out.rows_mut(v.ambient.start, v.ambient.len())
+-                    .copy_from(&updated);
++                v.kind.retract_validated_into(
++                    value,
++                    &d.as_slice()[t.clone()],
++                    &mut out.as_mut_slice()[v.ambient.clone()],
++                )?;
+             }
+         }
+         Ok(out)

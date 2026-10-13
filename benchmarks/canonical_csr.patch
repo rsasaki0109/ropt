@@ -1,0 +1,209 @@
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -57,6 +57,46 @@
+             values,
+         })
+     }
++    /// Internal checked handoff for assembly that already emits canonical rows.
++    /// No sorting, duplicate reduction or pruning is performed here.
++    pub(crate) fn from_canonical(
++        rows: usize,
++        columns: usize,
++        offsets: Vec<usize>,
++        indices: Vec<usize>,
++        values: Vec<f64>,
++    ) -> Result<Self, Error> {
++        if rows.checked_add(1) != Some(offsets.len())
++            || indices.len() != values.len()
++            || offsets.first() != Some(&0)
++            || offsets.last() != Some(&indices.len())
++            || offsets.windows(2).any(|pair| pair[0] > pair[1])
++            || indices.iter().any(|&column| column >= columns)
++        {
++            return Err(Error::InvalidDimensions);
++        }
++        for row in 0..rows {
++            if indices[offsets[row]..offsets[row + 1]]
++                .windows(2)
++                .any(|pair| pair[0] >= pair[1])
++            {
++                return Err(Error::InvalidDimensions);
++            }
++        }
++        if values.iter().any(|value| !value.is_finite()) {
++            return Err(Error::NonFinite);
++        }
++        if values.contains(&0.) {
++            return Err(Error::InvalidDimensions);
++        }
++        Ok(Self {
++            rows,
++            columns,
++            offsets,
++            indices,
++            values,
++        })
++    }
+     pub fn shape(&self) -> (usize, usize) {
+         (self.rows, self.columns)
+     }
+@@ -137,6 +177,60 @@
+         Ok(())
+     } else {
+         Err(Error::NonFinite)
++    }
++}
++
++#[cfg(test)]
++mod canonical_tests {
++    use super::*;
++
++    #[test]
++    fn canonical_handoff_checks_storage_and_matches_independent_products() {
++        let j = CsrMatrix::from_canonical(3, 4, vec![0, 2, 2, 3], vec![0, 3, 2], vec![2., -1., 4.])
++            .unwrap();
++        assert_eq!(
++            j.multiply(&DVector::from_vec(vec![1., 2., 3., 4.]))
++                .unwrap(),
++            DVector::from_vec(vec![-2., 0., 12.])
++        );
++        assert_eq!(
++            j.transpose_multiply(&DVector::from_vec(vec![1., 2., 3.]))
++                .unwrap(),
++            DVector::from_vec(vec![2., 0., 12., -1.])
++        );
++        for (rows, columns, offsets, indices, values) in [
++            (2, 3, vec![0], vec![], vec![]),
++            (1, 2, vec![1, 1], vec![0], vec![1.]),
++            (2, 2, vec![0, 2, 1], vec![0], vec![1.]),
++            (1, 2, vec![0, 2], vec![0], vec![1.]),
++            (1, 2, vec![0, 1], vec![2], vec![1.]),
++            (1, 3, vec![0, 2], vec![2, 1], vec![1., 2.]),
++            (1, 3, vec![0, 2], vec![1, 1], vec![1., 2.]),
++            (1, 3, vec![0, 1], vec![0], vec![]),
++            (usize::MAX, 0, vec![0], vec![], vec![]),
++        ] {
++            assert_eq!(
++                CsrMatrix::from_canonical(rows, columns, offsets, indices, values).unwrap_err(),
++                Error::InvalidDimensions
++            );
++        }
++        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
++            assert_eq!(
++                CsrMatrix::from_canonical(1, 1, vec![0, 1], vec![0], vec![value]).unwrap_err(),
++                Error::NonFinite
++            );
++        }
++        for value in [0., -0.] {
++            assert_eq!(
++                CsrMatrix::from_canonical(1, 1, vec![0, 1], vec![0], vec![value]).unwrap_err(),
++                Error::InvalidDimensions
++            );
++        }
++        let empty = CsrMatrix::from_canonical(2, 0, vec![0, 0, 0], vec![], vec![]).unwrap();
++        assert_eq!(
++            empty.multiply(&DVector::zeros(0)).unwrap(),
++            DVector::zeros(2)
++        );
+     }
+ }
+ /// Implementors must provide a symmetric positive definite operator and its positive diagonal.
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -619,26 +619,49 @@
+     }
+     fn evaluate_sparse(&self, x: &DVector<f64>) -> Result<(DVector<f64>, CsrMatrix), Error> {
+         let mut residuals = DVector::zeros(self.residual_size);
+-        let mut entries = Vec::new();
++        let mut offsets = Vec::with_capacity(self.residual_size + 1);
++        offsets.push(0);
++        let mut indices = Vec::new();
++        let mut values = Vec::new();
++        let mut order = Vec::new();
+         self.visit_factors(x, |row, f, residual, blocks| {
+             residuals.rows_mut(row, f.residuals).copy_from(&residual);
+-            for (id, block) in f.variables.iter().zip(blocks) {
+-                if let Some(t) = &self.variables[id.index].tangent {
+-                    for r in 0..f.residuals {
+-                        for c in 0..t.len() {
+-                            let v = block[(r, c)];
+-                            if v != 0.0 {
+-                                entries.push((row + r, t.start + c, v));
+-                            }
++            // Callback/whitening slots retain the caller's order. Only assembly
++            // visits distinct active blocks in their current tangent-column order.
++            order.clear();
++            order.extend(
++                (0..f.variables.len())
++                    .filter(|&slot| self.variables[f.variables[slot].index].tangent.is_some()),
++            );
++            order.sort_unstable_by_key(|&slot| f.variables[slot].index);
++            for r in 0..f.residuals {
++                for &slot in &order {
++                    let t = self.variables[f.variables[slot].index]
++                        .tangent
++                        .as_ref()
++                        .unwrap();
++                    let block = &blocks[slot];
++                    for c in 0..t.len() {
++                        let v = block[(r, c)];
++                        if v != 0.0 {
++                            indices.push(t.start + c);
++                            values.push(v);
+                         }
+                     }
+                 }
++                offsets.push(indices.len());
+             }
+             Ok(())
+         })?;
+         Ok((
+             residuals,
+-            CsrMatrix::from_triplets(self.residual_size, self.tangent_size, entries)?,
++            CsrMatrix::from_canonical(
++                self.residual_size,
++                self.tangent_size,
++                offsets,
++                indices,
++                values,
++            )?,
+         ))
+     }
+ }
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -345,17 +345,23 @@
+     fn into_sparse(self) -> Result<(DVector<f64>, CsrMatrix), Error> {
+         let j = match self.jacobian {
+             Jacobian::Sparse(j) => j,
+-            Jacobian::Dense(j) => CsrMatrix::from_triplets(
+-                j.nrows(),
+-                j.ncols(),
+-                (0..j.nrows())
+-                    .flat_map(|r| {
+-                        let j = &j;
+-                        (0..j.ncols())
+-                            .filter_map(move |c| (j[(r, c)] != 0.).then_some((r, c, j[(r, c)])))
+-                    })
+-                    .collect(),
+-            )?,
++            Jacobian::Dense(j) => {
++                let mut offsets = Vec::with_capacity(j.nrows() + 1);
++                offsets.push(0);
++                let mut indices = Vec::new();
++                let mut values = Vec::new();
++                for r in 0..j.nrows() {
++                    for c in 0..j.ncols() {
++                        let value = j[(r, c)];
++                        if value != 0. {
++                            indices.push(c);
++                            values.push(value);
++                        }
++                    }
++                    offsets.push(indices.len());
++                }
++                CsrMatrix::from_canonical(j.nrows(), j.ncols(), offsets, indices, values)?
++            }
+         };
+         Ok((self.residual, j))
+     }

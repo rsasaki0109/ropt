@@ -1,0 +1,64 @@
+{
+  "eligible": true,
+  "cases": {
+    "before": {
+      "complete": {
+        "samples": 12,
+        "median_ms": 16.921664,
+        "min_ms": 14.617412,
+        "max_ms": 20.322767,
+        "mean_ms": 17.002271666666665,
+        "stdev_ms": 1.787015185013562
+      },
+      "cached": {
+        "samples": 12,
+        "median_ms": 4.8488685,
+        "min_ms": 4.229986,
+        "max_ms": 8.193029,
+        "mean_ms": 5.2294677499999995,
+        "stdev_ms": 1.1143602425509387
+      },
+      "refresh": {
+        "samples": 12,
+        "median_ms": 11.6418935,
+        "min_ms": 10.387426,
+        "max_ms": 13.614282,
+        "mean_ms": 11.772803916666668,
+        "stdev_ms": 1.0845162949366305
+      }
+    },
+    "after": {
+      "complete": {
+        "samples": 12,
+        "median_ms": 16.0341755,
+        "min_ms": 14.429197,
+        "max_ms": 23.663608,
+        "mean_ms": 16.951854,
+        "stdev_ms": 2.983380288105675
+      },
+      "cached": {
+        "samples": 12,
+        "median_ms": 3.8720725,
+        "min_ms": 3.447412,
+        "max_ms": 5.4488,
+        "mean_ms": 4.1040035,
+        "stdev_ms": 0.6094446557899386
+      },
+      "refresh": {
+        "samples": 12,
+        "median_ms": 11.8534075,
+        "min_ms": 10.773069,
+        "max_ms": 18.214808,
+        "mean_ms": 12.8478505,
+        "stdev_ms": 2.4375220511794526
+      }
+    }
+  },
+  "all_prefix_means_reports_and_quality_exact": true,
+  "measured_updates": 2400,
+  "paired_faster": {
+    "complete": 7,
+    "cached": 10,
+    "refresh": 5
+  }
+}

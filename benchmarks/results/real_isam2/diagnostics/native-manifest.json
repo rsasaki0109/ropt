@@ -1,0 +1,30 @@
+{
+  "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+  "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+  "exact_between": true,
+  "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+  "executable_sha256": "d30d107f04c7670c231a09769ff34a061f93e5ba7b63193b32a41840eb5f9da9",
+  "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+  "options": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+    "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+    "GTSAM_WITH_TBB": "OFF",
+    "GTSAM_WITH_EIGEN_MKL": "OFF",
+    "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+    "GTSAM_DEFAULT_ALLOCATOR": "STL",
+    "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+    "GTSAM_BUILD_TESTS": "OFF",
+    "GTSAM_BUILD_UNSTABLE": "OFF"
+  },
+  "reference_sources_sha256": {
+    "benchmark.cpp": "0c6770a525252e7e38ea96a2f9f6cbbb85eef216a4fe92eb95394d195d8a2919",
+    "CMakeLists.txt": "0d302ce92ad64c437f7284865a8d0fb62ce4f8eaccf12449e1fe50ce9addc4d4"
+  },
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+  "reference_cache_sha256": "c7b9e7659299eeae13baa125dd9cfe11c11125f3e89ed124bba302ef824e6b08",
+  "runtime_library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a"
+}

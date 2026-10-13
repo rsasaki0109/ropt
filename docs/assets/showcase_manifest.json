@@ -1,0 +1,46 @@
+{
+  "renderer_sha256": "2c1764d16e8410cae4d59cc05149bddd0b9f6ea5e184d01e94c5e75d52338540",
+  "inputs_sha256": {
+    "benchmarks/results/real_isam2/intel943-primary/metadata.json": "5a28a9788167c2a86264d26f5d0148f6d468497f42c7530520cb8aa50053d06f",
+    "benchmarks/results/real_isam2/intel943-primary/report.json": "86eff4f732794b56cb8b83cdfc816cc46c5b7e379472c3a7a45bff27838e7fc2",
+    "benchmarks/results/real_isam2/intel943-confirmation/report.json": "77ea1e0161d7695395a31816a8dcbbe48d6184b0c6331d90cf4d9100568a6cfe",
+    "benchmarks/results/real_isam2/intel943-primary/ropt-poses.csv.gz": "ec41846a9bf6b2b99ccc0b62f7adaaf0d124eb69b5c02c3d4767285f4d3f337b",
+    "benchmarks/results/real_isam2/intel943-primary/quality.csv": "1cc3bbe249a79daf4fdcfa6c68cbdfc329705f1441b38385847f7c51d2ffee1d",
+    "benchmarks/results/real_isam2/intel943-primary/samples.csv": "021445da64ed6f640f3e34156684a72cef03e5ab5fc749b4d607c81133554e11",
+    "benchmarks/results/real_isam2/intel943-confirmation/samples.csv": "a8a2815e8b9e7ea8f5ccde35beff650e4d2707abf76478f4af0f16d9e6eba33d",
+    "benchmarks/results/real_isam2/intel-vertigo943-original.g2o": "4d87aaf96e1e04e47c723c371386b15358c71e98c05dad16b786d585f9fd70ff",
+    "docs/assets/rosenbrock_trace.csv": "b23f10e748e7348b1947538b84606fb81711939c1714dba6113967227d35ccac"
+  },
+  "versions": {
+    "matplotlib": "3.10.8",
+    "numpy": "2.3.5",
+    "Pillow": "12.3.0"
+  },
+  "images": {
+    "ropt-hero.gif": {
+      "bytes": 690094,
+      "sha256": "1c557d47471691f90722bcc75ad4675ad99b4549e7db07a1ace2003efde091eb"
+    },
+    "ropt-hero.png": {
+      "bytes": 122453,
+      "sha256": "839804b582f7cefb89f1533c2020100d6c70c7de825a03d3f6ee15fcbd95b841"
+    },
+    "intel943-trajectory.png": {
+      "bytes": 156014,
+      "sha256": "8230cab8a5d970e5662ab13d0c1dec68021170d727d05be010bf4ec93bcdc28a"
+    },
+    "isam2-comparison.png": {
+      "bytes": 125462,
+      "sha256": "b2896f82536882b491f0b62e461cb41cd78eb28c734391642c991fbfe70a8db1"
+    },
+    "rosenbrock-convergence.gif": {
+      "bytes": 103837,
+      "sha256": "02d7e1c06f379273936e4167747475a3c30258794c909a63f88c3938f7671e1b"
+    },
+    "rosenbrock-convergence.png": {
+      "bytes": 93182,
+      "sha256": "4ab36aa910d413a592a65bccdf39e398901c241b547045fad32a0daf4413f409"
+    }
+  },
+  "scope": "Real Intel943 measured constraints with inferred ID arrivals; actual selected prefixes, not real-time. Rosenbrock is synthetic and uses actual LM states, without interpolation. Comparison data comes from both eligible archived campaigns; MIT1228 remains ineligible."
+}

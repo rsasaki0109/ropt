@@ -1,0 +1,932 @@
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -70,6 +70,12 @@
+     }
+     pub fn nnz(&self) -> usize {
+         self.values.len()
++    }
++    pub(crate) fn pattern(&self) -> (&[usize], &[usize]) {
++        (&self.offsets, &self.indices)
++    }
++    pub(crate) fn values(&self) -> &[f64] {
++        &self.values
+     }
+     pub fn entries(&self) -> impl Iterator<Item = (usize, usize, f64)> + '_ {
+         (0..self.rows).flat_map(move |r| {
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -11,6 +11,11 @@
+     /// This is not approximate minimum degree or COLAMD.
+     #[default]
+     MinimumDegree,
++    /// Greedy minimum degree on contiguous equal-size variable blocks, keeping
++    /// each block's scalar coordinates together. Dimension must be divisible.
++    BlockMinimumDegree {
++        block_size: usize,
++    },
+ }
+ #[derive(Debug, Clone, Copy)]
+ pub struct SparseLdlOptions {
+@@ -34,6 +39,10 @@
+ impl SparseLdlOptions {
+     pub(crate) fn validate(self) -> Result<(), Error> {
+         if self.max_entries == 0
++            || matches!(
++                self.ordering,
++                SparseOrdering::BlockMinimumDegree { block_size: 0 }
++            )
+             || [self.relative_tolerance, self.absolute_tolerance]
+                 .iter()
+                 .any(|v| !v.is_finite() || *v < 0.0)
+@@ -72,13 +81,10 @@
+     }
+     Ok(())
+ }
+-fn assemble(j: &CsrMatrix, damping: f64, limit: usize) -> Result<(Columns, usize), Error> {
++fn assemble_pattern(j: &CsrMatrix, limit: usize) -> Result<(Columns, usize), Error> {
+     let (m, n) = j.shape();
+     if n == 0 {
+         return Err(Error::InvalidDimensions);
+-    }
+-    if !damping.is_finite() || damping < 0.0 {
+-        return Err(Error::InvalidOptions);
+     }
+     if n > limit {
+         return Err(Error::SparseFillLimit { limit });
+@@ -91,17 +97,10 @@
+     for r in 0..m {
+         row.clear();
+         row.extend(j.row(r)?);
+-        for (k, &(a, va)) in row.iter().enumerate() {
+-            for &(b, vb) in &row[k..] {
+-                add_entry(&mut columns[a], b, va * vb, &mut entries, limit)?;
+-            }
+-        }
+-    }
+-    for (k, column) in columns.iter_mut().enumerate() {
+-        let diagonal = column.get_mut(&k).ok_or(Error::InvalidDimensions)?;
+-        *diagonal += damping * diagonal.max(1.0);
+-        if !diagonal.is_finite() {
+-            return Err(Error::NonFinite);
++        for (k, &(a, _)) in row.iter().enumerate() {
++            for &(b, _) in &row[k..] {
++                add_entry(&mut columns[a], b, 0.0, &mut entries, limit)?;
++            }
+         }
+     }
+     Ok((columns, entries))
+@@ -158,6 +157,291 @@
+     }
+     Ok(order)
+ }
++/// Reusable symbolic analysis for an exact stored CSR pattern. Numeric values
++/// and damping may change; any offset/index/shape change requires new analysis.
++#[derive(Debug)]
++pub struct SparseLdlSymbolic {
++    shape: (usize, usize),
++    pattern_offsets: Vec<usize>,
++    pattern_indices: Vec<usize>,
++    permutation: Vec<usize>,
++    inverse: Vec<usize>,
++    offsets: Vec<usize>,
++    rows: Vec<usize>,
++    normal_entries: usize,
++    max_off_diagonal: usize,
++    update_targets: Option<Vec<usize>>,
++    assembly_targets: Option<Vec<usize>>,
++}
++impl SparseLdlSymbolic {
++    pub fn analyze(j: &CsrMatrix, options: &SparseLdlOptions) -> Result<Self, Error> {
++        options.validate()?;
++        let (columns, normal_entries) = assemble_pattern(j, options.max_entries)?;
++        let n = columns.len();
++        let permutation = match options.ordering {
++            SparseOrdering::Natural => (0..n).collect(),
++            SparseOrdering::MinimumDegree => {
++                minimum_degree(&columns, normal_entries, options.max_entries)?
++            }
++            SparseOrdering::BlockMinimumDegree { block_size } => {
++                if !n.is_multiple_of(block_size) {
++                    return Err(Error::InvalidDimensions);
++                }
++                let blocks = n / block_size;
++                let mut coarse = (0..blocks)
++                    .map(|k| BTreeMap::from([(k, 0.0)]))
++                    .collect::<Columns>();
++                let mut entries = blocks;
++                for (col, values) in columns.iter().enumerate() {
++                    for &row in values.keys() {
++                        add_entry(
++                            &mut coarse[col / block_size],
++                            row / block_size,
++                            0.0,
++                            &mut entries,
++                            options.max_entries,
++                        )?;
++                    }
++                }
++                minimum_degree(&coarse, entries, options.max_entries)?
++                    .into_iter()
++                    .flat_map(|block| {
++                        (0..block_size).map(move |offset| block * block_size + offset)
++                    })
++                    .collect()
++            }
++        };
++        let mut inverse = vec![0; n];
++        for (new, &old) in permutation.iter().enumerate() {
++            inverse[old] = new;
++        }
++        let mut work = vec![BTreeSet::new(); n];
++        for (old_col, column) in columns.into_iter().enumerate() {
++            for old_row in column.into_keys() {
++                let (a, b) = (inverse[old_col], inverse[old_row]);
++                work[a.min(b)].insert(a.max(b));
++            }
++        }
++        let mut entries = normal_entries;
++        let mut offsets = Vec::with_capacity(n + 1);
++        let mut rows = Vec::with_capacity(normal_entries);
++        let mut max_off_diagonal = 0;
++        offsets.push(0);
++        for k in 0..n {
++            let column = std::mem::take(&mut work[k]).into_iter().collect::<Vec<_>>();
++            if column.first() != Some(&k) {
++                return Err(Error::InvalidDimensions);
++            }
++            max_off_diagonal = max_off_diagonal.max(column.len() - 1);
++            for (i, &a) in column[1..].iter().enumerate() {
++                for &b in &column[i + 1..] {
++                    if !work[a].contains(&b) {
++                        if entries >= options.max_entries {
++                            return Err(Error::SparseFillLimit {
++                                limit: options.max_entries,
++                            });
++                        }
++                        work[a].insert(b);
++                        entries += 1;
++                    }
++                }
++            }
++            rows.extend(column);
++            offsets.push(rows.len());
++        }
++        let (pattern_offsets, pattern_indices) = j.pattern();
++        let mut symbolic = Self {
++            shape: j.shape(),
++            pattern_offsets: pattern_offsets.to_vec(),
++            pattern_indices: pattern_indices.to_vec(),
++            permutation,
++            inverse,
++            offsets,
++            rows,
++            normal_entries,
++            max_off_diagonal,
++            update_targets: None,
++            assembly_targets: None,
++        };
++        // Bound optional operation-index storage independently by the same entry
++        // budget. Dense/high-fill factors can fall back to binary searches.
++        let operations = (0..n).try_fold(0_usize, |sum, k| {
++            let off = symbolic.offsets[k + 1] - symbolic.offsets[k] - 1;
++            sum.checked_add(off.checked_mul(off.checked_add(1)?)? / 2)
++        });
++        if let Some(operations) = operations.filter(|&count| count <= options.max_entries) {
++            let mut targets = Vec::with_capacity(operations);
++            for k in 0..n {
++                for i in symbolic.offsets[k] + 1..symbolic.offsets[k + 1] {
++                    for q in i..symbolic.offsets[k + 1] {
++                        targets.push(symbolic.entry(symbolic.rows[i], symbolic.rows[q]));
++                    }
++                }
++            }
++            symbolic.update_targets = Some(targets);
++        }
++        let remaining = options.max_entries - symbolic.update_entries();
++        let operations = (0..j.shape().0).try_fold(0_usize, |sum, row| {
++            let count = pattern_offsets[row + 1] - pattern_offsets[row];
++            sum.checked_add(count.checked_mul(count.checked_add(1)?)? / 2)
++        });
++        if let Some(operations) = operations.filter(|&count| count <= remaining) {
++            let mut targets = Vec::with_capacity(operations);
++            for row in 0..j.shape().0 {
++                for a in pattern_offsets[row]..pattern_offsets[row + 1] {
++                    let ca = symbolic.inverse[pattern_indices[a]];
++                    for &original in &pattern_indices[a..pattern_offsets[row + 1]] {
++                        let cb = symbolic.inverse[original];
++                        targets.push(symbolic.entry(ca.min(cb), ca.max(cb)));
++                    }
++                }
++            }
++            symbolic.assembly_targets = Some(targets);
++        }
++        Ok(symbolic)
++    }
++    pub fn dimension(&self) -> usize {
++        self.permutation.len()
++    }
++    pub fn permutation(&self) -> &[usize] {
++        &self.permutation
++    }
++    pub fn normal_entries(&self) -> usize {
++        self.normal_entries
++    }
++    pub fn factor_entries(&self) -> usize {
++        self.rows.len()
++    }
++    /// Cached Schur-update destinations. Optional plan storage is at most max_entries;
++    /// larger operation counts use searches without changing the factor or arithmetic.
++    pub fn update_entries(&self) -> usize {
++        self.update_targets.as_ref().map_or(0, Vec::len)
++    }
++    pub fn has_update_plan(&self) -> bool {
++        self.update_targets.is_some()
++    }
++    pub fn assembly_entries(&self) -> usize {
++        self.assembly_targets.as_ref().map_or(0, Vec::len)
++    }
++    pub fn matches_pattern(&self, j: &CsrMatrix) -> bool {
++        let (offsets, indices) = j.pattern();
++        self.shape == j.shape()
++            && self.pattern_offsets == offsets
++            && self.pattern_indices == indices
++    }
++    fn entry(&self, column: usize, row: usize) -> usize {
++        let start = self.offsets[column];
++        start
++            + self.rows[start..self.offsets[column + 1]]
++                .binary_search(&row)
++                .expect("symbolic fill contains every normal and Schur entry")
++    }
++    /// Construct an independently owned numeric factor with this symbolic analysis.
++    /// For repeated numeric buffer reuse, use SparseLdlWorkspace instead.
++    pub fn factor_normal(&self, j: &CsrMatrix, damping: f64) -> Result<SparseLdlFactor, Error> {
++        let mut values = vec![0.0; self.factor_entries()];
++        let mut scratch = vec![0.0; self.max_off_diagonal];
++        factor_numeric(self, j, damping, &mut values, &mut scratch)?;
++        let mut lower = Vec::with_capacity(self.dimension());
++        let mut diagonal = DVector::zeros(self.dimension());
++        for k in 0..self.dimension() {
++            let start = self.offsets[k];
++            diagonal[k] = values[start];
++            lower.push(
++                (start + 1..self.offsets[k + 1])
++                    .map(|i| (self.rows[i], values[i]))
++                    .collect(),
++            );
++        }
++        Ok(SparseLdlFactor {
++            lower,
++            diagonal,
++            permutation: self.permutation.clone(),
++            normal_entries: self.normal_entries,
++        })
++    }
++}
++fn factor_numeric(
++    symbolic: &SparseLdlSymbolic,
++    j: &CsrMatrix,
++    damping: f64,
++    values: &mut [f64],
++    scratch: &mut [f64],
++) -> Result<(), Error> {
++    if !symbolic.matches_pattern(j) {
++        return Err(Error::Evaluation(
++            "sparse LDL symbolic pattern mismatch".into(),
++        ));
++    }
++    if !damping.is_finite() || damping < 0.0 {
++        return Err(Error::InvalidOptions);
++    }
++    values.fill(0.0);
++    let (offsets, indices) = j.pattern();
++    let numeric = j.values();
++    let mut assembly_index = 0;
++    for row in 0..j.shape().0 {
++        for a in offsets[row]..offsets[row + 1] {
++            let ca = symbolic.inverse[indices[a]];
++            for b in a..offsets[row + 1] {
++                let cb = symbolic.inverse[indices[b]];
++                let target = if let Some(targets) = &symbolic.assembly_targets {
++                    targets[assembly_index]
++                } else {
++                    symbolic.entry(ca.min(cb), ca.max(cb))
++                };
++                assembly_index += 1;
++                values[target] += numeric[a] * numeric[b];
++                if !values[target].is_finite() {
++                    return Err(Error::NonFinite);
++                }
++            }
++        }
++    }
++    let mut update_index = 0;
++    for k in 0..symbolic.dimension() {
++        let diagonal = &mut values[symbolic.offsets[k]];
++        *diagonal += damping * diagonal.max(1.0);
++        if !diagonal.is_finite() {
++            return Err(Error::NonFinite);
++        }
++    }
++    for k in 0..symbolic.dimension() {
++        let (start, end) = (symbolic.offsets[k], symbolic.offsets[k + 1]);
++        let pivot = values[start];
++        if !pivot.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        if pivot <= 0.0 {
++            return Err(Error::LinearSolve);
++        }
++        let count = end - start - 1;
++        scratch[..count].copy_from_slice(&values[start + 1..end]);
++        for value in &mut values[start + 1..end] {
++            *value /= pivot;
++            if !value.is_finite() {
++                return Err(Error::NonFinite);
++            }
++        }
++        // Preserve the previous right-looking arithmetic order: l_i * original a_jk.
++        for i in start + 1..end {
++            let column = symbolic.rows[i];
++            for q in i..end {
++                let target = if let Some(targets) = &symbolic.update_targets {
++                    targets[update_index]
++                } else {
++                    symbolic.entry(column, symbolic.rows[q])
++                };
++                update_index += 1;
++                values[target] += -values[i] * scratch[q - start - 1];
++                if !values[target].is_finite() {
++                    return Err(Error::NonFinite);
++                }
++            }
++        }
++    }
++    Ok(())
++}
+ /// Unit lower-triangle columns, diagonal pivots and original-coordinate permutation.
+ /// Construction rejects nonpositive pivots. This does not provide indefinite pivoting.
+ #[derive(Debug)]
+@@ -173,69 +457,7 @@
+         damping: f64,
+         options: &SparseLdlOptions,
+     ) -> Result<Self, Error> {
+-        options.validate()?;
+-        let (columns, normal_entries) = assemble(j, damping, options.max_entries)?;
+-        let n = columns.len();
+-        let permutation = match options.ordering {
+-            SparseOrdering::Natural => (0..n).collect(),
+-            SparseOrdering::MinimumDegree => {
+-                minimum_degree(&columns, normal_entries, options.max_entries)?
+-            }
+-        };
+-        let mut inverse = vec![0; n];
+-        for (new, &old) in permutation.iter().enumerate() {
+-            inverse[old] = new;
+-        }
+-        let mut work = vec![BTreeMap::new(); n];
+-        for (old_col, column) in columns.into_iter().enumerate() {
+-            for (old_row, value) in column {
+-                let a = inverse[old_col];
+-                let b = inverse[old_row];
+-                work[a.min(b)].insert(a.max(b), value);
+-            }
+-        }
+-        let mut entries = normal_entries;
+-        let mut diagonal = DVector::zeros(n);
+-        let mut lower = Vec::with_capacity(n);
+-        for k in 0..n {
+-            let mut column = std::mem::take(&mut work[k]);
+-            let pivot = column.remove(&k).ok_or(Error::InvalidDimensions)?;
+-            if !pivot.is_finite() {
+-                return Err(Error::NonFinite);
+-            }
+-            if pivot <= 0.0 {
+-                return Err(Error::LinearSolve);
+-            }
+-            diagonal[k] = pivot;
+-            let off_diagonal = column.into_iter().collect::<Vec<_>>();
+-            let mut l = Vec::with_capacity(off_diagonal.len());
+-            for &(row, value) in &off_diagonal {
+-                let coefficient = value / pivot;
+-                if !coefficient.is_finite() {
+-                    return Err(Error::NonFinite);
+-                }
+-                l.push((row, coefficient));
+-            }
+-            // Right-looking Schur updates. Keep structural zeros; never prune fill by a tolerance.
+-            for (i, &(row, coefficient)) in l.iter().enumerate() {
+-                for &(other, value) in &off_diagonal[i..] {
+-                    add_entry(
+-                        &mut work[row],
+-                        other,
+-                        -coefficient * value,
+-                        &mut entries,
+-                        options.max_entries,
+-                    )?;
+-                }
+-            }
+-            lower.push(l);
+-        }
+-        Ok(Self {
+-            lower,
+-            diagonal,
+-            permutation,
+-            normal_entries,
+-        })
++        SparseLdlSymbolic::analyze(j, options)?.factor_normal(j, damping)
+     }
+     pub fn dimension(&self) -> usize {
+         self.diagonal.len()
+@@ -287,43 +509,177 @@
+     pub normal_entries: usize,
+     pub factor_entries: usize,
+ }
+-/// Factor and solve damped J^T*J, then check b-A*x using the original matrix-free
+-/// operator. No dense allocation, CG fallback, regularization or iterative refinement.
++/// Counts of one checked solve; entry counts include diagonals/structural zeros.
++#[derive(Debug, Clone, Copy)]
++pub struct SparseLdlStats {
++    pub residual_norm: f64,
++    pub normal_entries: usize,
++    pub factor_entries: usize,
++}
++/// Symbolic analysis and numeric scratch reused across linear solves. Exact CSR
++/// pattern changes trigger reanalysis. No global cache or shared mutable state.
++#[derive(Debug)]
++pub struct SparseLdlWorkspace {
++    options: SparseLdlOptions,
++    symbolic: Option<SparseLdlSymbolic>,
++    values: Vec<f64>,
++    column_scratch: Vec<f64>,
++    solution: DVector<f64>,
++    residual: DVector<f64>,
++    analyses: usize,
++    ready: bool,
++}
++impl SparseLdlWorkspace {
++    pub fn new(options: SparseLdlOptions) -> Result<Self, Error> {
++        options.validate()?;
++        Ok(Self {
++            options,
++            symbolic: None,
++            values: Vec::new(),
++            column_scratch: Vec::new(),
++            solution: DVector::zeros(0),
++            residual: DVector::zeros(0),
++            analyses: 0,
++            ready: false,
++        })
++    }
++    pub fn analyses(&self) -> usize {
++        self.analyses
++    }
++    pub fn symbolic(&self) -> Option<&SparseLdlSymbolic> {
++        self.symbolic.as_ref()
++    }
++    /// Reuse ordering/fill and numeric buffers when the stored pattern is identical.
++    /// A failed refactor invalidates the numeric factor until the next successful call.
++    pub fn refactor(&mut self, j: &CsrMatrix, damping: f64) -> Result<(), Error> {
++        self.ready = false;
++        if !damping.is_finite() || damping < 0.0 {
++            return Err(Error::InvalidOptions);
++        }
++        if self.symbolic.as_ref().is_none_or(|s| !s.matches_pattern(j)) {
++            let symbolic = SparseLdlSymbolic::analyze(j, &self.options)?;
++            self.values.resize(symbolic.factor_entries(), 0.0);
++            self.column_scratch.resize(symbolic.max_off_diagonal, 0.0);
++            self.solution
++                .resize_vertically_mut(symbolic.dimension(), 0.0);
++            self.residual
++                .resize_vertically_mut(symbolic.dimension(), 0.0);
++            self.symbolic = Some(symbolic);
++            self.analyses = self.analyses.saturating_add(1);
++        }
++        factor_numeric(
++            self.symbolic.as_ref().ok_or(Error::LinearSolve)?,
++            j,
++            damping,
++            &mut self.values,
++            &mut self.column_scratch,
++        )?;
++        self.ready = true;
++        Ok(())
++    }
++    /// Solve the computed factors into caller storage, without checking the original
++    /// normal system. Use solve_into or solve for the true-residual check.
++    pub fn solve_factored_into(
++        &mut self,
++        rhs: &DVector<f64>,
++        x: &mut DVector<f64>,
++    ) -> Result<(), Error> {
++        if !self.ready {
++            return Err(Error::LinearSolve);
++        }
++        let s = self.symbolic.as_ref().ok_or(Error::LinearSolve)?;
++        if rhs.len() != s.dimension() || x.len() != s.dimension() {
++            return Err(Error::InvalidDimensions);
++        }
++        finite_vector(rhs)?;
++        for (k, &old) in s.permutation.iter().enumerate() {
++            self.solution[k] = rhs[old];
++        }
++        for k in 0..s.dimension() {
++            let v = self.solution[k];
++            for i in s.offsets[k] + 1..s.offsets[k + 1] {
++                self.solution[s.rows[i]] -= self.values[i] * v;
++            }
++        }
++        for k in 0..s.dimension() {
++            self.solution[k] /= self.values[s.offsets[k]];
++        }
++        for k in (0..s.dimension()).rev() {
++            for i in s.offsets[k] + 1..s.offsets[k + 1] {
++                self.solution[k] -= self.values[i] * self.solution[s.rows[i]];
++            }
++        }
++        finite_vector(&self.solution)?;
++        for (k, &old) in s.permutation.iter().enumerate() {
++            x[old] = self.solution[k];
++        }
++        Ok(())
++    }
++    /// Refactor, solve and verify the true rhs-A*x residual with the original CSR
++    /// operator. Numeric buffers are reused; constructing its diagonal still allocates.
++    pub fn solve_into(
++        &mut self,
++        j: &CsrMatrix,
++        rhs: &DVector<f64>,
++        damping: f64,
++        x: &mut DVector<f64>,
++    ) -> Result<SparseLdlStats, Error> {
++        if rhs.len() != j.shape().1 || x.len() != rhs.len() {
++            return Err(Error::InvalidDimensions);
++        }
++        finite_vector(rhs)?;
++        self.refactor(j, damping)?;
++        self.solve_factored_into(rhs, x)?;
++        NormalOperator::new(j, damping)?.apply_into(x, &mut self.residual)?;
++        for k in 0..rhs.len() {
++            self.residual[k] = rhs[k] - self.residual[k];
++        }
++        let (residual_norm, rhs_norm) = (self.residual.norm(), rhs.norm());
++        if !residual_norm.is_finite() || !rhs_norm.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        let tolerance = self
++            .options
++            .absolute_tolerance
++            .max(self.options.relative_tolerance * rhs_norm);
++        if !tolerance.is_finite() {
++            return Err(Error::InvalidOptions);
++        }
++        if residual_norm > tolerance {
++            return Err(Error::LinearResidualTooLarge {
++                residual_norm,
++                tolerance,
++            });
++        }
++        let s = self.symbolic.as_ref().ok_or(Error::LinearSolve)?;
++        Ok(SparseLdlStats {
++            residual_norm,
++            normal_entries: s.normal_entries(),
++            factor_entries: s.factor_entries(),
++        })
++    }
++    pub fn solve(
++        &mut self,
++        j: &CsrMatrix,
++        rhs: &DVector<f64>,
++        damping: f64,
++    ) -> Result<SparseLdlReport, Error> {
++        let mut x = DVector::zeros(j.shape().1);
++        let stats = self.solve_into(j, rhs, damping, &mut x)?;
++        Ok(SparseLdlReport {
++            x,
++            residual_norm: stats.residual_norm,
++            normal_entries: stats.normal_entries,
++            factor_entries: stats.factor_entries,
++        })
++    }
++}
++/// One-shot checked solve. For repeated numeric and symbolic reuse, keep a workspace.
+ pub fn solve_normal(
+     j: &CsrMatrix,
+     rhs: &DVector<f64>,
+     damping: f64,
+     options: &SparseLdlOptions,
+ ) -> Result<SparseLdlReport, Error> {
+-    options.validate()?;
+-    if rhs.len() != j.shape().1 {
+-        return Err(Error::InvalidDimensions);
+-    }
+-    finite_vector(rhs)?;
+-    let factor = SparseLdlFactor::factor_normal(j, damping, options)?;
+-    let x = factor.solve(rhs)?;
+-    let residual = rhs - NormalOperator::new(j, damping)?.apply(&x)?;
+-    let residual_norm = residual.norm();
+-    let rhs_norm = rhs.norm();
+-    if !residual_norm.is_finite() || !rhs_norm.is_finite() {
+-        return Err(Error::NonFinite);
+-    }
+-    let tolerance = options
+-        .absolute_tolerance
+-        .max(options.relative_tolerance * rhs_norm);
+-    if !tolerance.is_finite() {
+-        return Err(Error::InvalidOptions);
+-    }
+-    if residual_norm > tolerance {
+-        return Err(Error::LinearResidualTooLarge {
+-            residual_norm,
+-            tolerance,
+-        });
+-    }
+-    Ok(SparseLdlReport {
+-        x,
+-        residual_norm,
+-        normal_entries: factor.normal_entries(),
+-        factor_entries: factor.factor_entries(),
+-    })
+-}
++    SparseLdlWorkspace::new(*options)?.solve(j, rhs, damping)
++}
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -306,6 +306,7 @@
+         damping: f64,
+         options: &Options,
+         blocks: Option<&[Range<usize>]>,
++        ldl_workspace: Option<&mut crate::sparse_direct::SparseLdlWorkspace>,
+     ) -> Result<(DVector<f64>, usize), Error> {
+         match &self.jacobian {
+             Jacobian::Dense(j) => {
+@@ -352,9 +353,12 @@
+                 Ok((step, 0))
+             }
+             Jacobian::Sparse(j) => {
+-                if let LinearSolver::SparseLdl(ldl) = options.linear_solver {
+-                    let report =
+-                        crate::sparse_direct::solve_normal(j, &(-gradient), damping, &ldl)?;
++                if matches!(options.linear_solver, LinearSolver::SparseLdl(_)) {
++                    let report = ldl_workspace.ok_or(Error::InvalidOptions)?.solve(
++                        j,
++                        &(-gradient),
++                        damping,
++                    )?;
+                     return Ok((report.x, 0));
+                 }
+                 let report = match options.linear_solver {
+@@ -596,6 +600,11 @@
+     let mut damping = options.initial_damping;
+     let mut growth = 2.0;
+     let mut history = Vec::new();
++    let mut ldl_workspace = if let LinearSolver::SparseLdl(ldl) = options.linear_solver {
++        Some(crate::sparse_direct::SparseLdlWorkspace::new(ldl)?)
++    } else {
++        None
++    };
+     let mut termination = Termination::MaxIterations;
+     for iteration in 0..options.max_iterations {
+         let gradient = model.gradient()?;
+@@ -607,8 +616,13 @@
+             termination = Termination::Gradient;
+             break;
+         }
+-        let (step, linear_iterations) =
+-            model.step(&gradient, damping, options, block_layout.as_deref())?;
++        let (step, linear_iterations) = model.step(
++            &gradient,
++            damping,
++            options,
++            block_layout.as_deref(),
++            ldl_workspace.as_mut(),
++        )?;
+         if !step.iter().all(|v| v.is_finite()) {
+             return Err(Error::NonFinite);
+         }
+--- a/crates/ropt/src/pose_graph.rs
++++ b/crates/ropt/src/pose_graph.rs
+@@ -3,7 +3,8 @@
+ use crate::autodiff::DynamicJet as J;
+ use crate::factor::{FactorGraph, FactorOptions, VariableId, VariableKind};
+ use crate::manifold::SE2;
+-use nalgebra::Vector3;
++use nalgebra::{Matrix3, Vector3};
++pub type Pose2Linearization = (Vector3<f64>, Matrix3<f64>, Matrix3<f64>);
+ 
+ /// Residual is the translation and principal angle of Z^-1 * (A^-1 * B).
+ /// Information matrices must be expressed in these measurement-frame coordinates.
+@@ -31,6 +32,59 @@
+             return Err(Error::NonFinite);
+         }
+         Ok(r)
++    }
++    /// Exact analytic right-tangent Jacobians in g2o measurement coordinates.
++    /// The principal angle is differentiable away from its pi branch cut.
++    pub fn linearize(self, a: SE2, b: SE2) -> Result<Pose2Linearization, Error> {
++        let (ta, tb, z) = (
++            a.rotation.log(),
++            b.rotation.log(),
++            self.measurement.rotation.log(),
++        );
++        let (ca, sa, cz, sz) = (ta.cos(), ta.sin(), z.cos(), z.sin());
++        let difference = b.translation - a.translation;
++        let qx = ca * difference.x + sa * difference.y;
++        let qy = -sa * difference.x + ca * difference.y;
++        let x = qx - self.measurement.translation.x;
++        let y = qy - self.measurement.translation.y;
++        let angle = tb - ta - z;
++        let r = Vector3::new(
++            cz * x + sz * y,
++            -sz * x + cz * y,
++            angle.sin().atan2(angle.cos()),
++        );
++        let ja = Matrix3::new(
++            -cz,
++            -sz,
++            cz * qy - sz * qx,
++            sz,
++            -cz,
++            -sz * qy - cz * qx,
++            0.,
++            0.,
++            -1.,
++        );
++        let theta = tb - ta - z;
++        let jb = Matrix3::new(
++            theta.cos(),
++            -theta.sin(),
++            0.,
++            theta.sin(),
++            theta.cos(),
++            0.,
++            0.,
++            0.,
++            1.,
++        );
++        if !r
++            .iter()
++            .chain(ja.iter())
++            .chain(jb.iter())
++            .all(|v| v.is_finite())
++        {
++            return Err(Error::NonFinite);
++        }
++        Ok((r, ja, jb))
+     }
+     /// Ambient SE2 inputs `[x,y,angle]`; graph AD differentiates right retractions.
+     pub fn residual_autodiff(self, a: &[J], b: &[J]) -> Result<Vec<J>, Error> {
+@@ -78,6 +132,35 @@
+     })
+ }
+ 
++/// Explicit analytic alternative to the AD SE2 factor; identical residual coordinates.
++pub fn add_relative_pose2_factor_analytic(
++    graph: &mut FactorGraph,
++    a: VariableId,
++    b: VariableId,
++    measurement: SE2,
++    options: FactorOptions,
++) -> Result<(), Error> {
++    if !matches!(graph.variable_kind(a)?, VariableKind::SE2)
++        || !matches!(graph.variable_kind(b)?, VariableKind::SE2)
++    {
++        return Err(Error::InvalidDimensions);
++    }
++    let cost = RelativePose2::new(measurement)?;
++    graph.add_analytic_factor_with_options(&[a, b], 3, options, move |v| {
++        let (r, ja, jb) = cost.linearize(
++            crate::factor::read_se2(&v[0])?,
++            crate::factor::read_se2(&v[1])?,
++        )?;
++        Ok((
++            crate::DVector::from_column_slice(r.as_slice()),
++            vec![
++                crate::DMatrix::from_column_slice(3, 3, ja.as_slice()),
++                crate::DMatrix::from_column_slice(3, 3, jb.as_slice()),
++            ],
++        ))
++    })
++}
++
+ /// SE3 relative residual Log(Z^-1 * (A^-1 * B)), translation then rotation.
+ /// Noise must be expressed in this six-dimensional measurement Lie tangent.
+ #[derive(Debug, Clone, Copy)]
+--- a/crates/ropt/src/g2o.rs
++++ b/crates/ropt/src/g2o.rs
+@@ -2,7 +2,7 @@
+ use crate::factor::{FactorGraph, FactorOptions, VariableId, VariableKind, read_se2, se2_values};
+ use crate::manifold::{SE2, SO2};
+ use crate::noise::NoiseModel;
+-use crate::pose_graph::add_relative_pose2_factor;
++use crate::pose_graph::{add_relative_pose2_factor, add_relative_pose2_factor_analytic};
+ use crate::{DMatrix, DVector, Error, Loss};
+ use nalgebra::Vector2;
+ use std::collections::{BTreeMap, BTreeSet};
+@@ -86,6 +86,12 @@
+     vertices: BTreeMap<u64, SE2>,
+     edges: Vec<Edge2>,
+     fixed: BTreeSet<u64>,
++}
++#[derive(Debug, Clone, Copy, Default)]
++pub enum PoseJacobian {
++    #[default]
++    AutoDiff,
++    Analytic,
+ }
+ impl PoseGraph2 {
+     pub fn vertices(&self) -> &BTreeMap<u64, SE2> {
+@@ -185,6 +191,14 @@
+     /// Isolated vertices are rejected, since they have no measurement constraints.
+     /// Some(loss) applies jointly to the whitened three-component edge residual.
+     pub fn build(&self, loss: Option<Loss>) -> Result<LoadedPoseGraph2, G2oError> {
++        self.build_with_jacobians(loss, PoseJacobian::AutoDiff)
++    }
++    /// Same graph/anchors/objective with an explicit derivative implementation.
++    pub fn build_with_jacobians(
++        &self,
++        loss: Option<Loss>,
++        jacobians: PoseJacobian,
++    ) -> Result<LoadedPoseGraph2, G2oError> {
+         if self.vertices.is_empty() {
+             return Err(invalid(0, "no vertices"));
+         }
+@@ -231,7 +245,11 @@
+             variables.insert(key, variable);
+         }
+         for e in &self.edges {
+-            add_relative_pose2_factor(
++            let register = match jacobians {
++                PoseJacobian::AutoDiff => add_relative_pose2_factor,
++                PoseJacobian::Analytic => add_relative_pose2_factor_analytic,
++            };
++            register(
+                 &mut graph,
+                 variables[&e.from],
+                 variables[&e.to],
+--- a/crates/ropt/examples/benchmark_pose_graph.rs
++++ b/crates/ropt/examples/benchmark_pose_graph.rs
+@@ -1,5 +1,9 @@
+ //! Release-only solve timings. Parsing, graph construction and validation are untimed.
+-use ropt::{g2o::PoseGraph2, sparse::CgOptions, *};
++use ropt::{
++    g2o::{PoseGraph2, PoseJacobian},
++    sparse::CgOptions,
++    *,
++};
+ use std::fs::{self, File};
+ use std::io::{BufReader, BufWriter, Write};
+ use std::path::PathBuf;
+@@ -14,6 +18,7 @@
+     let mut repeats = 15_usize;
+     let mut warmup = 3_usize;
+     let mut backends = "dense,qr,scalar_cg,block_cg".to_string();
++    let mut pose_jacobians = PoseJacobian::AutoDiff;
+     let mut cg_relative_tolerance = 1e-8_f64;
+     let mut cg_absolute_tolerance = 1e-10_f64;
+     let mut args = std::env::args().skip(1);
+@@ -24,6 +29,13 @@
+             "--repeats" => repeats = args.next().ok_or("missing repeats")?.parse()?,
+             "--warmup" => warmup = args.next().ok_or("missing warmup")?.parse()?,
+             "--backends" => backends = args.next().ok_or("missing backend list")?,
++            "--pose-jacobians" => {
++                pose_jacobians = match args.next().as_deref() {
++                    Some("autodiff") => PoseJacobian::AutoDiff,
++                    Some("analytic") => PoseJacobian::Analytic,
++                    _ => return Err("--pose-jacobians requires autodiff or analytic".into()),
++                }
++            }
+             "--cg-relative-tolerance" => {
+                 cg_relative_tolerance = args
+                     .next()
+@@ -52,7 +64,7 @@
+     let input = input.ok_or("--input file.g2o is required")?;
+     let output = output.ok_or("--output NEW_DIRECTORY is required")?;
+     let data = PoseGraph2::from_reader(BufReader::new(File::open(input)?))?;
+-    let loaded = data.build(None)?;
++    let loaded = data.build_with_jacobians(None, pose_jacobians)?;
+     let initial = loaded.graph.initial();
+     let cg = CgOptions {
+         max_iterations: 10000,
+@@ -73,6 +85,13 @@
+             LinearSolver::SparseLdl(SparseLdlOptions {
+                 ordering: SparseOrdering::Natural,
+                 ..SparseLdlOptions::default()
++            }),
++        ),
++        (
++            "sparse_ldl_block",
++            LinearSolver::SparseLdl(SparseLdlOptions {
++                ordering: SparseOrdering::BlockMinimumDegree { block_size: 3 },
++                ..Default::default()
+             }),
+         ),
+     ];
+@@ -145,6 +164,7 @@
+         loaded.anchors
+     )?;
+     writeln!(config, "consistency_reference={reference_solver:?}")?;
++    writeln!(config, "pose_jacobians={pose_jacobians:?}")?;
+     for (name, solver) in &solvers {
+         writeln!(config, "{name}: {:?}", options(*solver))?;
+     }

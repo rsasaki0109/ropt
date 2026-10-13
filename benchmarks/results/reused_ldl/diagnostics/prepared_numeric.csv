@@ -1,0 +1,2 @@
+columns,jacobian_entries,normal_lower_entries,factor_entries,assembly_plan_entries,update_plan_entries,initial_analysis_factor_ns,prepared_100_refactor_solve_ns,allocation_calls,requested_bytes,symbolic_analyses,checked_residual_norm
+897,8587,6750,12908,23533,111776,5140376,25831576,0,0,1,4.28488923915257701e-13

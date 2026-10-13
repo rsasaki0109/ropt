@@ -1,0 +1,88 @@
+{
+  "purpose": "warmed inclusive stage profiling; excluded from primary comparisons; not additive",
+  "frames": 300,
+  "warmup_streams": 1,
+  "measured_streams": 1,
+  "stages": [
+    {
+      "stage": "build_graph",
+      "calls": 601,
+      "inclusive_ns": 18049583
+    },
+    {
+      "stage": "batch_solve",
+      "calls": 300,
+      "inclusive_ns": 233551951
+    },
+    {
+      "stage": "factor_evaluation",
+      "calls": 932,
+      "inclusive_ns": 67252293
+    },
+    {
+      "stage": "qr_append",
+      "calls": 301,
+      "inclusive_ns": 239539034
+    },
+    {
+      "stage": "graph_retract",
+      "calls": 632,
+      "inclusive_ns": 6385077
+    },
+    {
+      "stage": "ldl_solve",
+      "calls": 631,
+      "inclusive_ns": 131726165
+    },
+    {
+      "stage": "ldl_prepare",
+      "calls": 300,
+      "inclusive_ns": 73454690
+    },
+    {
+      "stage": "ldl_numeric",
+      "calls": 631,
+      "inclusive_ns": 24363741
+    },
+    {
+      "stage": "ldl_rebind",
+      "calls": 183,
+      "inclusive_ns": 11750347
+    },
+    {
+      "stage": "normal_pattern",
+      "calls": 483,
+      "inclusive_ns": 9333876
+    },
+    {
+      "stage": "ordering",
+      "calls": 300,
+      "inclusive_ns": 16706502
+    },
+    {
+      "stage": "factor_pattern",
+      "calls": 300,
+      "inclusive_ns": 26891400
+    },
+    {
+      "stage": "update_plan",
+      "calls": 300,
+      "inclusive_ns": 11690217
+    },
+    {
+      "stage": "assembly_plan",
+      "calls": 483,
+      "inclusive_ns": 13202959
+    },
+    {
+      "stage": "normal_signature",
+      "calls": 300,
+      "inclusive_ns": 3182026
+    }
+  ],
+  "means_and_nontiming_reports_match_primary": true,
+  "max_original_gradient": 2.963925807564216e-07,
+  "instrumented_source_sha256": "4b356fd0892c766f3619ca6bd1520b4286b8563fe5e48efbcbbe1ccfb40a6caf",
+  "executable_sha256": "f7702064ad0b6088673ebb674430d7c3877b8970bb3548d8ede837e21373ee8d",
+  "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9"
+}

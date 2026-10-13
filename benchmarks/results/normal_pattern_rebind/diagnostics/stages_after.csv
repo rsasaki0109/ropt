@@ -1,0 +1,10 @@
+stage,calls,inclusive_ns
+build_graph,601,17100875
+batch_solve,300,280594613
+factor_evaluation,932,72724397
+qr_append,301,294358358
+graph_retract,632,6327680
+ldl_solve,631,173323162
+ldl_prepare,300,109894292
+ldl_numeric,631,24270633
+ldl_rebind,183,17569706

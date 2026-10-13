@@ -1,8 +1,9 @@
 //! Factor graph with dense and sparse Jacobian assembly, with typed variable IDs, explicit local derivatives and fixed blocks.
 //! Numeric differentiation is opt-in at factor registration; never an implicit fallback.
 use crate::manifold::{SE2, SE3, SO2, SO3, Tangent6};
+use crate::noise::{NoiseModel, WhiteningWorkspace};
 use crate::sparse::CsrMatrix;
-use crate::{DMatrix, DVector, Error, LocalProblem};
+use crate::{DMatrix, DVector, Error, LocalProblem, Loss, LossBlock};
 use nalgebra::{Quaternion, UnitQuaternion, Vector2, Vector3};
 use std::ops::Range;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -33,7 +34,11 @@ impl VariableKind {
             Self::SE3 => (7, 6),
         }
     }
-    fn validate(self, x: &DVector<f64>) -> Result<(), Error> {
+    pub(crate) fn validate(self, x: &DVector<f64>) -> Result<(), Error> {
+        self.validate_slice(x.as_slice())
+    }
+    fn validate_slice(self, values: &[f64]) -> Result<(), Error> {
+        let x = nalgebra::DVectorView::from_slice(values, values.len());
         if x.len() != self.dimensions().0 || x.is_empty() {
             return Err(Error::InvalidDimensions);
         }
@@ -53,6 +58,15 @@ impl VariableKind {
         }
         Ok(())
     }
+    /// Jet-valued right retraction in the same storage and tangent conventions as `retract`.
+    /// Small-angle expansions keep derivatives finite at zero rotation.
+    pub fn retract_autodiff(
+        self,
+        x: &DVector<f64>,
+        d: &[crate::autodiff::DynamicJet],
+    ) -> Result<Vec<crate::autodiff::DynamicJet>, Error> {
+        crate::manifold_autodiff::retract(self, x, d)
+    }
     pub fn retract(self, x: &DVector<f64>, d: &DVector<f64>) -> Result<DVector<f64>, Error> {
         self.validate(x)?;
         if d.len() != self.dimensions().1 {
@@ -64,7 +78,9 @@ impl VariableKind {
         let out = match self {
             Self::Euclidean(_) => x + d,
             Self::SO2 => DVector::from_element(1, SO2::exp(x[0]).retract(d[0]).log()),
-            Self::SO3 => so3_values(decode_so3(x, 0).retract(Vector3::new(d[0], d[1], d[2]))),
+            Self::SO3 => {
+                so3_values(decode_so3(x.as_slice(), 0).retract(Vector3::new(d[0], d[1], d[2])))
+            }
             Self::SE2 => se2_values(read_se2(x)?.retract(Vector3::new(d[0], d[1], d[2]))),
             Self::SE3 => {
                 se3_values(read_se3(x)?.retract(Tangent6::from_column_slice(d.as_slice())))
@@ -73,8 +89,89 @@ impl VariableKind {
         self.validate(&out)?;
         Ok(out)
     }
+    // Private graph path: x is already validated, and storage ranges have the
+    // kind's dimensions. Use the same Lie operations as the owned public API.
+    fn retract_validated_into(self, x: &[f64], d: &[f64], out: &mut [f64]) -> Result<(), Error> {
+        if !d.iter().all(|v| v.is_finite()) {
+            return Err(Error::NonFinite);
+        }
+        match self {
+            Self::Euclidean(_) => {
+                for ((result, &value), &delta) in out.iter_mut().zip(x).zip(d) {
+                    *result = value + delta;
+                }
+            }
+            Self::SO2 => out[0] = SO2::exp(x[0]).retract(d[0]).log(),
+            Self::SO3 => {
+                let rotation = decode_so3(x, 0).retract(Vector3::new(d[0], d[1], d[2]));
+                let q = rotation.0.quaternion();
+                out.copy_from_slice(&[q.w, q.i, q.j, q.k]);
+            }
+            Self::SE2 => {
+                let pose = SE2 {
+                    translation: Vector2::new(x[0], x[1]),
+                    rotation: SO2::exp(x[2]),
+                }
+                .retract(Vector3::new(d[0], d[1], d[2]));
+                out.copy_from_slice(&[
+                    pose.translation[0],
+                    pose.translation[1],
+                    pose.rotation.log(),
+                ]);
+            }
+            Self::SE3 => {
+                let pose = SE3 {
+                    translation: Vector3::new(x[0], x[1], x[2]),
+                    rotation: decode_so3(x, 3),
+                }
+                .retract(Tangent6::from_column_slice(d));
+                let q = pose.rotation.0.quaternion();
+                out.copy_from_slice(&[
+                    pose.translation[0],
+                    pose.translation[1],
+                    pose.translation[2],
+                    q.w,
+                    q.i,
+                    q.j,
+                    q.k,
+                ]);
+            }
+        }
+        self.validate_slice(out)
+    }
+    /// Principal right-local coordinates Log(anchor^-1 * value).
+    pub fn local(self, anchor: &DVector<f64>, value: &DVector<f64>) -> Result<DVector<f64>, Error> {
+        self.validate(anchor)?;
+        self.validate(value)?;
+        let out = match self {
+            Self::Euclidean(_) => value - anchor,
+            Self::SO2 => DVector::from_element(1, SO2::exp(anchor[0]).local(SO2::exp(value[0]))),
+            Self::SO3 => {
+                DVector::from_column_slice(read_so3(anchor)?.local(read_so3(value)?).as_slice())
+            }
+            Self::SE2 => {
+                DVector::from_column_slice(read_se2(anchor)?.local(read_se2(value)?).as_slice())
+            }
+            Self::SE3 => {
+                DVector::from_column_slice(read_se3(anchor)?.local(read_se3(value)?).as_slice())
+            }
+        };
+        if !out.iter().all(|v| v.is_finite()) {
+            return Err(Error::NonFinite);
+        }
+        Ok(out)
+    }
+    /// Forward-AD local coordinates in the same chart as `local`.
+    /// The principal rotation chart is discontinuous at pi.
+    pub fn local_autodiff(
+        self,
+        anchor: &DVector<f64>,
+        value: &[crate::autodiff::DynamicJet],
+    ) -> Result<Vec<crate::autodiff::DynamicJet>, Error> {
+        crate::manifold_autodiff::local(self, anchor, value)
+    }
 }
-fn decode_so3(x: &DVector<f64>, k: usize) -> SO3 {
+fn decode_so3(x: &[f64], k: usize) -> SO3 {
     SO3(UnitQuaternion::new_normalize(Quaternion::new(
         x[k],
         x[k + 1],
@@ -84,7 +181,7 @@ fn decode_so3(x: &DVector<f64>, k: usize) -> SO3 {
 }
 pub fn read_so3(x: &DVector<f64>) -> Result<SO3, Error> {
     VariableKind::SO3.validate(x)?;
-    Ok(decode_so3(x, 0))
+    Ok(decode_so3(x.as_slice(), 0))
 }
 pub fn so3_values(r: SO3) -> DVector<f64> {
     let q = r.0.quaternion();
@@ -116,7 +213,7 @@ pub fn read_se3(x: &DVector<f64>) -> Result<SE3, Error> {
     VariableKind::SE3.validate(x)?;
     Ok(SE3 {
         translation: Vector3::new(x[0], x[1], x[2]),
-        rotation: decode_so3(x, 3),
+        rotation: decode_so3(x.as_slice(), 3),
     })
 }
 
@@ -132,7 +229,24 @@ enum Evaluation {
     Analytic(Box<AnalyticFn>),
     Central { step: f64, function: Box<NumericFn> },
 }
+/// Noise is applied before loss. Some(loss) replaces the global scalar loss for
+/// this entire whitened factor block; None keeps the global per-scalar fallback.
+#[derive(Debug, Clone, Default)]
+pub struct FactorOptions {
+    pub noise: NoiseModel,
+    pub loss: Option<Loss>,
+}
+impl FactorOptions {
+    fn validate(&self, m: usize) -> Result<(), Error> {
+        self.noise.validate_dimension(m)?;
+        if self.loss.is_some_and(|loss| !loss.valid()) {
+            return Err(Error::InvalidOptions);
+        }
+        Ok(())
+    }
+}
 struct Factor {
+    options: FactorOptions,
     variables: Vec<VariableId>,
     residuals: usize,
     evaluation: Evaluation,
@@ -189,10 +303,14 @@ impl FactorGraph {
         if id.graph != self.identity {
             return Err(Error::InvalidDimensions);
         }
-        self.variables
+        let variable = self
+            .variables
             .get_mut(id.index)
-            .ok_or(Error::InvalidDimensions)?
-            .fixed = fixed;
+            .ok_or(Error::InvalidDimensions)?;
+        if variable.fixed == fixed {
+            return Ok(());
+        }
+        variable.fixed = fixed;
         self.tangent_size = 0;
         for v in &mut self.variables {
             v.tangent = if v.fixed {
@@ -232,8 +350,23 @@ impl FactorGraph {
     where
         F: Fn(&[DVector<f64>]) -> Result<(DVector<f64>, Vec<DMatrix<f64>>), Error> + 'static,
     {
+        self.add_analytic_factor_with_options(ids, m, FactorOptions::default(), function)
+    }
+    /// Register an analytic factor with whitening and an optional joint robust loss.
+    pub fn add_analytic_factor_with_options<F>(
+        &mut self,
+        ids: &[VariableId],
+        m: usize,
+        options: FactorOptions,
+        function: F,
+    ) -> Result<(), Error>
+    where
+        F: Fn(&[DVector<f64>]) -> Result<(DVector<f64>, Vec<DMatrix<f64>>), Error> + 'static,
+    {
         self.check_factor(ids, m)?;
+        options.validate(m)?;
         self.factors.push(Factor {
+            options,
             variables: ids.to_vec(),
             residuals: m,
             evaluation: Evaluation::Analytic(Box::new(function)),
@@ -253,11 +386,27 @@ impl FactorGraph {
     where
         F: Fn(&[DVector<f64>]) -> Result<DVector<f64>, Error> + 'static,
     {
+        self.add_numeric_factor_with_options(ids, m, step, FactorOptions::default(), function)
+    }
+    /// Central differences stay explicit; whitening is applied after differentiating.
+    pub fn add_numeric_factor_with_options<F>(
+        &mut self,
+        ids: &[VariableId],
+        m: usize,
+        step: f64,
+        options: FactorOptions,
+        function: F,
+    ) -> Result<(), Error>
+    where
+        F: Fn(&[DVector<f64>]) -> Result<DVector<f64>, Error> + 'static,
+    {
         self.check_factor(ids, m)?;
+        options.validate(m)?;
         if !step.is_finite() || step <= 0.0 {
             return Err(Error::InvalidOptions);
         }
         self.factors.push(Factor {
+            options,
             variables: ids.to_vec(),
             residuals: m,
             evaluation: Evaluation::Central {
@@ -268,6 +417,76 @@ impl FactorGraph {
         self.residual_size += m;
         Ok(())
     }
+    /// Runtime AD of residuals evaluated on right-retracted ambient variable blocks.
+    /// Callbacks receive the documented storage coordinates; Jacobians use tangent coordinates.
+    pub fn add_autodiff_factor<F>(
+        &mut self,
+        ids: &[VariableId],
+        m: usize,
+        function: F,
+    ) -> Result<(), Error>
+    where
+        F: Fn(&[&[crate::autodiff::DynamicJet]]) -> Result<Vec<crate::autodiff::DynamicJet>, Error>
+            + 'static,
+    {
+        self.add_autodiff_factor_with_options(ids, m, 32, FactorOptions::default(), function)
+    }
+    /// Chunked runtime AD with the same whitening and joint loss policies as analytic factors.
+    pub fn add_autodiff_factor_with_options<F>(
+        &mut self,
+        ids: &[VariableId],
+        m: usize,
+        chunk_size: usize,
+        options: FactorOptions,
+        function: F,
+    ) -> Result<(), Error>
+    where
+        F: Fn(&[&[crate::autodiff::DynamicJet]]) -> Result<Vec<crate::autodiff::DynamicJet>, Error>
+            + 'static,
+    {
+        use crate::Residual;
+        use crate::autodiff::DynamicAutoDiff;
+        self.check_factor(ids, m)?;
+        if chunk_size == 0 {
+            return Err(Error::InvalidOptions);
+        }
+        let kinds = ids
+            .iter()
+            .map(|id| self.variable_kind(*id))
+            .collect::<Result<Vec<_>, Error>>()?;
+        let dimensions: Vec<_> = kinds.iter().map(|kind| kind.dimensions().1).collect();
+        let parameters = dimensions.iter().sum();
+        self.add_analytic_factor_with_options(ids, m, options, move |values| {
+            let residual = DynamicAutoDiff::new(parameters, m, |inputs| {
+                let mut start = 0;
+                let blocks = kinds
+                    .iter()
+                    .zip(values)
+                    .map(|(&kind, value)| {
+                        let n = kind.dimensions().1;
+                        let block = kind.retract_autodiff(value, &inputs[start..start + n]);
+                        start += n;
+                        block
+                    })
+                    .collect::<Result<Vec<_>, Error>>()?;
+                function(&blocks.iter().map(Vec::as_slice).collect::<Vec<_>>())
+            })?
+            .with_chunk_size(chunk_size)?;
+            let mut r = DVector::zeros(m);
+            let mut j = DMatrix::zeros(m, parameters);
+            residual.evaluate(&DVector::zeros(parameters), &mut r, &mut j)?;
+            let mut start = 0;
+            let blocks = dimensions
+                .iter()
+                .map(|&n| {
+                    let block = j.columns(start, n).into_owned();
+                    start += n;
+                    block
+                })
+                .collect();
+            Ok((r, blocks))
+        })
+    }
     pub fn variable_kind(&self, id: VariableId) -> Result<VariableKind, Error> {
         if id.graph != self.identity {
             return Err(Error::InvalidDimensions);
@@ -277,6 +496,33 @@ impl FactorGraph {
             .get(id.index)
             .ok_or(Error::InvalidDimensions)?
             .kind)
+    }
+    /// Active tangent columns at the graph's current fixed-variable layout.
+    /// None denotes a fixed variable; ranges change after set_fixed.
+    pub fn tangent_range(&self, id: VariableId) -> Result<Option<Range<usize>>, Error> {
+        self.variable_kind(id)?;
+        Ok(self.variables[id.index].tangent.clone())
+    }
+    /// Marginal covariance of the requested active variables in their right tangents.
+    /// Output ordering follows ids, then each block's tangent coordinates. Fixed
+    /// variables are conditioned constants and cannot be queried as estimated variables.
+    pub fn marginal_covariance(
+        &self,
+        x: &DVector<f64>,
+        ids: &[VariableId],
+        options: &crate::covariance::CovarianceOptions,
+    ) -> Result<crate::covariance::TangentCovariance, Error> {
+        if ids.is_empty() {
+            return Err(Error::InvalidDimensions);
+        }
+        let mut indices = Vec::new();
+        for &id in ids {
+            let range = self.tangent_range(id)?.ok_or_else(|| {
+                Error::Evaluation("fixed variables have no estimated covariance".into())
+            })?;
+            indices.extend(range);
+        }
+        crate::covariance::marginal_covariance(self, x, &indices, options)
     }
     /// Validate an independent eliminated suffix and return (retained columns, block size).
     /// Fixed IDs are excluded; active eliminated blocks must have equal tangent sizes.
@@ -355,24 +601,44 @@ impl LocalProblem for FactorGraph {
     fn dimensions(&self) -> (usize, usize, usize) {
         (self.initial.len(), self.tangent_size, self.residual_size)
     }
+    fn tangent_blocks(&self) -> Result<Vec<Range<usize>>, Error> {
+        Ok(self
+            .variables
+            .iter()
+            .filter_map(|v| v.tangent.clone())
+            .collect())
+    }
+    fn loss_blocks(&self) -> Vec<LossBlock> {
+        let mut row = 0;
+        let mut blocks = Vec::new();
+        for factor in &self.factors {
+            if let Some(loss) = factor.options.loss {
+                blocks.push(LossBlock {
+                    rows: row..row + factor.residuals,
+                    loss,
+                });
+            }
+            row += factor.residuals;
+        }
+        blocks
+    }
+
     fn retract(&self, x: &DVector<f64>, d: &DVector<f64>) -> Result<DVector<f64>, Error> {
         if x.len() != self.initial.len() || d.len() != self.tangent_size {
             return Err(Error::InvalidDimensions);
         }
         let mut out = x.clone();
-        for (i, v) in self.variables.iter().enumerate() {
-            let value = self.value(
-                x,
-                VariableId {
-                    graph: self.identity,
-                    index: i,
-                },
-            )?;
+        for v in &self.variables {
+            let value = &x.as_slice()[v.ambient.clone()];
+            // Preserve validation and failure order, including fixed/disconnected
+            // blocks. A failed update never escapes this owned output.
+            v.kind.validate_slice(value)?;
             if let Some(t) = &v.tangent {
-                let delta = d.rows(t.start, t.len()).into_owned();
-                let updated = v.kind.retract(&value, &delta)?;
-                out.rows_mut(v.ambient.start, v.ambient.len())
-                    .copy_from(&updated);
+                v.kind.retract_validated_into(
+                    value,
+                    &d.as_slice()[t.clone()],
+                    &mut out.as_mut_slice()[v.ambient.clone()],
+                )?;
             }
         }
         Ok(out)
@@ -403,26 +669,49 @@ impl LocalProblem for FactorGraph {
     }
     fn evaluate_sparse(&self, x: &DVector<f64>) -> Result<(DVector<f64>, CsrMatrix), Error> {
         let mut residuals = DVector::zeros(self.residual_size);
-        let mut entries = Vec::new();
+        let mut offsets = Vec::with_capacity(self.residual_size + 1);
+        offsets.push(0);
+        let mut indices = Vec::new();
+        let mut values = Vec::new();
+        let mut order = Vec::new();
         self.visit_factors(x, |row, f, residual, blocks| {
             residuals.rows_mut(row, f.residuals).copy_from(&residual);
-            for (id, block) in f.variables.iter().zip(blocks) {
-                if let Some(t) = &self.variables[id.index].tangent {
-                    for r in 0..f.residuals {
-                        for c in 0..t.len() {
-                            let v = block[(r, c)];
-                            if v != 0.0 {
-                                entries.push((row + r, t.start + c, v));
-                            }
+            // Callback/whitening slots retain the caller's order. Only assembly
+            // visits distinct active blocks in their current tangent-column order.
+            order.clear();
+            order.extend(
+                (0..f.variables.len())
+                    .filter(|&slot| self.variables[f.variables[slot].index].tangent.is_some()),
+            );
+            order.sort_unstable_by_key(|&slot| f.variables[slot].index);
+            for r in 0..f.residuals {
+                for &slot in &order {
+                    let t = self.variables[f.variables[slot].index]
+                        .tangent
+                        .as_ref()
+                        .unwrap();
+                    let block = &blocks[slot];
+                    for c in 0..t.len() {
+                        let v = block[(r, c)];
+                        if v != 0.0 {
+                            indices.push(t.start + c);
+                            values.push(v);
                         }
                     }
                 }
+                offsets.push(indices.len());
             }
             Ok(())
         })?;
         Ok((
             residuals,
-            CsrMatrix::from_triplets(self.residual_size, self.tangent_size, entries)?,
+            CsrMatrix::from_canonical(
+                self.residual_size,
+                self.tangent_size,
+                offsets,
+                indices,
+                values,
+            )?,
         ))
     }
 }
@@ -435,26 +724,32 @@ impl FactorGraph {
         if x.len() != self.initial.len() {
             return Err(Error::InvalidDimensions);
         }
-        for i in 0..self.variables.len() {
-            self.value(
-                x,
-                VariableId {
-                    graph: self.identity,
-                    index: i,
-                },
-            )?;
+        // Validate every block, including fixed/disconnected variables, without
+        // allocating owned copies that would immediately be discarded.
+        for variable in &self.variables {
+            variable
+                .kind
+                .validate_slice(&x.as_slice()[variable.ambient.clone()])?;
         }
+        // Callbacks keep the owned-vector API. Reuse per-slot storage across
+        // factors, passing only the current arity; no values escape the callback.
+        let mut inputs = Vec::<DVector<f64>>::new();
+        let mut whitening = WhiteningWorkspace::default();
         let mut row = 0;
         for f in &self.factors {
-            let values = f
-                .variables
-                .iter()
-                .map(|id| self.value(x, *id))
-                .collect::<Result<Vec<_>, _>>()?;
-            let (residual, blocks) = match &f.evaluation {
-                Evaluation::Analytic(function) => function(&values)?,
+            inputs.resize_with(inputs.len().max(f.variables.len()), || DVector::zeros(0));
+            for (id, buffer) in f.variables.iter().zip(&mut inputs) {
+                let ambient = &self.variables[id.index].ambient;
+                if buffer.len() != ambient.len() {
+                    buffer.resize_vertically_mut(ambient.len(), 0.);
+                }
+                buffer.copy_from(&x.rows(ambient.start, ambient.len()));
+            }
+            let values = &inputs[..f.variables.len()];
+            let (mut residual, mut blocks) = match &f.evaluation {
+                Evaluation::Analytic(function) => function(values)?,
                 Evaluation::Central { step, function } => {
-                    let residual = function(&values)?;
+                    let residual = function(values)?;
                     check_residual(&residual, f.residuals)?;
                     let mut blocks = Vec::new();
                     for (index, id) in f.variables.iter().enumerate() {
@@ -468,8 +763,8 @@ impl FactorGraph {
                         for k in 0..n {
                             let mut d = DVector::zeros(n);
                             d[k] = *step;
-                            let mut plus = values.clone();
-                            let mut minus = values.clone();
+                            let mut plus = values.to_vec();
+                            let mut minus = values.to_vec();
                             plus[index] = kind.retract(&values[index], &d)?;
                             minus[index] = kind.retract(&values[index], &(-d))?;
                             let a = function(&plus)?;
@@ -496,6 +791,9 @@ impl FactorGraph {
                     return Err(Error::NonFinite);
                 }
             }
+            f.options
+                .noise
+                .whiten(&mut residual, &mut blocks, &mut whitening)?;
             consume(row, f, residual, blocks)?;
             row += f.residuals;
         }

@@ -1,0 +1,7 @@
+{
+  "zero_fuzz_apply": true,
+  "instrumented_source_matches_compiled_classifier": true,
+  "runner_matches_compiled_classifier": true,
+  "source_sha256": "76a54b85ff992300a048c60a2c99a6301fd7d74ded28c94ff3af7e578dad2adf",
+  "patch_sha256": "ecc0b905da2b2c3838f1f528b177fd3771431f4bc07f611a98b565b85d1d1aca"
+}

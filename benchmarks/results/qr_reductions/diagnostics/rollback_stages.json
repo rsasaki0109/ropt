@@ -1,0 +1,384 @@
+{
+  "purpose": "source-only rollback check; cargo builds skipped; newest predecessor built and smoke-tested separately",
+  "builder_sha256": "b86ed96a9eae27e9a537fcd7b7ac0a65cfd6fce5facbd995cb7499def79d12dd",
+  "stages": [
+    {
+      "stage": "before-qr-reductions",
+      "source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch"
+      ]
+    },
+    {
+      "stage": "before-update-cursor",
+      "source_sha256": "ca68bf2894fb27e4c1498ed3fd7c71990fb62772b9fb153ceb5952f11bd689fd",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch"
+      ]
+    },
+    {
+      "stage": "before-qr-norm",
+      "source_sha256": "4cdcea1a4e4476218884a61185aa986717589355fd133806c56d1d1591c9e1cc",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch"
+      ]
+    },
+    {
+      "stage": "before-symbolic-merge",
+      "source_sha256": "63ad08ae135e85d51df51cb2fa13bb35d51371295b0c1c07b327af4557646ac5",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch"
+      ]
+    },
+    {
+      "stage": "before-qr-aligned",
+      "source_sha256": "a0448407832c4c7f9f61ae02c52f86533f9b99d9dc52bdfddc3e91a36c099909",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch"
+      ]
+    },
+    {
+      "stage": "before-normal-rebind",
+      "source_sha256": "4ac6c808eef27dd66f6b6461c9092cf07f1083f29e16853c62d05c88dd32d68f",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch"
+      ]
+    },
+    {
+      "stage": "before-ordering-adjacency",
+      "source_sha256": "f9d5a34d25424400b89c31ec8726e8aec95e5cad37ed2a471679e63291ed5105",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch"
+      ]
+    },
+    {
+      "stage": "before-whitening-buffers",
+      "source_sha256": "23ac190ae27e83972cf5e84c21ed948a42768210f00d95e75f9612b2582c72ef",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch"
+      ]
+    },
+    {
+      "stage": "before-qr-inplace",
+      "source_sha256": "54aa16cb8687c670088e9513d422f081983f76d8446587ecbc52ba0d2b1d7c6b",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch"
+      ]
+    },
+    {
+      "stage": "before-graph-retraction",
+      "source_sha256": "bbffa896b6c6edb2a49b1ad1a89d673e8ae407ad5757d26523accb30db96aa48",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch"
+      ]
+    },
+    {
+      "stage": "before-canonical-csr",
+      "source_sha256": "3fa2c64823b6f2749c4211f6ecd883d9e8f1af8bca089d0e8ecf97b8b4d3b5dd",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch"
+      ]
+    },
+    {
+      "stage": "before-qr-buffers",
+      "source_sha256": "591d0b1d9b0d392550cca9f1e8725c1b7711cc51b02a8ed8a8b164392d386a19",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch"
+      ]
+    },
+    {
+      "stage": "before-symbolic-pattern",
+      "source_sha256": "e8735c009834aad576680b9a329be720f3ba3ceed7ed2475bd814debf5717c38",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch"
+      ]
+    },
+    {
+      "stage": "before-damping-reuse",
+      "source_sha256": "e6e08a58d37556e23efd146969b11f0edd746907c87e03e0e056454537cd5fd4",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch"
+      ]
+    },
+    {
+      "stage": "before-model-reuse",
+      "source_sha256": "029ea57cb829ddba94a4d85f39051999a30e8bdda7267e941e5d8177cfd3aeab",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch"
+      ]
+    },
+    {
+      "stage": "before-qr-merge",
+      "source_sha256": "688ae1c80275448108cbb771343f2b633affb7566e327718cda1f5b9667ea7ff",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch",
+        "isam_qr_merge.patch"
+      ]
+    },
+    {
+      "stage": "before-scheduled-refresh",
+      "source_sha256": "11d6160e152d661673d9fbeee35fafe8b8b58cd2d8025ff4beca6be4a9ffd729",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch",
+        "isam_qr_merge.patch",
+        "isam_scheduled_refresh.patch"
+      ]
+    },
+    {
+      "stage": "before-isam",
+      "source_sha256": "a0adf3e1b40b8c13d70f5eefd8a40960e3c8bf78701caf73e2ecdc5124d0ecac",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch",
+        "isam_qr_merge.patch",
+        "isam_scheduled_refresh.patch",
+        "isam_graph_reuse.patch"
+      ]
+    },
+    {
+      "stage": "before-objective",
+      "source_sha256": "6a77f7827cd50db5ddfce106bcb51ae0628f63bec9ada95dd28454cc69fd965d",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch",
+        "isam_qr_merge.patch",
+        "isam_scheduled_refresh.patch",
+        "isam_graph_reuse.patch",
+        "stable_objective.patch"
+      ]
+    },
+    {
+      "stage": "before-refinement",
+      "source_sha256": "ae86a4746e860279c1ec5baf9483bb11b119595d560b2139e322372c1f5a9e4a",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch",
+        "isam_qr_merge.patch",
+        "isam_scheduled_refresh.patch",
+        "isam_graph_reuse.patch",
+        "stable_objective.patch",
+        "ldl_refinement.patch"
+      ]
+    },
+    {
+      "stage": "default",
+      "source_sha256": "808f8136a1567293d271c1269b5516148d1afed6963322acfcedb8e792f0c1f4",
+      "matches_archived_kernel": true,
+      "patches": [
+        "qr_reductions.patch",
+        "update_cursor.patch",
+        "qr_norm.patch",
+        "symbolic_sorted_merge.patch",
+        "qr_aligned.patch",
+        "normal_pattern_rebind.patch",
+        "ordering_adjacency.patch",
+        "whitening_buffers.patch",
+        "qr_inplace.patch",
+        "graph_retraction.patch",
+        "canonical_csr.patch",
+        "qr_merge_buffers.patch",
+        "symbolic_pattern.patch",
+        "isam_damping_reuse.patch",
+        "isam_model_reuse.patch",
+        "isam_qr_merge.patch",
+        "isam_scheduled_refresh.patch",
+        "isam_graph_reuse.patch",
+        "stable_objective.patch",
+        "ldl_refinement.patch",
+        "ldl_reuse.patch"
+      ]
+    }
+  ]
+}

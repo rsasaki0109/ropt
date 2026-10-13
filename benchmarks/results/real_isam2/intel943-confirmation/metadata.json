@@ -1,0 +1,97 @@
+{
+  "dataset": {
+    "dataset": "Intel Research Lab recorded SE2 pose graph",
+    "variant": "intel-vertigo943",
+    "source_url": "https://raw.githubusercontent.com/uoip/g2opy/5587024b17fd812c66d91740716fbf0bf5824fbc/contrib/vertigo/datasets/intel/originalDataset/intel.g2o",
+    "source_commit": "5587024b17fd812c66d91740716fbf0bf5824fbc",
+    "source_sha256": "4d87aaf96e1e04e47c723c371386b15358c71e98c05dad16b786d585f9fd70ff",
+    "total_source_poses": 943,
+    "total_source_edges": 1837,
+    "used_arrivals": 942,
+    "used_edges": 1837,
+    "complete_dataset": true,
+    "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+    "initialization": "provided original vertex values; angles normalized; no optimized/truth seeds",
+    "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+    "stream_sha256": "97dbe661d59fb0f864a544b1d8f955512a2c47b87cb3975abf6280f34a937496"
+  },
+  "rounds": 6,
+  "cpu_affinity": [
+    0
+  ],
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "native_manifest": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "executable_sha256": "d30d107f04c7670c231a09769ff34a061f93e5ba7b63193b32a41840eb5f9da9",
+    "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "benchmark.cpp": "0c6770a525252e7e38ea96a2f9f6cbbb85eef216a4fe92eb95394d195d8a2919",
+      "CMakeLists.txt": "0d302ce92ad64c437f7284865a8d0fb62ce4f8eaccf12449e1fe50ce9addc4d4"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "reference_cache_sha256": "c7b9e7659299eeae13baa125dd9cfe11c11125f3e89ed124bba302ef824e6b08",
+    "runtime_library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a"
+  },
+  "source_sha256": "6f3670ec8c608eb12bee16b2031aab5835a241e735285d6772adb0a172ba3c5c",
+  "executable_sha256": {
+    "ropt": "a2e40c51755872a032f188c0dd2d68332e53e3cd9e2ce0923c28a41238790c4f",
+    "native": "d30d107f04c7670c231a09769ff34a061f93e5ba7b63193b32a41840eb5f9da9"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_real_isam_se2.rs": "3d7009aa1c45c524c32d302b2bed2083c6595aebf7f184aea78d5146f9bf654c",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "580cc744d38beaf43bb4b65ec63ece49c3d03303df9b8888c5e7be71df7480a3",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/real_se2_stream.py": "602e1d7ac1cce119046a1a915044be342ccfab024a6952b81ef0a27d620e49eb",
+    "benchmarks/se2_stream.py": "cf2b1c202e82aaa3676397d06e9e7c0209d69cb41541ddffafc89fd800e161ae",
+    "benchmarks/paired_isam2.py": "84f38629ca9287ccfa2c1078baf642b76830ea49ff9b2e19bfbf00bf00f48d75",
+    "benchmarks/paired_real_isam2.py": "46964b72fa94655c97d2f3cff710d50c5fbf21a13466422510571b78cfc41aba"
+  },
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "world_pose_norm_difference": 2e-06,
+    "relative_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "fixed_root": "exact"
+  },
+  "warmup_streams_per_process": 1,
+  "timed_streams_per_process": 1,
+  "policy": "both solvers force full relinearization every arrival; normalized internal gradient target 8e-8; ropt restart damping 1e-5, batch ordering reuse, at most four frozen-QR refinements; native full-relin iSAM2 QR/GN with timed empty updates to stationarity",
+  "timed": "complete update including full owned means and cost/report; native stationarity probes included; parsing, factor construction, external validation, serialization and report destruction excluded",
+  "allocator_counting": false,
+  "memory_measured": false,
+  "scope": "recorded measurements; pose-ID arrival inferred without sensor timestamps; this accuracy-target policy is not either library default"
+}

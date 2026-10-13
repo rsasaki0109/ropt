@@ -1,0 +1,23 @@
+{
+  "purpose": "same forward profile patch on isolated before/after sources; fresh targets; primary sources unchanged",
+  "cases": [
+    {
+      "variant": "before",
+      "primary_source_sha256": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b",
+      "instrumented_source_sha256": "95e3c754497ace5db9d40e384802ad6e24b38bd984d6e9eb7a705e00812407a0",
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "zero_fuzz_apply": true,
+      "fresh_target": "/tmp/ropt-qr-columns-before-stages/target",
+      "all_fifteen_counters_and_primary_reports_verified": true
+    },
+    {
+      "variant": "after",
+      "primary_source_sha256": "5d3a5de1a11c1aa1bdbbcf4c44859d54c7127d987cb24ac67d2e96ab6d16d289",
+      "instrumented_source_sha256": "bedea51219f8d37f0f3cea9e7959f0db21572e652604d0075264d129be1bb30b",
+      "patch_sha256": "b6f87e1fac669e8c2895e65fafca5815d73fdad7e24fdf4a6a38ac6fd28a0ca9",
+      "zero_fuzz_apply": true,
+      "fresh_target": "/tmp/ropt-qr-columns-after-stages/target",
+      "all_fifteen_counters_and_primary_reports_verified": true
+    }
+  ]
+}

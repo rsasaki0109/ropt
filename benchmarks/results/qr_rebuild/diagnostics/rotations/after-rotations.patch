@@ -1,0 +1,26 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -161,6 +161,7 @@
+         let mut lower_row = Vec::new();
+         let mut row = Vec::new();
+         let max_entries = self.options.max_entries;
++        let mut rotations = 0_u64;
+         for r in rows {
+             let residual = residual[r];
+             row.clear();
+@@ -172,6 +173,7 @@
+                     row_start += 1;
+                     continue;
+                 }
++                rotations += 1;
+                 let old = &mut self.rows[k];
+                 let diagonal = old.first().map_or(0., |&(_, value)| value);
+                 let norm = givens_norm(diagonal, below);
+@@ -370,6 +372,7 @@
+                 return Err(Error::NonFinite);
+             }
+         }
++        eprintln!("qr_rotations={rotations}");
+         Ok(())
+     }
+     /// Solve the full-column-rank cached model. No damping or pseudoinverse.

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-12T12:02:51Z",
+  "dataset": {
+    "sha256": "5b91856683006b8204b0daba329eddc1ef613ce33342d169939a7ad51998b128",
+    "derived": true,
+    "provenance": {
+      "source": "https://raw.githubusercontent.com/borglab/gtsam/4.2.1/examples/Data/w10000.graph",
+      "source_sha256": "1e88f220bd580a4c2b9fc065358608a53b26b1c30033405990b4cdc83236fc89",
+      "prefix_vertices": 300,
+      "retained_edges": 721,
+      "output_sha256": "5b91856683006b8204b0daba329eddc1ef613ce33342d169939a7ad51998b128",
+      "source_equivalence_records": 5875,
+      "omitted_equivalences_within_prefix": 94,
+      "complete_original_problem": false,
+      "transformation": "explicit between-only subgraph: IDs 0..N-1, keep EDGE2 within prefix, omit EQUIV, permute TORO information to g2o"
+    },
+    "poses": 300,
+    "edges": 721,
+    "anchors": [
+      0
+    ],
+    "active_tangent": 897
+  },
+  "repository": {
+    "head": "b8d9242d700e1288eea86722839bef92091f5139",
+    "dirty": true,
+    "solver_source_sha256": "d1e2e3c216e824ade25312a912ea036e9d392d646d0192f46c73c65db45d3e51",
+    "driver_sha256": "bc9c1d048680ff89a4a93e36b606ddfc5c1eda8f602b21c8fa342d6538d87b3f"
+  },
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "driver_sha256": "88318f0434eb0d6b839e133f4783df864ead8c4eae76623f1e4eb9eec1b5ceac",
+  "oracle_sha256": "6c5905c82d4cd184eb2f4b4fe8cfc5bfc2cd0d7deb1c913059d4fd62b4c643d9",
+  "converter_sha256": "5602df73bbca6fcba54a717d649754b528bdacce6452e747e5872ae860a94130",
+  "release_executable_sha256": "1e336f3e47a1085942332b67f7774c0e5600f7b721e5e384461969467695111e",
+  "gtsam_build": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "executable_sha256": "9d1a38f5eae773cf5a8e659c179025fb59699d67e7826a18500b29d7719a745e",
+    "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "benchmark.cpp": "db4b0f22eaf8e400cbbeea937b1c329fa62f4e60834303aa16d220d236436ffc",
+      "CMakeLists.txt": "28860f46fcabb1e19b97cbeee6cc80348a2d11a37e6c56cd0741c546f0cf06b5"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0"
+  },
+  "repeats": 10,
+  "warmup": 3,
+  "backends": [
+    "dense",
+    "sparse_ldl",
+    "scalar_cg",
+    "block_cg"
+  ],
+  "memory_measured": false,
+  "cg_relative_tolerance": 1e-10,
+  "cg_absolute_tolerance": 1e-12,
+  "quality_thresholds": {
+    "relative_cost": 1e-09,
+    "gradient_inf": 1e-05,
+    "pose_delta": 1e-06
+  }
+}
