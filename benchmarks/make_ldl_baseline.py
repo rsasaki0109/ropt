@@ -17,6 +17,98 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="new directory outside checkout")
     stage = parser.add_mutually_exclusive_group()
+    stage.add_argument("--before-lag-cost-range", action="store_true",
+                       help="restore fixed-lag costs before finite half-square accumulation")
+    stage.add_argument("--before-projection-range", action="store_true",
+                       help="restore prior elimination before bounded extreme projections")
+    stage.add_argument("--before-prior-column-scaling", action="store_true",
+                       help="restore prior compression before extreme column-scale fallback")
+    stage.add_argument("--before-root-weights", action="store_true",
+                       help="restore robust models before direct extreme square-root weights")
+    stage.add_argument("--before-cauchy-range", action="store_true",
+                       help="restore Cauchy loss before extreme-scale fallback evaluation")
+    stage.add_argument("--before-robust-block-norm", action="store_true",
+                       help="restore robust loss blocks before stable norm evaluation")
+    stage.add_argument("--before-numeric-factor-steps", action="store_true",
+                       help="restore numeric factors before step representability checks")
+    stage.add_argument("--before-numeric-factor-errors", action="store_true",
+                       help="restore numeric factors before fail-fast output validation")
+    stage.add_argument("--before-central-difference", action="store_true",
+                       help="restore central differences before perturbation and output guards")
+    stage.add_argument("--before-block-layout", action="store_true",
+                       help="restore block Jacobi before allocation layout preflight")
+    stage.add_argument("--before-pcg-direction", action="store_true",
+                       help="restore PCG before early direction breakdown checks")
+    stage.add_argument("--before-pcg-limit", action="store_true",
+                       help="restore PCG before final-step true residual checks")
+    stage.add_argument("--before-pcg-norm", action="store_true",
+                       help="restore PCG before robust residual norms")
+    stage.add_argument("--before-csr-dimensions", action="store_true",
+                       help="restore CSR construction before row-storage dimension checks")
+    stage.add_argument("--before-residual-count", action="store_true",
+                       help="restore factor registration before residual-count overflow checks")
+    stage.add_argument("--before-empty-window", action="store_true",
+                       help="restore fixed-lag smoothing before empty time-only updates")
+    stage.add_argument("--before-retired-timestamps", action="store_true",
+                       help="restore fixed-lag reports before retired timestamp snapshots")
+    stage.add_argument("--before-covariance-preflight", action="store_true",
+                       help="restore covariance query validation after nonlinear optimization")
+    stage.add_argument("--before-dynamic-lag", action="store_true",
+                       help="restore fixed-lag smoothing before runtime duration changes")
+    stage.add_argument("--before-robust-covariance-model", action="store_true",
+                       help="restore fixed-lag covariance before loss-model consistency checks")
+    stage.add_argument("--before-covariance-snapshot", action="store_true",
+                       help="restore fixed-lag updates before pre-expiry covariance queries")
+    stage.add_argument("--before-expiry-estimates", action="store_true",
+                       help="restore fixed-lag reports before expired-estimate snapshots")
+    stage.add_argument("--before-tree-refinement", action="store_true",
+                       help="restore separate global QR and editable-tree refresh factorization")
+    stage.add_argument("--before-tree-gradient", action="store_true",
+                       help="restore Gaussian trees before frozen-factor gradient solves")
+    stage.add_argument("--before-cache-refresh", action="store_true",
+                       help="restore copying factor cache references before scheduled refresh")
+    stage.add_argument("--before-factor-capture", action="store_true",
+                       help="restore row-iterator growth in Gaussian factor capture")
+    stage.add_argument("--before-inline-ad-inputs", action="store_true",
+                       help="restore heap wrappers for all AD callback input arities")
+    stage.add_argument("--before-block-jacobian", action="store_true",
+                       help="restore flat tangent Jacobian/seed allocation before block splitting")
+    stage.add_argument("--before-dense-probe", action="store_true",
+                       help="restore tree-only probe variable indexing")
+    stage.add_argument("--before-probe-cost", action="store_true",
+                       help="restore materialized probe residual/zero vectors")
+    stage.add_argument("--before-jet-negation", action="store_true",
+                       help="restore generic negation with finite scans")
+    stage.add_argument("--before-jet-loops", action="store_true",
+                       help="restore indexed owned Jet derivative loops")
+    stage.add_argument("--before-jet-buffers", action="store_true",
+                       help="restore allocating owned Jet arithmetic")
+    stage.add_argument("--before-mixed-probe", action="store_true",
+                       help="restore graph/CSR probes for graphs containing automatic differentiation")
+    stage.add_argument("--before-direct-probe", action="store_true",
+                       help="restore graph registration/CSR assembly for every nonlinear probe")
+    stage.add_argument("--before-incidence-cache", action="store_true",
+                       help="restore full child/factor incidence enumeration in editable Gaussian updates")
+    stage.add_argument("--before-editable-cow", action="store_true",
+                       help="restore independent editable Gaussian metadata map copies")
+    stage.add_argument("--before-local-clique-csr", action="store_true",
+                       help="restore triplet assembly in editable Gaussian cliques")
+    stage.add_argument("--before-stationarity-probes", action="store_true",
+                       help="restore the editable-tree kernel before nonlinear probes, requested keys and topology reuse")
+    stage.add_argument("--before-editable-bayes-tree", action="store_true",
+                       help="restore the global-QR selected-factor kernel before separator-message replacement")
+    stage.add_argument("--before-selective-relinearization", action="store_true",
+                       help="restore the pre-selective nonlinear-factor cache kernel")
+    stage.add_argument("--before-cartesian-chart", action="store_true",
+                       help="restore Lie-chart-only variables before Cartesian SE2 and mapped QR row reuse")
+    stage.add_argument("--before-qr-structure", action="store_true",
+                       help="restore comparator sorting, scalar graph projection and fresh QR buffers")
+    stage.add_argument("--before-bayes-tree", action="store_true",
+                       help="restore the QR-only Gaussian cache before optional Bayes-tree paths")
+    stage.add_argument("--before-information-precision", action="store_true",
+                       help="restore ordinary information whitening before compensated small-pivot arithmetic")
+    stage.add_argument("--before-sparse-qr", action="store_true",
+                       help="restore LDL-only sparse GN/LM before ordered sparse QR and explicit GN policy")
     stage.add_argument("--before-real-isam", action="store_true",
                        help="restore absolute-gradient iSAM before optional QR ordering/refinement")
     parser.add_argument("--source-only", action="store_true", help="reconstruct source without compiling")
@@ -83,17 +175,77 @@ def main():
     if args.before_isam or args.before_scheduled_refresh:
         for name in ("benchmark_isam.rs", "support/isam_stream.rs"):
             shutil.copyfile(ROOT / "crates/ropt/examples" / name, crate / "examples" / name)
-    if args.before_qr_merge or args.before_model_reuse or args.before_damping_reuse or args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam:
+    if args.before_qr_merge or args.before_model_reuse or args.before_damping_reuse or args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam or args.before_sparse_qr or args.before_information_precision or args.before_bayes_tree or args.before_qr_structure or args.before_cartesian_chart:
         for name in ("benchmark_isam_se2.rs", "support/se2_benchmark.rs", "benchmark_isam.rs", "support/isam_stream.rs"):
             shutil.copyfile(ROOT / "crates/ropt/examples" / name, crate / "examples" / name)
-    if args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam:
+    if args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam or args.before_sparse_qr or args.before_information_precision or args.before_bayes_tree or args.before_qr_structure or args.before_cartesian_chart:
         for name in ("benchmark_warm_isam_se2.rs", "benchmark_restart_isam_se2.rs", "profile_symbolic.rs"):
             shutil.copyfile(ROOT / "crates/ropt/examples" / name, crate / "examples" / name)
-    if args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam:
+    if args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam or args.before_sparse_qr or args.before_information_precision or args.before_bayes_tree or args.before_qr_structure or args.before_cartesian_chart:
         for name in ("validate_isam_se2.rs", "benchmark_cached_isam_se2.rs", "support/isam_se2.rs"):
             shutil.copyfile(ROOT / "crates/ropt/examples" / name, crate / "examples" / name)
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation or args.before_jet_loops or args.before_jet_buffers or args.before_mixed_probe or args.before_direct_probe or args.before_incidence_cache or args.before_editable_cow or args.before_local_clique_csr:
+        for name in ("benchmark_selective_se2_isam.rs", "support/real_selective_se2.rs", "support/real_se2_benchmark.rs"):
+            shutil.copyfile(ROOT / "crates/ropt/examples" / name, crate / "examples" / name)
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation or args.before_jet_loops or args.before_jet_buffers or args.before_mixed_probe:
+        shutil.copyfile(ROOT / "crates/ropt/examples/benchmark_autodiff_probe.rs", crate / "examples/benchmark_autodiff_probe.rs")
+        shutil.copyfile(ROOT / "crates/ropt/examples/benchmark_ad_selective_se2_isam.rs", crate / "examples/benchmark_ad_selective_se2_isam.rs")
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation or args.before_jet_loops or args.before_jet_buffers:
+        shutil.copyfile(ROOT / "crates/ropt/examples/profile_dynamic_jet.rs", crate / "examples/profile_dynamic_jet.rs")
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation:
+        shutil.copyfile(ROOT / "crates/ropt/examples/profile_dynamic_negation.rs", crate / "examples/profile_dynamic_negation.rs")
+    if args.before_cache_refresh or args.before_factor_capture:
+        shutil.copyfile(ROOT / "crates/ropt/examples/benchmark_factor_cache.rs", crate / "examples/benchmark_factor_cache.rs")
+    if args.before_lag_cost_range or args.before_projection_range or args.before_prior_column_scaling or args.before_root_weights or args.before_cauchy_range or args.before_robust_block_norm or args.before_numeric_factor_steps or args.before_numeric_factor_errors or args.before_central_difference or args.before_block_layout or args.before_pcg_direction or args.before_pcg_limit or args.before_pcg_norm or args.before_csr_dimensions or args.before_residual_count or args.before_empty_window or args.before_retired_timestamps or args.before_covariance_preflight or args.before_dynamic_lag or args.before_robust_covariance_model or args.before_covariance_snapshot or args.before_expiry_estimates or args.before_tree_refinement or args.before_tree_gradient:
+        shutil.copytree(ROOT / "crates/ropt/examples", crate / "examples", dirs_exist_ok=True)
     names = []
     for name, stop_here in (
+        ("fixed_lag_cost_range.patch", args.before_lag_cost_range),
+        ("prior_projection_range.patch", args.before_projection_range),
+        ("prior_column_scaling.patch", args.before_prior_column_scaling),
+        ("robust_root_weights.patch", args.before_root_weights),
+        ("cauchy_range.patch", args.before_cauchy_range),
+        ("robust_block_norm.patch", args.before_robust_block_norm),
+        ("numeric_factor_steps.patch", args.before_numeric_factor_steps),
+        ("numeric_factor_errors.patch", args.before_numeric_factor_errors),
+        ("central_difference_guards.patch", args.before_central_difference),
+        ("block_jacobi_layout.patch", args.before_block_layout),
+        ("pcg_direction.patch", args.before_pcg_direction),
+        ("pcg_iteration_limit.patch", args.before_pcg_limit),
+        ("pcg_residual_norm.patch", args.before_pcg_norm),
+        ("csr_dimensions.patch", args.before_csr_dimensions),
+        ("residual_count.patch", args.before_residual_count),
+        ("empty_window.patch", args.before_empty_window),
+        ("retired_timestamps.patch", args.before_retired_timestamps),
+        ("covariance_preflight.patch", args.before_covariance_preflight),
+        ("dynamic_lag.patch", args.before_dynamic_lag),
+        ("robust_covariance_model.patch", args.before_robust_covariance_model),
+        ("covariance_snapshot.patch", args.before_covariance_snapshot),
+        ("expiry_estimates.patch", args.before_expiry_estimates),
+        ("tree_refinement.patch", args.before_tree_refinement),
+        ("tree_gradient.patch", args.before_tree_gradient),
+        ("cache_refresh.patch", args.before_cache_refresh),
+        ("factor_capture.patch", args.before_factor_capture),
+        ("inline_ad_inputs.patch", args.before_inline_ad_inputs),
+        ("block_jacobian.patch", args.before_block_jacobian),
+        ("dense_probe.patch", args.before_dense_probe),
+        ("probe_cost.patch", args.before_probe_cost),
+        ("jet_negation.patch", args.before_jet_negation),
+        ("jet_loop_split.patch", args.before_jet_loops),
+        ("jet_buffer_reuse.patch", args.before_jet_buffers),
+        ("mixed_probe.patch", args.before_mixed_probe),
+        ("direct_probe.patch", args.before_direct_probe),
+        ("incidence_cache.patch", args.before_incidence_cache),
+        ("editable_cow.patch", args.before_editable_cow),
+        ("local_clique_csr.patch", args.before_local_clique_csr),
+        ("stationarity_probes.patch", args.before_stationarity_probes),
+        ("editable_bayes_tree.patch", args.before_editable_bayes_tree),
+        ("selective_relinearization.patch", args.before_selective_relinearization),
+        ("cartesian_chart.patch", args.before_cartesian_chart),
+        ("qr_structure.patch", args.before_qr_structure),
+        ("bayes_tree.patch", args.before_bayes_tree),
+        ("information_precision.patch", args.before_information_precision),
+        ("sparse_qr.patch", args.before_sparse_qr),
         ("real_isam.patch", args.before_real_isam),
         ("qr_rebuild.patch", args.before_qr_rebuild),
         ("anchor_coordinates.patch", args.before_anchor_coordinates),
@@ -128,7 +280,53 @@ def main():
         subprocess.run(["patch", "--batch", "--fuzz=0", "-p1", "-R", "-d", str(out), "-i", str(patch)], check=True)
     metadata = {"patches_sha256": {name: hashlib.sha256((ROOT / "benchmarks" / name).read_bytes()).hexdigest()
                                    for name in names},
-                "purpose": ("restored absolute-gradient iSAM before optional QR ordering/refinement" if args.before_real_isam else
+                "purpose": ("restored fixed-lag costs before finite half-square accumulation" if args.before_lag_cost_range else
+                            "restored prior elimination before bounded extreme projections" if args.before_projection_range else
+                            "restored prior compression before extreme column-scale fallback" if args.before_prior_column_scaling else
+                            "restored robust models before direct extreme square-root weights" if args.before_root_weights else
+                            "restored Cauchy loss before extreme-scale fallback evaluation" if args.before_cauchy_range else
+                            "restored robust loss blocks before stable norm evaluation" if args.before_robust_block_norm else
+                            "restored numeric factors before step representability checks" if args.before_numeric_factor_steps else
+                            "restored numeric factors before fail-fast output validation" if args.before_numeric_factor_errors else
+                            "restored central differences before perturbation and output guards" if args.before_central_difference else
+                            "restored block Jacobi before allocation layout preflight" if args.before_block_layout else
+                            "restored PCG before early direction breakdown checks" if args.before_pcg_direction else
+                            "restored PCG before final-step true residual checks" if args.before_pcg_limit else
+                            "restored PCG before robust residual norms" if args.before_pcg_norm else
+                            "restored CSR construction before row-storage dimension checks" if args.before_csr_dimensions else
+                            "restored factor registration before residual-count overflow checks" if args.before_residual_count else
+                            "restored fixed-lag smoothing before empty time-only updates" if args.before_empty_window else
+                            "restored fixed-lag reports before retired timestamp snapshots" if args.before_retired_timestamps else
+                            "restored covariance query validation after nonlinear optimization" if args.before_covariance_preflight else
+                            "restored fixed-lag smoothing before runtime duration changes" if args.before_dynamic_lag else
+                            "restored fixed-lag covariance before loss-model consistency checks" if args.before_robust_covariance_model else
+                            "restored fixed-lag updates before pre-expiry covariance queries" if args.before_covariance_snapshot else
+                            "restored fixed-lag reports before expired-estimate snapshots" if args.before_expiry_estimates else
+                            "restored separate global QR and editable-tree refresh factorization" if args.before_tree_refinement else
+                            "restored Gaussian trees before frozen-factor gradient solves" if args.before_tree_gradient else
+                            "restored factor cache copies before scheduled refresh" if args.before_cache_refresh else
+                            "restored row-iterator growth in Gaussian factor capture" if args.before_factor_capture else
+                            "restored heap wrappers for AD callback inputs" if args.before_inline_ad_inputs else
+                            "restored flat tangent Jacobian/seed allocation" if args.before_block_jacobian else
+                            "restored tree-only probe variable indexing" if args.before_dense_probe else
+                            "restored materialized probe residual/zero vectors" if args.before_probe_cost else
+                            "restored generic negation with finite scans" if args.before_jet_negation else
+                            "restored indexed owned Jet derivative loops" if args.before_jet_loops else
+                            "restored allocating owned Jet arithmetic" if args.before_jet_buffers else
+                            "restored graph/CSR probes for AD/mixed factor recipes" if args.before_mixed_probe else
+                            "restored graph/CSR nonlinear stationarity probes" if args.before_direct_probe else
+                            "restored full editable-tree incidence enumeration" if args.before_incidence_cache else
+                            "restored independent editable-tree metadata copies" if args.before_editable_cow else
+                            "restored editable-tree triplet clique assembly" if args.before_local_clique_csr else
+                            "restored editable tree before nonlinear stationarity probes and symbolic topology reuse" if args.before_stationarity_probes else
+                            "restored selected-factor kernel before editable Gaussian Bayes-tree replacement" if args.before_editable_bayes_tree else
+                            "restored kernel before selective nonlinear factor evaluation" if args.before_selective_relinearization else
+                            "restored Lie-chart-only variables and unmapped QR rows" if args.before_cartesian_chart else
+                            "restored comparator QR grouping, scalar ordering projection and fresh numeric buffers" if args.before_qr_structure else
+                            "restored the QR-only Gaussian cache" if args.before_bayes_tree else
+                            "restored ordinary information whitening" if args.before_information_precision else
+                            "restored sparse solver before ordered QR and explicit nonmonotonic GN" if args.before_sparse_qr else
+                            "restored absolute-gradient iSAM before optional QR ordering/refinement" if args.before_real_isam else
                             "restored chronological insertion for full-model QR rebuilds" if args.before_qr_rebuild else
                             "restored repeated iSAM principal local-coordinate calculations" if args.before_anchor_coordinates else
                             "restored per-index alignment checks for all equal-width QR suffixes" if args.before_qr_columns else
@@ -158,12 +356,24 @@ def main():
                "--example", "benchmark_pose_graph", "--example", "profile_pose_graph"]
     if args.before_isam or args.before_scheduled_refresh:
         command += ["--example", "benchmark_isam"]
-    if args.before_qr_merge or args.before_model_reuse or args.before_damping_reuse or args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam:
+    if args.before_qr_merge or args.before_model_reuse or args.before_damping_reuse or args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam or args.before_sparse_qr or args.before_information_precision or args.before_bayes_tree or args.before_qr_structure or args.before_cartesian_chart:
         command += ["--example", "benchmark_isam_se2", "--example", "benchmark_isam"]
-    if args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam:
+    if args.before_symbolic_pattern or args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam or args.before_sparse_qr or args.before_information_precision or args.before_bayes_tree or args.before_qr_structure or args.before_cartesian_chart:
         command += ["--example", "benchmark_warm_isam_se2", "--example", "benchmark_restart_isam_se2", "--example", "profile_symbolic"]
-    if args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam:
+    if args.before_qr_buffers or args.before_canonical_csr or args.before_graph_retraction or args.before_qr_inplace or args.before_whitening_buffers or args.before_ordering_adjacency or args.before_normal_rebind or args.before_qr_aligned or args.before_symbolic_merge or args.before_qr_norm or args.before_update_cursor or args.before_qr_reductions or args.before_qr_columns or args.before_anchor_coordinates or args.before_qr_rebuild or args.before_real_isam or args.before_sparse_qr or args.before_information_precision or args.before_bayes_tree or args.before_qr_structure or args.before_cartesian_chart:
         command += ["--example", "validate_isam_se2", "--example", "benchmark_cached_isam_se2"]
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation or args.before_jet_loops or args.before_jet_buffers or args.before_mixed_probe or args.before_direct_probe or args.before_incidence_cache or args.before_editable_cow or args.before_local_clique_csr:
+        command += ["--example", "benchmark_selective_se2_isam"]
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation or args.before_jet_loops or args.before_jet_buffers or args.before_mixed_probe:
+        command += ["--example", "benchmark_autodiff_probe", "--example", "benchmark_ad_selective_se2_isam"]
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation or args.before_jet_loops or args.before_jet_buffers:
+        command += ["--example", "profile_dynamic_jet"]
+    if args.before_cache_refresh or args.before_factor_capture or args.before_inline_ad_inputs or args.before_block_jacobian or args.before_dense_probe or args.before_probe_cost or args.before_jet_negation:
+        command += ["--example", "profile_dynamic_negation"]
+    if args.before_cache_refresh or args.before_factor_capture:
+        command += ["--example", "benchmark_factor_cache"]
+    if args.before_lag_cost_range or args.before_projection_range or args.before_prior_column_scaling or args.before_root_weights or args.before_cauchy_range or args.before_robust_block_norm or args.before_numeric_factor_steps or args.before_numeric_factor_errors or args.before_central_difference or args.before_block_layout or args.before_pcg_direction or args.before_pcg_limit or args.before_pcg_norm or args.before_csr_dimensions or args.before_residual_count or args.before_empty_window or args.before_retired_timestamps or args.before_covariance_preflight or args.before_dynamic_lag or args.before_robust_covariance_model or args.before_covariance_snapshot or args.before_expiry_estimates or args.before_tree_refinement or args.before_tree_gradient:
+        command += ["--example", "benchmark_ad_selective_se2_isam"]
     if not args.source_only:
         subprocess.run(command + ["--release", "--locked", "--offline"], check=True)
     if args.source_only:

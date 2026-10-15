@@ -85,6 +85,8 @@ impl BlockJacobi {
     /// Ranges must cover all active columns exactly once, in contiguous order.
     /// Cross-block couplings remain in the full operator, but not in M.
     /// No full normal matrix, explicit inverse, extra jitter or fallback is used.
+    /// Unrepresentable mapping or dense-block storage returns `InvalidDimensions`
+    /// before allocating either. This does not impose an available-memory budget.
     pub fn from_normal(
         j: &CsrMatrix,
         damping: f64,
@@ -98,6 +100,14 @@ impl BlockJacobi {
             return Err(Error::InvalidOptions);
         }
         validate_partition(n, ranges)?;
+        std::alloc::Layout::array::<(usize, usize)>(n).map_err(|_| Error::InvalidDimensions)?;
+        for range in ranges {
+            let entries = range
+                .len()
+                .checked_mul(range.len())
+                .ok_or(Error::InvalidDimensions)?;
+            std::alloc::Layout::array::<f64>(entries).map_err(|_| Error::InvalidDimensions)?;
+        }
         let mut mapping = vec![(0, 0); n];
         let mut matrices = Vec::new();
         for (block, range) in ranges.iter().enumerate() {

@@ -27,8 +27,30 @@ Its original-energy chart shows the cost of the growing graph, which can increas
 as observations arrive; it is not the cost of iterations on a fixed objective.
 The comparison plot retains all six paired samples in each of two independent
 campaigns, with complete update/replay timings rather than per-frame latency.
-Both campaigns use common accuracy gates and explicit full-refresh policies;
-the MIT1228 artifact remains ineligible. See [the comparison contract](../../benchmarks/REAL_ISAM2.md).
+Both campaigns use common accuracy gates and explicit full-refresh policies.
+The historical MIT1228 attempt was ineligible; a later
+[Cartesian/precision comparison](../../benchmarks/PRECISE_REAL_ISAM2.md) passes
+the unchanged gates. The Intel hero retains its original archived inputs.
+See [the comparison contract](../../benchmarks/REAL_ISAM2.md).
+
+## Recorded CSAIL comparison
+
+The additional static figure uses a different recorded graph, CSAIL: 1,045 poses
+and 1,172 original constraints. Its left panel reads the actual archived final
+ropt poses and the shared seeds integrated from original odometry; its right
+panel shows every measured pair in the primary and confirmation campaigns.
+No optimized or truth-based initializer is used.
+
+```sh
+MPLCONFIGDIR=/tmp/ropt-viz-config XDG_CACHE_HOME=/tmp/ropt-viz-cache \
+  python3 benchmarks/plot_csail_comparison.py
+```
+
+This produces `docs/assets/csail-comparison.png` and
+[csail-comparison.json](../assets/csail-comparison.json), with source, input,
+renderer and image hashes. It leaves the historical showcase inputs/outputs
+untouched. The [CSAIL comparison contract](../../benchmarks/CSAIL_REAL_ISAM2.md)
+documents the source artifact, unchanged quality gates and full-refresh scope.
 
 Rosenbrock uses the same AD residual and initial state as the standard example.
 The exporter reruns LM with every iteration cap and checks each actual state cost

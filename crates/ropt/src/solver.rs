@@ -2,6 +2,7 @@ pub use crate::dense::QrOptions;
 use crate::schur::block_schur_solve;
 use crate::sparse::{CgOptions, CsrMatrix, NormalOperator, conjugate_gradient, schur_solve};
 pub use crate::sparse_direct::{SparseLdlOptions, SparseOrdering};
+pub use crate::sparse_qr::SparseQrOptions;
 use crate::{DMatrix, DVector};
 use std::ops::Range;
 
@@ -88,6 +89,10 @@ impl<P: Residual> LocalProblem for EuclideanProblem<'_, P> {
     }
 }
 /// Explicit debug/verification adapter; never selected implicitly.
+/// Every coordinate must admit distinct finite `x +/- h`, with finite `2*h`,
+/// where `h = step * max(abs(x), 1)`. A step rounded away at either side returns
+/// `InvalidOptions`; nonfinite inputs, perturbations or outputs return `NonFinite`.
+/// Perturbations are validated before callbacks or output buffers are modified.
 pub struct CentralDifference<F> {
     pub parameters: usize,
     pub residuals: usize,
@@ -110,10 +115,22 @@ impl<F: Fn(&DVector<f64>) -> Result<DVector<f64>, Error>> Residual for CentralDi
         if x.len() != self.parameters || j.shape() != (self.residuals, self.parameters) {
             return Err(Error::InvalidDimensions);
         }
+        crate::sparse::finite_vector(x)?;
+        for &value in x.iter() {
+            let h = self.step * value.abs().max(1.0);
+            let (plus, minus) = (value + h, value - h);
+            if !h.is_finite() || !(2.0 * h).is_finite() || !plus.is_finite() || !minus.is_finite() {
+                return Err(Error::NonFinite);
+            }
+            if plus == value || minus == value {
+                return Err(Error::InvalidOptions);
+            }
+        }
         *r = (self.function)(x)?;
         if r.len() != self.residuals {
             return Err(Error::InvalidDimensions);
         }
+        crate::sparse::finite_vector(r)?;
         for k in 0..x.len() {
             let h = self.step * x[k].abs().max(1.0);
             let mut plus = x.clone();
@@ -121,11 +138,18 @@ impl<F: Fn(&DVector<f64>) -> Result<DVector<f64>, Error>> Residual for CentralDi
             plus[k] += h;
             minus[k] -= h;
             let a = (self.function)(&plus)?;
-            let b = (self.function)(&minus)?;
-            if a.len() != self.residuals || b.len() != self.residuals {
+            if a.len() != self.residuals {
                 return Err(Error::InvalidDimensions);
             }
-            j.set_column(k, &((a - b) / (2.0 * h)));
+            crate::sparse::finite_vector(&a)?;
+            let b = (self.function)(&minus)?;
+            if b.len() != self.residuals {
+                return Err(Error::InvalidDimensions);
+            }
+            crate::sparse::finite_vector(&b)?;
+            let column = (a - b) / (2.0 * h);
+            crate::sparse::finite_vector(&column)?;
+            j.set_column(k, &column);
         }
         Ok(())
     }
@@ -182,9 +206,44 @@ impl Loss {
             Self::Huber(_) => (0.5 * r * r, 1.0),
             Self::Cauchy(a) => {
                 let s = (r / a).powi(2);
-                (0.5 * a * a * s.ln_1p(), 1.0 / (1.0 + s))
+                let cost = 0.5 * a * a * s.ln_1p();
+                if s.is_normal() && cost.is_normal() {
+                    return (cost, 1.0 / (1.0 + s));
+                }
+                let norm = r.abs();
+                if norm <= a {
+                    // Cancel a^2 before multiplying when r/a is tiny or a^2
+                    // overflows. ln(1+s)/s has continuous value 1 at s=0.
+                    let correction = if s == 0.0 { 1.0 } else { s.ln_1p() / s };
+                    ((0.5 * norm) * (norm * correction), 1.0 / (1.0 + s))
+                } else {
+                    let inverse_squared = (a / norm).powi(2);
+                    let log = log_positive_ratio(norm, a) + 0.5 * inverse_squared.ln_1p();
+                    // Multiplication order preserves subnormal costs even
+                    // when a^2 underflows. The inverse ratio preserves weights
+                    // when (r/a)^2 overflows but its reciprocal is representable.
+                    (a * (a * log), inverse_squared / (1.0 + inverse_squared))
+                }
             }
         }
+    }
+    fn value_sqrt_weight(self, r: f64) -> (f64, f64) {
+        let (cost, weight) = self.value_weight(r);
+        let root = if weight.is_normal() {
+            weight.sqrt()
+        } else {
+            // The raw weight may underflow or lose precision while its square
+            // root and the weighted residual/Jacobian are still representable.
+            match self {
+                Self::Huber(a) if r.abs() > a => a.sqrt() / r.abs().sqrt(),
+                Self::Cauchy(a) if r.abs() > a => {
+                    let inverse = a / r.abs();
+                    inverse / (1.0 + inverse * inverse).sqrt()
+                }
+                _ => weight.sqrt(),
+            }
+        };
+        (cost, root)
     }
     // Difference of true losses for nonnegative scalar/block norms. Orient the
     // Cauchy ratio positively so ln_1p cannot round its argument down to -1.
@@ -198,9 +257,12 @@ impl Loss {
             Self::Huber(a) if before > a => a * (before - a) + 0.5 * (a - after) * (a + after),
             Self::Huber(_) => 0.5 * (before - after) * (before + after),
             Self::Cauchy(a) => {
+                if before == after {
+                    return 0.0;
+                }
                 let (u, v) = (before / a, after / a);
                 let ratio = ((before - after) / a) * (u + v) / (1.0 + v * v);
-                if before <= a {
+                let reduction = if before <= a {
                     // Cancel a^2 algebraically when normalized squared changes
                     // can underflow. ln(1+z)/z has continuous value 1 at z=0.
                     let log_ratio = if ratio == 0.0 {
@@ -211,9 +273,52 @@ impl Loss {
                     0.5 * (before - after) * (before + after) / (1.0 + v * v) * log_ratio
                 } else {
                     0.5 * a * a * ratio.ln_1p()
+                };
+                if reduction.is_normal() {
+                    return reduction;
+                }
+                if before <= a {
+                    let correction = if ratio == 0.0 {
+                        1.0
+                    } else {
+                        ratio.ln_1p() / ratio
+                    };
+                    // Scale before multiplication; both the unscaled sum and
+                    // its product with the difference can overflow needlessly.
+                    (before - after) * ((0.5 * before + 0.5 * after) * (correction / (1.0 + v * v)))
+                } else {
+                    let log = if after >= a {
+                        // Normalize by the smaller residual, keeping the scale
+                        // ratio <= 1 and retaining small relative improvements.
+                        let difference = (before - after) / after;
+                        let inverse_squared = (a / after).powi(2);
+                        let relative = difference * (2.0 + difference) / (1.0 + inverse_squared);
+                        if relative.is_finite() {
+                            0.5 * relative.ln_1p()
+                        } else {
+                            log_positive_ratio(before, after)
+                                + 0.5 * ((a / before).powi(2).ln_1p() - inverse_squared.ln_1p())
+                        }
+                    } else if ratio.is_finite() {
+                        0.5 * ratio.ln_1p()
+                    } else {
+                        log_positive_ratio(before, a)
+                            + 0.5 * ((a / before).powi(2).ln_1p() - v.powi(2).ln_1p())
+                    };
+                    a * (a * log)
                 }
             }
         }
+    }
+}
+// Positive finite arguments with numerator >= denominator. Use log subtraction
+// only if division overflows; direct division is more accurate near equality.
+fn log_positive_ratio(numerator: f64, denominator: f64) -> f64 {
+    let ratio = numerator / denominator;
+    if ratio.is_finite() {
+        ratio.ln()
+    } else {
+        numerator.ln() - denominator.ln()
     }
 }
 #[derive(Default)]
@@ -245,6 +350,8 @@ impl CompensatedSum {
     }
 }
 /// Explicit robust loss on the joint squared norm of a disjoint, whitened residual block.
+/// The joint norm avoids intermediate squared-norm overflow and underflow when
+/// the norm is representable; loss costs and weights still follow f64 range limits.
 #[derive(Debug, Clone)]
 pub struct LossBlock {
     pub rows: Range<usize>,
@@ -264,6 +371,8 @@ pub enum LinearSolver {
     SparseBlockCg(CgOptions),
     /// Sparse LDL^T of damped normal equations with bounded fill; LM only.
     SparseLdl(SparseLdlOptions),
+    /// Ordered sparse Givens QR of J (GN) or the augmented model (LM).
+    SparseQr(SparseQrOptions),
     /// CSR-based independent-block elimination and reduced PCG; LM only.
     BlockSchur {
         retained: usize,
@@ -285,6 +394,10 @@ pub enum GradientNorm {
 pub struct Options {
     pub linear_solver: LinearSolver,
     pub algorithm: Algorithm,
+    /// Explicit GN policy allowing finite uphill trials, like unrestricted
+    /// Gauss-Newton iterations. Default GN rejects them. Invalid for LM.
+    /// Final convergence must still be checked; negative reduction is not convergence.
+    pub nonmonotonic_gauss_newton: bool,
     pub loss: Loss,
     pub max_iterations: usize,
     pub gradient_tolerance: f64,
@@ -300,6 +413,7 @@ impl Default for Options {
         Self {
             linear_solver: LinearSolver::Dense,
             algorithm: Algorithm::LevenbergMarquardt,
+            nonmonotonic_gauss_newton: false,
             loss: Loss::Squared,
             max_iterations: 100,
             gradient_tolerance: 1e-10,
@@ -352,6 +466,22 @@ struct Linearization {
     objective_norms: Vec<f64>,
     residual: DVector<f64>,
     jacobian: Jacobian,
+}
+// Keep the LDL workspace inline to avoid an extra heap allocation per solve.
+#[allow(clippy::large_enum_variant)]
+enum LinearSolveWorkspace {
+    None,
+    Ldl(crate::sparse_direct::SparseLdlWorkspace),
+    Qr(crate::sparse_qr::SparseQrWorkspace),
+}
+impl LinearSolveWorkspace {
+    fn permutation(&self) -> Option<&[usize]> {
+        match self {
+            Self::None => None,
+            Self::Ldl(w) => w.symbolic().map(|s| s.permutation()),
+            Self::Qr(w) => w.permutation(),
+        }
+    }
 }
 impl Linearization {
     /// Consume the already evaluated accepted model. iSAM uses this only for
@@ -449,7 +579,7 @@ impl Linearization {
         damping: f64,
         options: &Options,
         blocks: Option<&[Range<usize>]>,
-        ldl_workspace: Option<&mut crate::sparse_direct::SparseLdlWorkspace>,
+        workspace: &mut LinearSolveWorkspace,
     ) -> Result<(DVector<f64>, usize), Error> {
         match &self.jacobian {
             Jacobian::Dense(j) => {
@@ -497,12 +627,21 @@ impl Linearization {
             }
             Jacobian::Sparse(j) => {
                 if matches!(options.linear_solver, LinearSolver::SparseLdl(_)) {
-                    let report = ldl_workspace.ok_or(Error::InvalidOptions)?.solve(
-                        j,
-                        &(-gradient),
-                        damping,
-                    )?;
+                    let LinearSolveWorkspace::Ldl(ldl_workspace) = workspace else {
+                        return Err(Error::InvalidOptions);
+                    };
+                    let report = ldl_workspace.solve(j, &(-gradient), damping)?;
                     return Ok((report.x, 0));
+                }
+                if matches!(options.linear_solver, LinearSolver::SparseQr(_)) {
+                    let LinearSolveWorkspace::Qr(qr_workspace) = workspace else {
+                        return Err(Error::InvalidOptions);
+                    };
+                    let damping = match options.algorithm {
+                        Algorithm::GaussNewton => 0.,
+                        Algorithm::LevenbergMarquardt => damping,
+                    };
+                    return Ok((qr_workspace.solve(j, &self.residual, damping)?, 0));
                 }
                 let report = match options.linear_solver {
                     LinearSolver::SparseCg(cg) => {
@@ -558,6 +697,7 @@ fn linearize(
         LinearSolver::SparseCg(_)
         | LinearSolver::SparseBlockCg(_)
         | LinearSolver::SparseLdl(_)
+        | LinearSolver::SparseQr(_)
         | LinearSolver::BlockSchur { .. } => {
             let (r, j) = problem.evaluate_sparse(x)?;
             if j.shape() != (m, n) {
@@ -597,6 +737,7 @@ fn linearize(
         jacobian,
     })
 }
+// Returns cost and square-root IRLS weights for residuals and Jacobian rows.
 pub(crate) fn robust_weights(
     residual: &DVector<f64>,
     fallback: Loss,
@@ -618,9 +759,9 @@ fn robust_model(
         if !norm.is_finite() {
             return Err(Error::NonFinite);
         }
-        let (c, w) = loss.value_weight(norm);
+        let (c, root) = loss.value_sqrt_weight(norm);
         cost.add(c)?;
-        weights.rows_mut(rows.start, rows.len()).fill(w.sqrt());
+        weights.rows_mut(rows.start, rows.len()).fill(root);
         if let Some(norms) = &mut norms {
             norms.push(norm);
         }
@@ -630,7 +771,15 @@ fn robust_model(
         for i in cursor..block.rows.start {
             add(residual[i].abs(), fallback, i..i + 1)?;
         }
-        let norm = residual.rows(block.rows.start, block.rows.len()).norm();
+        let values = residual.rows(block.rows.start, block.rows.len());
+        let squared = values.norm_squared();
+        // Preserve the usual path, but avoid losing tiny block norms (and their
+        // robust weights) or overflowing when the norm itself is representable.
+        let norm = if squared.is_normal() {
+            squared.sqrt()
+        } else {
+            values.iter().fold(0_f64, |norm, value| norm.hypot(*value))
+        };
         add(norm, block.loss, block.rows.clone())?;
         cursor = block.rows.end;
     }
@@ -692,6 +841,32 @@ pub(crate) fn gaussian_reduction(
         sum.add(Loss::Squared.reduction(a.abs(), b.abs()))?;
     }
     sum.total()
+}
+/// Ordered Gaussian cost without materializing a residual or zero vector.
+/// Errors are retained until finish so callers can preserve callback precedence.
+#[derive(Default)]
+pub(crate) struct GaussianCostAccumulator {
+    sum: CompensatedSum,
+    error: Option<Error>,
+}
+impl GaussianCostAccumulator {
+    pub(crate) fn add(&mut self, residuals: &DVector<f64>) {
+        if self.error.is_some() {
+            return;
+        }
+        for &value in residuals.iter() {
+            if let Err(error) = self.sum.add(Loss::Squared.reduction(0., value.abs())) {
+                self.error = Some(error);
+                break;
+            }
+        }
+    }
+    pub(crate) fn finish(self) -> Result<f64, Error> {
+        match self.error {
+            Some(error) => Err(error),
+            None => self.sum.total().map(|reduction| -reduction),
+        }
+    }
 }
 pub(crate) fn gaussian_gradient_norm(
     j: &CsrMatrix,
@@ -773,10 +948,7 @@ pub(crate) fn solve_local_gaussian_model(
     }
     let (report, model, final_damping, workspace) = solve_local_model(problem, initial, options)?;
     let column_permutation = if capture_ordering {
-        workspace
-            .as_ref()
-            .and_then(|w| w.symbolic())
-            .map(|s| s.permutation().to_vec())
+        workspace.permutation().map(|p| p.to_vec())
     } else {
         None
     };
@@ -793,15 +965,7 @@ fn solve_local_model(
     problem: &impl LocalProblem,
     initial: DVector<f64>,
     options: &Options,
-) -> Result<
-    (
-        Report,
-        Linearization,
-        f64,
-        Option<crate::sparse_direct::SparseLdlWorkspace>,
-    ),
-    Error,
-> {
+) -> Result<(Report, Linearization, f64, LinearSolveWorkspace), Error> {
     let (ambient, n, m) = problem.dimensions();
     if ambient == 0 || m == 0 || initial.len() != ambient {
         return Err(Error::InvalidDimensions);
@@ -810,6 +974,8 @@ fn solve_local_model(
         return Err(Error::NonFinite);
     }
     if options.max_iterations == 0
+        || (options.nonmonotonic_gauss_newton
+            && !matches!(options.algorithm, Algorithm::GaussNewton))
         || !options.loss.valid()
         || !options.initial_damping.is_finite()
         || options.initial_damping <= 0.0
@@ -843,6 +1009,9 @@ fn solve_local_model(
     }
     if let LinearSolver::SparseLdl(ldl) = options.linear_solver {
         ldl.validate()?;
+    }
+    if let LinearSolver::SparseQr(qr) = options.linear_solver {
+        qr.validate()?;
     }
     if let LinearSolver::SparseCg(cg) | LinearSolver::SparseBlockCg(cg) = options.linear_solver {
         cg.validate()?;
@@ -885,16 +1054,20 @@ fn solve_local_model(
             },
             model,
             options.initial_damping,
-            None,
+            LinearSolveWorkspace::None,
         ));
     }
     let mut damping = options.initial_damping;
     let mut growth = 2.0;
     let mut history = Vec::new();
-    let mut ldl_workspace = if let LinearSolver::SparseLdl(ldl) = options.linear_solver {
-        Some(crate::sparse_direct::SparseLdlWorkspace::new(ldl)?)
-    } else {
-        None
+    let mut workspace = match options.linear_solver {
+        LinearSolver::SparseLdl(ldl) => {
+            LinearSolveWorkspace::Ldl(crate::sparse_direct::SparseLdlWorkspace::new(ldl)?)
+        }
+        LinearSolver::SparseQr(qr) => {
+            LinearSolveWorkspace::Qr(crate::sparse_qr::SparseQrWorkspace::new(qr)?)
+        }
+        _ => LinearSolveWorkspace::None,
     };
     let mut termination = Termination::MaxIterations;
     for iteration in 0..options.max_iterations {
@@ -912,7 +1085,7 @@ fn solve_local_model(
             damping,
             options,
             block_layout.as_deref(),
-            ldl_workspace.as_mut(),
+            &mut workspace,
         )?;
         if !step.iter().all(|v| v.is_finite()) {
             return Err(Error::NonFinite);
@@ -936,7 +1109,11 @@ fn solve_local_model(
         } else {
             f64::NEG_INFINITY
         };
-        let accepted = actual > 0.0 && ratio > 0.0;
+        let small_step = step_norm <= options.step_tolerance * (options.step_tolerance + scale);
+        let accepted = (actual > 0.0 && ratio > 0.0)
+            || (options.nonmonotonic_gauss_newton
+                && predicted > 0.0
+                && !(actual <= 0.0 && small_step));
         history.push(Iteration {
             iteration,
             cost,
@@ -963,7 +1140,7 @@ fn solve_local_model(
                 termination = Termination::Step;
                 break;
             }
-            if actual <= options.cost_tolerance * previous.max(1.0) {
+            if actual > 0.0 && actual <= options.cost_tolerance * previous.max(1.0) {
                 termination = Termination::Cost;
                 break;
             }
@@ -998,13 +1175,38 @@ fn solve_local_model(
         },
         model,
         damping,
-        ldl_workspace,
+        workspace,
     ))
 }
 
 #[cfg(test)]
 mod stable_loss_tests {
     use super::*;
+    #[test]
+    fn streamed_gaussian_cost_preserves_compensation_bits_and_errors_across_blocks() {
+        for values in [
+            vec![],
+            vec![0., -0.],
+            vec![1e150, 1e-150, 3., -4., 1e150],
+            vec![f64::from_bits(1), -f64::MIN_POSITIVE, 1.],
+            vec![1e154, -1e154, 1e-154],
+            vec![1e200, 3., 4.],
+            vec![f64::NAN, 1.],
+            vec![f64::INFINITY, 1.],
+        ] {
+            let residual = DVector::from_vec(values.clone());
+            let expected = gaussian_reduction(&DVector::zeros(values.len()), &residual)
+                .map(|value| (-value).to_bits());
+            for width in [1, 2, 3, 8] {
+                let mut cost = GaussianCostAccumulator::default();
+                cost.add(&DVector::zeros(0));
+                for block in values.chunks(width) {
+                    cost.add(&DVector::from_column_slice(block));
+                }
+                assert_eq!(cost.finish().map(f64::to_bits), expected);
+            }
+        }
+    }
     #[test]
     fn normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients() {
         for coefficients in [
@@ -1058,6 +1260,31 @@ mod stable_loss_tests {
         assert!((Loss::Cauchy(1e154).reduction(1., 0.5) - 0.375).abs() < 1e-15);
         let tiny_change = Loss::Cauchy(1e154).reduction(1., 1. - f64::EPSILON);
         assert!((tiny_change - f64::EPSILON).abs() < 1e-30);
+    }
+    #[test]
+    fn cauchy_differences_survive_overflow_and_underflow_in_intermediates() {
+        // Independent Decimal references at 1100-digit precision, evaluated
+        // from the exact binary64 inputs before rounding the result to f64.
+        for (before, after, scale, expected) in [
+            (1e155, 5e154, 1., std::f64::consts::LN_2),
+            (1e300, 0., 1e-100, 9.210340371976183e-198),
+            (1., 0., 1e200, 0.5),
+            (2e154, 1e154, 2e154, 9.400072584914712e307),
+            (2e154, 0., 2e154, 1.3862943611198907e308),
+            (1., 0., 1e-162, 3.7e-322),
+            (1e155, 1e155 * (1. - 1e-12), 1., 9.99958899574909e-13),
+            (1e154, 1e154 * (1. - 1e-12), 1e200, 1.0000184422022033e296),
+        ] {
+            let loss = Loss::Cauchy(scale);
+            let reduction = loss.reduction(before, after);
+            let tolerance = (expected * 5e-14).max(f64::from_bits(2));
+            assert!(
+                (reduction - expected).abs() <= tolerance,
+                "before={before}, after={after}, scale={scale}: {reduction} != {expected}"
+            );
+            assert_eq!(loss.reduction(after, before), -reduction);
+            assert_eq!(loss.reduction(before, before), 0.);
+        }
     }
     #[test]
     fn compensated_summation_retains_small_terms_and_rejects_nonfinite_totals() {

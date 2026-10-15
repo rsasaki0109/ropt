@@ -200,3 +200,18 @@ artifact and explicit accuracy policy. They do not establish superiority on 3D,
 VIO, robust outliers, sensor timestamps, other GTSAM configurations, peak memory
 or real-time deadlines. ropt still has no Bayes tree or selective clique updates.
 Subjective maturity remains 75%.
+
+The subsequent [optional sparse QR/GN path](SPARSE_QR.md) completes MIT1228 and
+matches the native poses at every arrival. The strict reported-cost gate remains
+unmet for both outputs in that frozen replay. The subsequent
+[information precision fix](INFORMATION_PRECISION.md) passes every ropt gate;
+the unchanged native reference still fails reported-cost verification.
+The historical LDL/LM failure and timing campaigns above
+are preserved; they are not replaced by the new functional replay.
+
+The new [Cartesian/precision comparison](PRECISE_REAL_ISAM2.md) additionally
+corrects the native whitening and conditioned-root chart. Both complete MIT1228
+outputs now pass every original gate. ropt takes 7.947 s versus 11.032 s (1.39x),
+confirmed at 8.488 / 11.284 s (1.33x), with 12/12 faster pairs. This separate
+campaign uses explicit Cartesian SE2 retraction and the disclosed corrected
+native reference; it does not revise any frozen records above.

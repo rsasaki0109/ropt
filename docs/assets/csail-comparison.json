@@ -1,0 +1,17 @@
+{
+  "renderer_sha256": "1195837734b6e2a508435b42471613c10f7dc39eb2dca6460ef1b4933b572c6e",
+  "inputs_sha256": {
+    "benchmarks/results/csail_real_isam2/csail-se-sync1045-original.g2o": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6",
+    "benchmarks/results/csail_real_isam2/primary/metadata.json": "9ec33f492c144e78e82704343cc984b156af4963ed21648e291baebc10c8a9d0",
+    "benchmarks/results/csail_real_isam2/primary/report.json": "38900dbde496260c63e2ec109f45850c05ac7f8e62d414ad57655b6ae2eccf18",
+    "benchmarks/results/csail_real_isam2/primary/samples.csv": "d8cbe8f75297287caa19964a107b3a261b7ca53e9e2e2230c1b09a285149118c",
+    "benchmarks/results/csail_real_isam2/confirmation/metadata.json": "9ec33f492c144e78e82704343cc984b156af4963ed21648e291baebc10c8a9d0",
+    "benchmarks/results/csail_real_isam2/confirmation/report.json": "631b8bf695b745cb8f85849322e260061861db98877058feace7cf13c4ac71e8",
+    "benchmarks/results/csail_real_isam2/confirmation/samples.csv": "a33e044edadd8033012728a9b16332299fe11b99a7ab16f9f1f43eb34f891856",
+    "benchmarks/results/csail_real_isam2/primary/ropt-poses.csv.gz": "7adfb22fbc39a95d9094768fc057b41becea04eb2eb111f9b3565f9d488fd46e"
+  },
+  "image_sha256": "060b83ad95bb42f83d88434444d01a0195048b35ac787d51b834b99d1b197265",
+  "source_sha256": "31c01bc01ed53679b44fccb92bdaf46982010b8a2895b6bf926b84a42b350047",
+  "scope": "archived full CSAIL recorded replay, shared accuracy full-refresh policy; no synthetic timing samples",
+  "matplotlib_version": "3.10.8"
+}

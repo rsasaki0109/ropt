@@ -1,0 +1,212 @@
+--- a/crates/ropt/src/isam/probe.rs
++++ b/crates/ropt/src/isam/probe.rs
+@@ -9,6 +9,82 @@
+ };
+ use std::{collections::BTreeMap, ops::Range};
+ 
++type Binding<'a> = (&'a WindowVariable, Option<Range<usize>>);
++
++/// Contiguous key spaces need one allocation and constant-time lookup. Sparse
++/// keys retain the tree; ranges still follow caller order in either layout.
++enum VariableLayout<'a> {
++    Dense {
++        first: Key,
++        bindings: Vec<Option<Binding<'a>>>,
++    },
++    Sparse(BTreeMap<Key, Binding<'a>>),
++}
++impl<'a> VariableLayout<'a> {
++    fn new(variables: &BTreeMap<Key, WindowVariable>, ordered: usize) -> Self {
++        let first = if ordered == variables.len() {
++            match (variables.first_key_value(), variables.last_key_value()) {
++                (Some((&first, _)), Some((&last, _)))
++                    if Key::try_from(ordered.saturating_sub(1)).ok() == Some(last - first) =>
++                {
++                    Some(first)
++                }
++                _ => None,
++            }
++        } else {
++            None
++        };
++        match first {
++            Some(first) => Self::Dense {
++                first,
++                bindings: vec![None; ordered],
++            },
++            None => Self::Sparse(BTreeMap::new()),
++        }
++    }
++    fn insert(&mut self, key: Key, binding: Binding<'a>) -> Result<(), Error> {
++        match self {
++            Self::Dense { first, bindings } => {
++                let index = key
++                    .checked_sub(*first)
++                    .and_then(|offset| usize::try_from(offset).ok())
++                    .ok_or(Error::InvalidDimensions)?;
++                *bindings.get_mut(index).ok_or(Error::InvalidDimensions)? = Some(binding);
++            }
++            Self::Sparse(bindings) => {
++                bindings.insert(key, binding);
++            }
++        }
++        Ok(())
++    }
++    fn get(&self, key: &Key) -> Option<&Binding<'a>> {
++        match self {
++            Self::Dense { first, bindings } => {
++                let index = usize::try_from(key.checked_sub(*first)?).ok()?;
++                bindings.get(index)?.as_ref()
++            }
++            Self::Sparse(bindings) => bindings.get(key),
++        }
++    }
++    fn visit(self, mut record: impl FnMut(Key, Binding<'a>)) {
++        match self {
++            Self::Dense { first, bindings } => {
++                for (offset, binding) in bindings.into_iter().enumerate() {
++                    if let Some(binding) = binding {
++                        // Construction proved the last key is representable.
++                        record(first + offset as Key, binding);
++                    }
++                }
++            }
++            Self::Sparse(bindings) => {
++                for (key, binding) in bindings {
++                    record(key, binding);
++                }
++            }
++        }
++    }
++}
++
+ /// Connectivity/options are already validated by the committed update. Every
+ /// variable and callback output is validated again, including fixed blocks.
+ pub(super) fn summary(
+@@ -17,7 +93,7 @@
+     order: &[Key],
+     norm: GradientNorm,
+ ) -> Result<IsamNonlinearSummary, Error> {
+-    let mut layout = BTreeMap::<Key, (&WindowVariable, Option<Range<usize>>)>::new();
++    let mut layout = VariableLayout::new(variables, order.len());
+     let mut columns = 0usize;
+     for key in order {
+         let variable = variables.get(key).ok_or(Error::InvalidDimensions)?;
+@@ -32,7 +108,7 @@
+         } else {
+             None
+         };
+-        layout.insert(*key, (variable, range));
++        layout.insert(*key, (variable, range))?;
+     }
+     factors.iter().try_fold(0usize, |n, f| {
+         n.checked_add(f.residuals).ok_or(Error::InvalidDimensions)
+@@ -116,13 +192,13 @@
+     finite_vector(&gradient)?;
+     let mut variable_gradients = BTreeMap::new();
+     let mut gradient_norm = 0_f64;
+-    for (key, (_, range)) in layout {
++    layout.visit(|key, (_, range)| {
+         if let Some(range) = range {
+             let value = gradient.rows(range.start, range.len()).amax();
+             gradient_norm = gradient_norm.max(value);
+             variable_gradients.insert(key, value);
+         }
+-    }
++    });
+     Ok(IsamNonlinearSummary {
+         cost,
+         gradient_norm,
+@@ -286,6 +362,92 @@
+             summary(&invalid, &factors, &order, GradientNorm::Absolute).unwrap_err(),
+             legacy(&invalid, &factors, &order, GradientNorm::Absolute).unwrap_err()
+         );
++    }
++
++    #[test]
++    fn dense_offset_and_sparse_layouts_match_csr_for_nonchronological_fixed_slots() {
++        for keys in [
++            [10, 11, 12],
++            [Key::MAX - 2, Key::MAX - 1, Key::MAX],
++            [10, 12, 100],
++        ] {
++            let variables = [
++                variable(keys[0], VariableKind::Euclidean(1), &[1.], true),
++                variable(keys[1], VariableKind::Euclidean(2), &[0.5, 0.25], false),
++                variable(keys[2], VariableKind::Euclidean(1), &[0.2], false),
++            ]
++            .into_iter()
++            .map(|v| (v.key, v))
++            .collect::<BTreeMap<_, _>>();
++            let dense = keys[2] - keys[0] == 2;
++            let mut layout = VariableLayout::new(&variables, 3);
++            assert_eq!(matches!(layout, VariableLayout::Dense { .. }), dense);
++            for (&key, value) in &variables {
++                layout.insert(key, (value, None)).unwrap();
++            }
++            assert!(layout.get(&0).is_none());
++            for key in keys {
++                assert_eq!(layout.get(&key).unwrap().0.key, key);
++            }
++            let factors = vec![SmootherFactor::analytic(
++                &[keys[2], keys[0], keys[1]],
++                2,
++                FactorOptions {
++                    noise: NoiseModel::from_information(DMatrix::from_row_slice(
++                        2,
++                        2,
++                        &[4., 1., 1., 3.],
++                    ))
++                    .unwrap(),
++                    ..Default::default()
++                },
++                |v| {
++                    let (c, b, a) = (v[0][0], v[1][0], &v[2]);
++                    Ok((
++                        DVector::from_vec(vec![c + 2. * a[0] + 3. * a[1] - b, a[0] * c - 0.1]),
++                        vec![
++                            DMatrix::from_column_slice(2, 1, &[1., a[0]]),
++                            DMatrix::from_column_slice(2, 1, &[-1., 0.]),
++                            DMatrix::from_row_slice(2, 2, &[2., 3., c, 0.]),
++                        ],
++                    ))
++                },
++            )];
++            let order = [keys[2], keys[0], keys[1]];
++            for norm in [GradientNorm::Absolute, GradientNorm::ColumnNormalized] {
++                let direct = summary(&variables, &factors, &order, norm).unwrap();
++                let csr = legacy(&variables, &factors, &order, norm).unwrap();
++                assert_eq!(direct.cost.to_bits(), csr.cost.to_bits());
++                assert_eq!(direct.gradient_norm.to_bits(), csr.gradient_norm.to_bits());
++                assert_eq!(direct.variable_gradients, csr.variable_gradients);
++            }
++        }
++    }
++
++    #[test]
++    fn incomplete_and_duplicate_dense_order_preserves_tree_binding_semantics() {
++        let variables = (0..3)
++            .map(|key| (key, variable(key, VariableKind::Euclidean(1), &[1.], false)))
++            .collect::<BTreeMap<_, _>>();
++        let mut dense = VariableLayout::new(&variables, 3);
++        assert!(dense.get(&1).is_none());
++        dense.insert(0, (&variables[&0], Some(0..1))).unwrap();
++        dense.insert(0, (&variables[&0], Some(1..2))).unwrap();
++        assert_eq!(dense.get(&0).unwrap().1, Some(1..2));
++        assert!(dense.get(&1).is_none());
++        assert!(dense.get(&Key::MAX).is_none());
++        assert_eq!(
++            dense.insert(Key::MAX, (&variables[&0], None)),
++            Err(Error::InvalidDimensions)
++        );
++        assert!(matches!(
++            VariableLayout::new(&variables, 2),
++            VariableLayout::Sparse(_)
++        ));
++        assert!(matches!(
++            VariableLayout::new(&BTreeMap::new(), 0),
++            VariableLayout::Sparse(_)
++        ));
+     }
+ 
+     #[test]

@@ -1,0 +1,34 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -515,6 +515,13 @@
+     }
+     Ok((graph, ids))
+ }
++fn quadratic_cost(residual: &DVector<f64>) -> Result<f64, Error> {
++    // Sum half-squares directly: the squared norm may overflow even when the
++    // cost is representable. Reuse compensated accumulation without allocating.
++    let mut cost = crate::solver::GaussianCostAccumulator::default();
++    cost.add(residual);
++    cost.finish()
++}
+ fn marginalize(
+     variables: &mut BTreeMap<Key, WindowVariable>,
+     factors: &mut Vec<SmootherFactor>,
+@@ -581,7 +588,7 @@
+                     j.row_mut(row).scale_mut(weights[row]);
+                 }
+                 // Keep the robust objective offset at this linearization point.
+-                *constant_cost += cost - 0.5 * residual.norm_squared();
++                *constant_cost += cost - quadratic_cost(&residual)?;
+             }
+         }
+         let ne = eliminated
+@@ -592,7 +599,7 @@
+         summary.separator_tangent = n - ne;
+         let prior = marginalize_linearized(&j, &residual, ne, &options.marginalization)?;
+         if separator.is_empty() {
+-            *constant_cost += 0.5 * prior.residual.norm_squared();
++            *constant_cost += quadratic_cost(&prior.residual)?;
+         } else {
+             let kinds = separator
+                 .iter()

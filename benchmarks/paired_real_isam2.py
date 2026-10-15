@@ -1,4 +1,4 @@
-"""Balanced full recorded Intel replay with independent all-prefix quality gates."""
+"""Balanced full recorded SE2 replay with independent all-prefix quality gates."""
 import argparse
 import csv
 import gzip
@@ -23,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('ropt', 'native', 'native-manifest', 'input', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--ropt-policy', choices=('ldl-lm', 'sparse-qr-gn', 'sparse-qr-gn-ambient', 'sparse-qr-gn-cartesian'), default='ldl-lm')
     parser.add_argument('--rounds', type=int, default=6)
     parser.add_argument('--cpu', type=int, default=0)
     args = parser.parse_args()
@@ -41,14 +42,24 @@ def main():
                  for line in linked.splitlines() if 'libgtsam.so' in line and '=>' in line]
     require(len(libraries) == 1 and digest(libraries[0]) == manifest['library_sha256'],
             'native runtime library differs')
+    reference_dir = ROOT / manifest.get('reference_source_directory', 'benchmarks/gtsam_real_isam2')
+    require(reference_dir.resolve().is_relative_to(ROOT/'benchmarks'), 'reference source outside benchmarks')
     for name, expected in manifest['reference_sources_sha256'].items():
-        require(digest(ROOT / 'benchmarks/gtsam_real_isam2' / name) == expected,
+        require(digest(reference_dir / name) == expected,
                 'native reference source changed')
-    files = ('crates/ropt/examples/benchmark_real_isam_se2.rs',
+    ropt_driver = ('crates/ropt/examples/benchmark_real_isam_se2.rs' if args.ropt_policy == 'ldl-lm'
+                   else 'crates/ropt/examples/benchmark_cartesian_se2_isam.rs' if args.ropt_policy == 'sparse-qr-gn-cartesian'
+                   else 'crates/ropt/examples/benchmark_ambient_se2_isam.rs' if args.ropt_policy == 'sparse-qr-gn-ambient'
+                   else 'crates/ropt/examples/benchmark_sparse_qr_isam_se2.rs')
+    files = (ropt_driver,
              'crates/ropt/examples/support/real_se2_benchmark.rs',
              'crates/ropt/examples/support/allocation_counter.rs',
-             'benchmarks/real_se2_stream.py', 'benchmarks/se2_stream.py',
+             'benchmarks/real_se2_stream.py', 'benchmarks/se2_stream.py', 'benchmarks/information_precision.py',
              'benchmarks/paired_isam2.py', 'benchmarks/paired_real_isam2.py')
+    ropt_policy = ('ropt LDL/LM restart damping 1e-5' if args.ropt_policy == 'ldl-lm'
+                   else 'ropt explicit sparse QR/nonmonotonic GN with Cartesian SE2 right chart and ambient evaluation' if args.ropt_policy == 'sparse-qr-gn-cartesian'
+                   else 'ropt explicit sparse QR/nonmonotonic GN with ambient SE2 analytic evaluation' if args.ropt_policy == 'sparse-qr-gn-ambient'
+                   else 'ropt explicit sparse QR/nonmonotonic GN')
     metadata = {
         'dataset': dataset, 'rounds': args.rounds, 'cpu_affinity': [args.cpu],
         'environment': environment(), 'native_manifest': manifest,
@@ -59,7 +70,8 @@ def main():
                   'world_pose_norm_difference': 2e-6, 'relative_cost_difference': 1e-9,
                   'relative_reported_cost_difference': 1e-10, 'fixed_root': 'exact'},
         'warmup_streams_per_process': 1, 'timed_streams_per_process': 1,
-        'policy': 'both solvers force full relinearization every arrival; normalized internal gradient target 8e-8; ropt restart damping 1e-5, batch ordering reuse, at most four frozen-QR refinements; native full-relin iSAM2 QR/GN with timed empty updates to stationarity',
+        'policy': f'both solvers force full relinearization every arrival; normalized internal gradient target 8e-8; {ropt_policy}, batch ordering reuse, at most four frozen-QR refinements; native full-relin iSAM2 QR/GN with timed empty updates to stationarity',
+        'ropt_policy': args.ropt_policy,
         'timed': 'complete update including full owned means and cost/report; native stationarity probes included; parsing, factor construction, external validation, serialization and report destruction excluded',
         'allocator_counting': False, 'memory_measured': False,
         'scope': 'recorded measurements; pose-ID arrival inferred without sensor timestamps; this accuracy-target policy is not either library default',
@@ -81,7 +93,10 @@ def main():
             poses, qualities, raw, sample = validate(directory, frames, problem,
                                                    column_normalized_gradient, 1e-7)
             if variant == 'ropt':
-                require(all(float(r['initial_damping']) == 1e-5 for r in raw), 'restart policy differs')
+                if args.ropt_policy == 'ldl-lm':
+                    require(all(float(r['initial_damping']) == 1e-5 for r in raw), 'restart policy differs')
+                else:
+                    require(all(r['initial_damping'] == r['final_damping'] == '' for r in raw), 'GN reports damping')
             measured[variant] = poses, qualities
             samples.append({'variant': variant, 'round': round_index, 'position': position, **sample})
             updates.extend({'variant': variant, 'round': round_index, **row} for row in raw)

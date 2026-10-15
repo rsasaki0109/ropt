@@ -28,6 +28,14 @@ fn batch_options() -> Options {
 
 #[test]
 fn refined_estimates_keep_the_batch_anchor_for_cached_updates_and_rollback() {
+    for cap in [1, 4] {
+        for backend in 0..3 {
+            check_refined_anchor_and_rollback(cap, backend);
+        }
+    }
+}
+
+fn check_refined_anchor_and_rollback(cap: usize, backend: usize) {
     let mut graph = FactorGraph::new();
     let mut update = SmootherUpdate::default();
     let mut ids = vec![];
@@ -92,10 +100,16 @@ fn refined_estimates_keep_the_batch_anchor_for_cached_updates_and_rollback() {
     .unwrap()
     .with_batch_ordering_reuse()
     .unwrap()
-    .with_final_refinement(4)
+    .with_final_refinement(cap)
     .unwrap();
+    smoother = match backend {
+        1 => smoother.with_bayes_tree().unwrap(),
+        2 => smoother.with_selective_bayes_tree(1).unwrap(),
+        _ => smoother,
+    };
     let refreshed = smoother.update(update, true).unwrap();
     assert!(refreshed.refinement_steps > 0);
+    assert!(refreshed.refinement_steps <= cap);
     assert!((refreshed.estimates[&90][0] - 2.).abs() < (batch.x[0] - 2.).abs());
     assert_eq!(refreshed.estimates[&1][0], 0.);
     let before = refreshed.estimates.clone();

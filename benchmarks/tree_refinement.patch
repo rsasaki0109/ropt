@@ -1,0 +1,54 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -85,7 +85,7 @@
+     /// Effective initial/final LM damping; None on cached updates and Gauss-Newton.
+     pub batch_initial_damping: Option<f64>,
+     pub batch_final_damping: Option<f64>,
+-    /// Accepted optional frozen-QR Gaussian refinement steps after batch LM.
++    /// Accepted optional frozen-factor Gaussian refinement steps after a batch solve.
+     pub refinement_steps: usize,
+     /// Optional scalar-frontal Gaussian tree work. Full nonlinear refreshes still
+     /// rebuild every conditional; cached updates re-eliminate affected paths.
+@@ -176,7 +176,8 @@
+     fn solve_gradient(&self, g: &DVector<f64>) -> Result<DVector<f64>, Error> {
+         match self {
+             Self::Qr(qr) => qr.solve_gradient(g),
+-            Self::Tree(_) | Self::Editable(_) => Err(Error::InvalidOptions),
++            Self::Tree(tree) => tree.solve_gradient(g),
++            Self::Editable(tree) => tree.solve_gradient(g),
+         }
+     }
+     fn cost(&self, x: &DVector<f64>) -> Result<f64, Error> {
+@@ -308,9 +309,9 @@
+         self.reuse_batch_ordering = true;
+         Ok(self)
+     }
+-    /// Opt into bounded frozen-QR refinement of an accepted Gaussian batch
++    /// Opt into bounded frozen-factor refinement of an accepted Gaussian batch
+     /// solution. Every accepted step requires positive predicted and actual
+-    /// improvement and a smaller gradient measure. The QR factor stays at the
++    /// improvement and a smaller gradient measure. The triangular factor stays at the
+     /// batch solution's anchor; cached updates and linearized cost use that anchor.
+     /// Backtracking is bounded to eight trials per step. Refinement stops at
+     /// one hundredth of the configured gradient tolerance, or on a small step.
+@@ -628,9 +629,19 @@
+                     qr.set_column_order(permutation)?;
+                 }
+             }
+-            qr.rebuild_in_place(&j, &r)?;
+             if let Some(cache) = &mut selective_cache {
+                 cache.reset(&j, &r, &factors, self.options.qr.max_entries)?;
++            }
++            // Build the committed cache once and reuse its frozen triangular
++            // factor for observability and optional near-solution corrections.
++            if editable_mode {
++                qr = GaussianCache::Editable(selective_cache.as_ref().unwrap().build_tree(
++                    n,
++                    qr.column_permutation(),
++                    self.options.qr,
++                )?);
++            } else {
++                qr.rebuild_in_place(&j, &r)?;
+             }
+             // Require an observable undamped model even when batch LM used damping.
+             let mut step = qr.solve()?;

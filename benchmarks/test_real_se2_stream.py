@@ -71,6 +71,37 @@ class RealStreamTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'checksum'):
                 real.load(source)
 
+    def test_edge_only_seeds_integrate_original_odometry_without_loop_measurements(self):
+        text = ('EDGE_SE2 0 2 99 98 0 4 0 0 3 0 5\n'
+                'EDGE_SE2 1 2 2 0 0 4 0 0 3 0 5\n'
+                f'EDGE_SE2 0 1 1 0 {math.pi/2:.17g} 4 0 0 3 0 5\n')
+        with tempfile.TemporaryDirectory() as d:
+            source, digest, record = self.fixture(text, d)
+            record.update(seed_policy='odometry-chain', recording='test recording')
+            with patch.dict(real.DATASETS, {digest: record}):
+                root, frames = real.load(source)
+                self.assertEqual(root, (0., 0., 0.))
+                self.assertAlmostEqual(frames[1][0][0], 1.)
+                self.assertAlmostEqual(frames[1][0][1], 2.)
+                self.assertAlmostEqual(frames[1][0][2], math.pi/2)
+                self.assertEqual(frames[1][1][0][2:5], (99., 98., 0.))
+                self.assertEqual(frames[1][1][1][0:2], (1, 2))
+                metadata = real.write(source, Path(d)/'stream')
+                self.assertEqual(metadata['dataset'], 'test recording')
+                self.assertIn('odometry', metadata['initialization'])
+                self.assertTrue(metadata['complete_dataset'])
+
+    def test_edge_only_requires_unique_complete_chain_and_no_supplied_vertices(self):
+        edge = 'EDGE_SE2 0 1 1 0 0 1 0 0 1 0 1\n'
+        loop = 'EDGE_SE2 0 2 2 0 0 1 0 0 1 0 1\n'
+        for text in (edge + loop + loop, edge + edge + loop,
+                     'VERTEX_SE2 0 0 0 0\n' + edge + loop + loop):
+            with tempfile.TemporaryDirectory() as d:
+                source, digest, record = self.fixture(text, d)
+                record['seed_policy'] = 'odometry-chain'
+                with patch.dict(real.DATASETS, {digest: record}), self.assertRaises(ValueError):
+                    real.load(source)
+
     def test_non_spd_information_and_disconnected_arrival_are_rejected(self):
         header = 'VERTEX_SE2 0 0 0 0\nVERTEX_SE2 1 1 0 0\nVERTEX_SE2 2 2 0 0\n'
         for body in [

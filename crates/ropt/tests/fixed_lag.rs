@@ -75,6 +75,20 @@ fn linear_stream_matches_full_history_estimates_and_covariance_without_double_co
                 (estimate[0] - batch.value(&full.x, ids[key as usize]).unwrap()[0]).abs() < 1e-8
             );
         }
+        assert_eq!(
+            report
+                .marginalized_estimates
+                .keys()
+                .copied()
+                .collect::<Vec<_>>(),
+            report.marginalized
+        );
+        for (&key, estimate) in &report.marginalized_estimates {
+            assert!(
+                (estimate[0] - batch.value(&full.x, ids[key as usize]).unwrap()[0]).abs() < 1e-8
+            );
+            assert!(smoother.estimate(key).is_none());
+        }
         let live = report.estimates.keys().copied().collect::<Vec<_>>();
         let a = smoother
             .marginal_covariance(&live, &CovarianceOptions::default())
@@ -555,4 +569,180 @@ fn se2_and_se3_streams_keep_manifold_priors_and_anchor_information() {
             previous = truth;
         }
     }
+}
+
+#[test]
+fn expired_snapshots_capture_current_optimized_values_and_remain_owned() {
+    let mut smoother = FixedLagSmoother::new(FixedLagOptions {
+        lag: 1.,
+        solver: Options {
+            algorithm: ropt::Algorithm::GaussNewton,
+            linear_solver: LinearSolver::DenseQr(Default::default()),
+            gradient_tolerance: 1e-12,
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+    let initial = smoother
+        .update(
+            1.,
+            SmootherUpdate {
+                variables: vec![variable(0, Some(0.), 0.), variable(1, Some(1.), 0.)],
+                factors: vec![
+                    observation(0, 0., 1.),
+                    odometry(0, 1, 1.),
+                    observation(1, 3., 1.),
+                ],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert!(initial.marginalized_estimates.is_empty());
+    assert!((initial.estimates[&0][0] - 2. / 3.).abs() < 1e-10);
+    let expired = smoother
+        .update(
+            2.,
+            SmootherUpdate {
+                factors: vec![observation(0, 10., 1.)],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(expired.marginalized, vec![0]);
+    assert_eq!(
+        expired
+            .marginalized_estimates
+            .keys()
+            .copied()
+            .collect::<Vec<_>>(),
+        vec![0]
+    );
+    assert!((expired.marginalized_estimates[&0][0] - 4.4).abs() < 1e-10);
+    assert!((expired.estimates[&1][0] - 4.2).abs() < 1e-10);
+    assert!(smoother.estimate(0).is_none());
+    let later = smoother
+        .update(
+            3.,
+            SmootherUpdate {
+                factors: vec![observation(1, 7., 1.)],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(later.marginalized, vec![1]);
+    assert!((later.marginalized_estimates[&1][0] - 5.25).abs() < 1e-10);
+    assert!(later.estimates.is_empty());
+    assert!((expired.marginalized_estimates[&0][0] - 4.4).abs() < 1e-10);
+}
+
+#[test]
+fn expired_snapshots_follow_refreshed_times_and_distinguish_reused_keys() {
+    let mut smoother = FixedLagSmoother::new(FixedLagOptions {
+        lag: 1.,
+        solver: Options {
+            algorithm: ropt::Algorithm::GaussNewton,
+            linear_solver: LinearSolver::DenseQr(Default::default()),
+            gradient_tolerance: 1e-12,
+            ..Default::default()
+        },
+        ..Default::default()
+    })
+    .unwrap();
+    let mut fixed = variable(9, Some(0.), -2.);
+    fixed.fixed = true;
+    smoother
+        .update(
+            1.,
+            SmootherUpdate {
+                variables: vec![
+                    fixed,
+                    variable(3, Some(0.), 3.),
+                    variable(7, Some(0.), 7.),
+                    variable(100, None, 10.),
+                ],
+                factors: vec![
+                    observation(9, -2., 1.),
+                    observation(3, 3., 1.),
+                    observation(7, 7., 1.),
+                    observation(100, 10., 1.),
+                ],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    // An invalid refresh must not advance the clock or postpone expiry.
+    assert!(
+        smoother
+            .update(
+                2.,
+                SmootherUpdate {
+                    timestamps: vec![(3, 2.), (3, 2.)],
+                    ..Default::default()
+                }
+            )
+            .is_err()
+    );
+    assert_eq!(smoother.last_time(), Some(1.));
+    assert_eq!(smoother.variable_count(), 4);
+    assert_eq!(smoother.factor_count(), 4);
+    let retired = smoother
+        .update(
+            2.,
+            SmootherUpdate {
+                timestamps: vec![(3, 2.)],
+                factors: vec![observation(7, 9., 1.)],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(retired.marginalized, vec![7, 9]);
+    assert_eq!(
+        retired
+            .marginalized_estimates
+            .keys()
+            .copied()
+            .collect::<Vec<_>>(),
+        retired.marginalized
+    );
+    assert!((retired.marginalized_estimates[&7][0] - 8.).abs() < 1e-10);
+    assert_eq!(retired.marginalized_estimates[&9][0], -2.);
+    assert_eq!(
+        retired.estimates.keys().copied().collect::<Vec<_>>(),
+        vec![3, 100]
+    );
+
+    // Strict expiry retains a variable exactly at the refreshed boundary.
+    let boundary = smoother.update(3., Default::default()).unwrap();
+    assert!(boundary.marginalized_estimates.is_empty());
+    assert_eq!(boundary.estimates[&3][0], 3.);
+    let refreshed = smoother.update(3.1, Default::default()).unwrap();
+    assert_eq!(refreshed.marginalized, vec![3]);
+    assert_eq!(refreshed.marginalized_estimates[&3][0], 3.);
+    assert_eq!(
+        refreshed.estimates.keys().copied().collect::<Vec<_>>(),
+        vec![100]
+    );
+
+    // Reusing the retired key creates a new value; the old report stays owned.
+    let reused = smoother
+        .update(
+            3.1,
+            SmootherUpdate {
+                variables: vec![variable(7, Some(3.1), -8.)],
+                factors: vec![observation(7, -8., 1.)],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert!(reused.marginalized_estimates.is_empty());
+    assert_eq!(reused.estimates[&7][0], -8.);
+    let retired_again = smoother.update(4.2, Default::default()).unwrap();
+    assert_eq!(retired_again.marginalized, vec![7]);
+    assert_eq!(retired_again.marginalized_estimates[&7][0], -8.);
+    assert!((retired.marginalized_estimates[&7][0] - 8.).abs() < 1e-10);
+    assert_eq!(smoother.estimate(100).unwrap()[0], 10.);
+    assert_eq!(smoother.variable_count(), 1);
+    assert_eq!(smoother.factor_count(), 1);
 }

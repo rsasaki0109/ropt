@@ -193,6 +193,15 @@ pub fn validate_observed(
     output: &mut impl Write,
     observer: &mut impl UpdateObserver,
 ) -> Result<AccuracySummary> {
+    validate_observed_with_smoother(frames, output, observer, Ok)
+}
+/// Run the same independent checks with an explicitly configured smoother.
+pub fn validate_observed_with_smoother(
+    frames: usize,
+    output: &mut impl Write,
+    observer: &mut impl UpdateObserver,
+    configure: impl FnOnce(IsamSmoother) -> Result<IsamSmoother>,
+) -> Result<AccuracySummary> {
     if !(25..=300).contains(&frames) || !frames.is_multiple_of(25) {
         return Err("frames must be a multiple of 25 in 25..=300".into());
     }
@@ -204,7 +213,7 @@ pub fn validate_observed(
         max_iterations: 200,
         ..Default::default()
     };
-    let mut smoother = IsamSmoother::new(IsamOptions {
+    let smoother = IsamSmoother::new(IsamOptions {
         batch_solver: Options {
             linear_solver: LinearSolver::SparseLdl(SparseLdlOptions {
                 ordering: SparseOrdering::BlockMinimumDegree { block_size: 3 },
@@ -214,6 +223,7 @@ pub fn validate_observed(
         },
         ..Default::default()
     })?;
+    let mut smoother = configure(smoother)?;
     let origin = SE2 {
         translation: Vector2::new(2., -1.),
         rotation: SO2::exp(0.4),
@@ -291,7 +301,8 @@ pub fn validate_observed(
             None => summary.incremental += 1,
             Some(IsamRelinearizationReason::Forced) => summary.forced += 1,
             Some(IsamRelinearizationReason::Interval) => summary.interval += 1,
-            Some(IsamRelinearizationReason::Threshold) => summary.threshold += 1,
+            // Explicit requested refreshes share this legacy selected-work counter.
+            Some(_) => summary.threshold += 1,
         }
         let estimates = poses(&report.estimates)?;
         if report.estimates[&0] != se2_values(origin) {

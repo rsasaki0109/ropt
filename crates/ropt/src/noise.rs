@@ -1,12 +1,14 @@
 //! Measurement whitening. A transform W maps raw residuals and Jacobians into
 //! normalized units. For covariance Sigma, W Sigma Wᵀ = I and WᵀW = Sigma^-1.
 use crate::{DMatrix, DVector, Error};
+mod precision;
 #[derive(Debug, Clone)]
 enum Whitening {
     Unit,
     Scalar(f64),
     Diagonal(DVector<f64>),
     Matrix(DMatrix<f64>),
+    PreciseInformation(precision::PreciseMatrix),
 }
 
 #[cfg(test)]
@@ -15,6 +17,32 @@ mod workspace_tests {
 
     fn bits(values: impl Iterator<Item = f64>) -> Vec<u64> {
         values.map(f64::to_bits).collect()
+    }
+
+    #[test]
+    fn compensated_whitening_reuses_scratch_after_residual_and_jacobian_overflow() {
+        let a = 2_f64.powi(53) + 4.;
+        let b = 2_f64.powi(53);
+        let noise =
+            NoiseModel::from_information(DMatrix::from_row_slice(2, 2, &[a, b, b, a])).unwrap();
+        let mut workspace = WhiteningWorkspace::default();
+        for (value, derivative) in [(f64::MAX, 0.), (0., f64::MAX)] {
+            let mut r = DVector::from_element(2, value);
+            let mut blocks = vec![DMatrix::from_element(2, 1, derivative)];
+            assert_eq!(
+                noise.whiten(&mut r, &mut blocks, &mut workspace),
+                Err(Error::NonFinite)
+            );
+            let mut r = DVector::from_vec(vec![1., -1.]);
+            let mut blocks = vec![
+                DMatrix::from_column_slice(2, 1, &[1., -1.]),
+                DMatrix::zeros(2, 0),
+            ];
+            noise.whiten(&mut r, &mut blocks, &mut workspace).unwrap();
+            assert!((0.5 * r.norm_squared() - 4.).abs() < 2e-14);
+            assert_eq!(bits(r.iter().copied()), bits(blocks[0].iter().copied()));
+            assert_eq!(blocks[1].shape(), (2, 0));
+        }
     }
 
     #[test]
@@ -188,6 +216,9 @@ impl NoiseModel {
     }
     /// Factor SPD information as Omega=L*Lᵀ and whiten with W=Lᵀ.
     /// The transpose matters: Wᵀ*W must equal Omega, including correlations.
+    /// Small relative Cholesky pivots use compensated coefficients and products
+    /// to preserve weak directions. Information is never regularized; returned
+    /// weighted residuals and Jacobians still use `f64`.
     pub fn from_information(information: DMatrix<f64>) -> Result<Self, Error> {
         let n = information.nrows();
         if n == 0 || information.ncols() != n {
@@ -199,13 +230,27 @@ impl NoiseModel {
         if (&information - information.transpose()).amax() > 1e-12 * information.amax() {
             return Err(Error::InvalidOptions);
         }
-        let lower = information.cholesky().ok_or(Error::InvalidOptions)?.l();
-        Self::sqrt_information(lower.transpose())
+        let lower = information.clone().cholesky().map(|factor| factor.l());
+        // A small Schur pivot loses significant bits under ordinary subtraction.
+        // Only such information matrices pay for compensated factorization and
+        // coefficient products; ordinary whitening keeps its existing arithmetic.
+        const ROOT_PIVOT_RATIO: f64 = 1. / 8192.;
+        if lower.as_ref().is_none_or(|l| {
+            (0..n).any(|i| l[(i, i)] / information[(i, i)].sqrt() < ROOT_PIVOT_RATIO)
+        }) {
+            return Ok(Self {
+                whitening: Whitening::PreciseInformation(
+                    precision::PreciseMatrix::from_information(&information)?,
+                ),
+            });
+        }
+        Self::sqrt_information(lower.unwrap().transpose())
     }
     pub(crate) fn validate_dimension(&self, rows: usize) -> Result<(), Error> {
         let dimension = match &self.whitening {
             Whitening::Matrix(w) => Some(w.nrows()),
             Whitening::Diagonal(w) => Some(w.len()),
+            Whitening::PreciseInformation(w) => Some(w.dimension()),
             _ => None,
         };
         if dimension.is_some_and(|n| n != rows) {
@@ -249,6 +294,16 @@ impl NoiseModel {
                         workspace.block.resize_mut(block.nrows(), block.ncols(), 0.);
                     }
                     workspace.block.gemm(1., w, &*block, 0.);
+                    std::mem::swap(block, &mut workspace.block);
+                }
+            }
+            Whitening::PreciseInformation(w) => {
+                workspace.residual.resize_vertically_mut(residual.len(), 0.);
+                w.multiply_vector(residual, &mut workspace.residual)?;
+                std::mem::swap(residual, &mut workspace.residual);
+                for block in &mut *blocks {
+                    workspace.block.resize_mut(block.nrows(), block.ncols(), 0.);
+                    w.multiply_block(block, &mut workspace.block)?;
                     std::mem::swap(block, &mut workspace.block);
                 }
             }

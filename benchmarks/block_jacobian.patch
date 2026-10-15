@@ -1,0 +1,262 @@
+--- a/crates/ropt/src/dynamic_autodiff.rs
++++ b/crates/ropt/src/dynamic_autodiff.rs
+@@ -345,37 +345,61 @@
+         self.chunk_size = chunk_size;
+         Ok(self)
+     }
+-}
+-impl<F: Fn(&[DynamicJet]) -> Result<Vec<DynamicJet>, Error>> Residual for DynamicAutoDiff<F> {
+-    fn dimensions(&self) -> (usize, usize) {
+-        (self.parameters, self.residuals)
+-    }
+-    fn evaluate(
++
++    /// Tangent inputs are zero at the current estimate. Write the derivative
++    /// chunks directly into factor blocks without a flat Jacobian or seed vector.
++    pub(crate) fn evaluate_blocks_at_zero(
+         &self,
+-        x: &DVector<f64>,
++        dimensions: &[usize],
++    ) -> Result<(DVector<f64>, Vec<DMatrix<f64>>), Error> {
++        let parameters = dimensions.iter().try_fold(0usize, |total, &n| {
++            total.checked_add(n).ok_or(Error::InvalidDimensions)
++        })?;
++        if parameters != self.parameters {
++            return Err(Error::InvalidDimensions);
++        }
++        let mut r = DVector::zeros(self.residuals);
++        let mut blocks: Vec<_> = dimensions
++            .iter()
++            .map(|&n| DMatrix::zeros(self.residuals, n))
++            .collect();
++        self.evaluate_chunks(
++            |_| 0.,
++            &mut r,
++            |row, start, width, partials| {
++                let end = start + width;
++                let mut offset = 0;
++                for block in &mut blocks {
++                    let next = offset + block.ncols();
++                    for column in start.max(offset)..end.min(next) {
++                        block[(row, column - offset)] =
++                            partials.get(column - start).copied().unwrap_or(0.);
++                    }
++                    offset = next;
++                    if offset >= end {
++                        break;
++                    }
++                }
++            },
++        )?;
++        Ok((r, blocks))
++    }
++
++    fn evaluate_chunks(
++        &self,
++        input_value: impl Fn(usize) -> f64,
+         r: &mut DVector<f64>,
+-        j: &mut DMatrix<f64>,
++        mut write_row: impl FnMut(usize, usize, usize, &[f64]),
+     ) -> Result<(), Error> {
+-        if x.len() != self.parameters
+-            || r.len() != self.residuals
+-            || j.shape() != (self.residuals, self.parameters)
+-        {
+-            return Err(Error::InvalidDimensions);
+-        }
+-        if !x.iter().all(|v| v.is_finite()) {
+-            return Err(Error::NonFinite);
+-        }
+         for start in (0..self.parameters).step_by(self.chunk_size) {
+             let width = (self.parameters - start).min(self.chunk_size);
+             let end = start + width;
+-            let inputs = x
+-                .iter()
+-                .enumerate()
+-                .map(|(i, value)| {
++            let inputs = (0..self.parameters)
++                .map(|i| {
+                     if i >= start && i < end {
+-                        DynamicJet::variable(*value, i - start, width)
++                        DynamicJet::variable(input_value(i), i - start, width)
+                     } else {
+-                        Ok(DynamicJet::constant(*value))
++                        Ok(DynamicJet::constant(input_value(i)))
+                     }
+                 })
+                 .collect::<Result<Vec<_>, _>>()?;
+@@ -395,12 +419,40 @@
+                         "autodiff residual values changed between derivative chunks".into(),
+                     ));
+                 }
++                write_row(row, start, width, partials);
++            }
++        }
++        Ok(())
++    }
++}
++impl<F: Fn(&[DynamicJet]) -> Result<Vec<DynamicJet>, Error>> Residual for DynamicAutoDiff<F> {
++    fn dimensions(&self) -> (usize, usize) {
++        (self.parameters, self.residuals)
++    }
++    fn evaluate(
++        &self,
++        x: &DVector<f64>,
++        r: &mut DVector<f64>,
++        j: &mut DMatrix<f64>,
++    ) -> Result<(), Error> {
++        if x.len() != self.parameters
++            || r.len() != self.residuals
++            || j.shape() != (self.residuals, self.parameters)
++        {
++            return Err(Error::InvalidDimensions);
++        }
++        if !x.iter().all(|v| v.is_finite()) {
++            return Err(Error::NonFinite);
++        }
++        self.evaluate_chunks(
++            |i| x[i],
++            r,
++            |row, start, width, partials| {
+                 for col in 0..width {
+                     j[(row, start + col)] = partials.get(col).copied().unwrap_or(0.0);
+                 }
+-            }
+-        }
+-        Ok(())
++            },
++        )
+     }
+ }
+ 
+@@ -526,3 +578,98 @@
+         }
+     }
+ }
++
++#[cfg(test)]
++mod block_jacobian_tests {
++    use super::*;
++    use std::cell::Cell;
++
++    #[test]
++    fn block_chunks_match_flat_jacobian_bits_across_empty_and_crossed_blocks() {
++        let dimensions = [2, 0, 1, 3];
++        for chunk in [1, 2, 4, 6, 7, 32] {
++            let callback = |x: &[DynamicJet]| {
++                Ok(vec![
++                    &x[0] - 2. * &x[3],
++                    x[1].sin() + &x[5],
++                    DynamicJet::constant(-0.),
++                    DynamicJet::constant(7.),
++                ])
++            };
++            let adapter = DynamicAutoDiff::new(6, 4, callback)
++                .unwrap()
++                .with_chunk_size(chunk)
++                .unwrap();
++            // The flat API must overwrite even constant columns, independently
++            // of the block API's zero-initialized storage.
++            let mut flat_r = DVector::from_element(4, f64::NAN);
++            let mut flat_j = DMatrix::from_element(4, 6, 73.);
++            adapter
++                .evaluate(&DVector::zeros(6), &mut flat_r, &mut flat_j)
++                .unwrap();
++            let (r, blocks) = adapter.evaluate_blocks_at_zero(&dimensions).unwrap();
++            assert_eq!(r.map(f64::to_bits), flat_r.map(f64::to_bits));
++            let mut offset = 0;
++            for (block, n) in blocks.iter().zip(dimensions) {
++                assert_eq!(block.shape(), (4, n));
++                assert_eq!(
++                    block.map(f64::to_bits),
++                    flat_j.columns(offset, n).map(f64::to_bits)
++                );
++                offset += n;
++            }
++        }
++    }
++
++    #[test]
++    fn block_chunks_preserve_callback_errors_dimensions_and_primal_consistency() {
++        let run = |blocked: bool, case: usize| {
++            let calls = Cell::new(0);
++            let callback = |x: &[DynamicJet]| {
++                let call = calls.get();
++                calls.set(call + 1);
++                match case {
++                    0 => Ok(vec![]),
++                    1 => Ok(vec![DynamicJet::constant(f64::NAN)]),
++                    2 => Ok(vec![DynamicJet::variable(0., 0, 3)?]),
++                    3 => Ok(vec![DynamicJet::constant(if call == 0 { 0. } else { -0. })]),
++                    4 if call > 0 => Err(Error::Evaluation("later callback".into())),
++                    _ => Ok(vec![&x[0] + &x[2]]),
++                }
++            };
++            let adapter = DynamicAutoDiff::new(3, 1, callback)
++                .unwrap()
++                .with_chunk_size(2)
++                .unwrap();
++            let result = if blocked {
++                adapter.evaluate_blocks_at_zero(&[1, 2]).map(|_| ())
++            } else {
++                adapter.evaluate(
++                    &DVector::zeros(3),
++                    &mut DVector::zeros(1),
++                    &mut DMatrix::zeros(1, 3),
++                )
++            };
++            (result, calls.get())
++        };
++        for case in 0..5 {
++            let flat = run(false, case);
++            assert!(flat.0.is_err());
++            assert_eq!(run(true, case), flat);
++            assert_eq!(flat.1, if case < 3 { 1 } else { 2 });
++        }
++        let calls = Cell::new(0);
++        let adapter = DynamicAutoDiff::new(3, 1, |_| {
++            calls.set(calls.get() + 1);
++            Ok(vec![DynamicJet::constant(0.)])
++        })
++        .unwrap();
++        for dimensions in [vec![1, 1], vec![usize::MAX, 1]] {
++            assert_eq!(
++                adapter.evaluate_blocks_at_zero(&dimensions),
++                Err(Error::InvalidDimensions)
++            );
++        }
++        assert_eq!(calls.get(), 0);
++    }
++}
+--- a/crates/ropt/src/factor/autodiff.rs
++++ b/crates/ropt/src/factor/autodiff.rs
+@@ -1,7 +1,7 @@
+ //! Shared tangent-space AD evaluation for graphs and current-estimate probes.
+ use super::VariableKind;
+ use crate::{
+-    DMatrix, DVector, Error, Residual,
++    DMatrix, DVector, Error,
+     autodiff::{DynamicAutoDiff, DynamicJet},
+ };
+ 
+@@ -57,19 +57,6 @@
+             function(&blocks.iter().map(Vec::as_slice).collect::<Vec<_>>())
+         })?
+         .with_chunk_size(self.chunk_size)?;
+-        let mut r = DVector::zeros(self.residuals);
+-        let mut j = DMatrix::zeros(self.residuals, self.parameters);
+-        residual.evaluate(&DVector::zeros(self.parameters), &mut r, &mut j)?;
+-        let mut start = 0;
+-        let blocks = self
+-            .dimensions
+-            .iter()
+-            .map(|&n| {
+-                let block = j.columns(start, n).into_owned();
+-                start += n;
+-                block
+-            })
+-            .collect();
+-        Ok((r, blocks))
++        residual.evaluate_blocks_at_zero(&self.dimensions)
+     }
+ }

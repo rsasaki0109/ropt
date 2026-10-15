@@ -1,0 +1,977 @@
+--- a/crates/ropt/src/bayes_tree.rs
++++ b/crates/ropt/src/bayes_tree.rs
+@@ -3,11 +3,13 @@
+ //! Existing conditional rows on the touched-to-root paths and new rows are
+ //! re-eliminated by sparse QR. Unaffected conditionals remain shared. This is a
+ //! fixed-order Gaussian backend, not selective nonlinear relinearization.
++mod editable;
+ use crate::{
+     DVector, Error,
+     incremental_qr::{IncrementalQr, IncrementalQrOptions},
+     sparse::{CsrMatrix, finite_vector},
+ };
++pub use editable::{EditableBayesTree, EditableBayesTreeUpdate, GaussianFactor, GaussianFactorId};
+ use std::{collections::BTreeSet, sync::Arc};
+ 
+ #[derive(Debug)]
+--- /dev/null
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -0,0 +1,551 @@
++//! Factor replacement by multifrontal square-root elimination and cached messages.
++use super::{Conditional, GaussianBayesTree};
++use crate::{
++    DVector, Error,
++    incremental_qr::{IncrementalQr, IncrementalQrOptions},
++    sparse::{CsrMatrix, finite_vector},
++};
++use std::{
++    collections::{BTreeMap, BTreeSet},
++    sync::Arc,
++};
++
++pub type GaussianFactorId = u64;
++
++/// An owned Gaussian observation block: cost = 0.5 * ||J*x+residual||².
++/// Columns are original parameter coordinates, not elimination coordinates.
++#[derive(Debug, Clone)]
++pub struct GaussianFactor {
++    jacobian: CsrMatrix,
++    residual: DVector<f64>,
++}
++
++impl GaussianFactor {
++    pub fn new(jacobian: CsrMatrix, residual: DVector<f64>) -> Result<Self, Error> {
++        if jacobian.shape().0 == 0 || jacobian.shape().0 != residual.len() {
++            return Err(Error::InvalidDimensions);
++        }
++        finite_vector(&residual)?;
++        Ok(Self { jacobian, residual })
++    }
++    pub fn jacobian(&self) -> &CsrMatrix {
++        &self.jacobian
++    }
++    pub fn residual(&self) -> &DVector<f64> {
++        &self.residual
++    }
++    pub(crate) fn entries(&self) -> Result<usize, Error> {
++        self.jacobian
++            .nnz()
++            .checked_add(self.residual.len())
++            .ok_or(Error::InvalidDimensions)
++    }
++}
++
++/// Scalar-clique work for the last committed factor update. Global metadata
++/// analysis and full back-substitution are not included in these counts.
++#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
++pub struct EditableBayesTreeUpdate {
++    pub reeliminated_cliques: usize,
++    pub reused_cliques: usize,
++    /// Original observation rows gathered by affected cliques.
++    pub input_factor_rows: usize,
++    /// Separator rows gathered, including newly computed child messages.
++    pub input_separator_rows: usize,
++    /// Unaffected child messages reused at the affected region's boundary.
++    pub reused_boundary_messages: usize,
++}
++#[derive(Debug)]
++struct Message {
++    // Sorted internal coordinates. Each row represents row*x-rhs.
++    rows: Vec<Vec<(usize, f64)>>,
++    rhs: Vec<f64>,
++    constant_cost: f64,
++}
++impl Message {
++    fn empty() -> Self {
++        Self {
++            rows: Vec::new(),
++            rhs: Vec::new(),
++            constant_cost: 0.,
++        }
++    }
++    fn entries(&self) -> Result<usize, Error> {
++        self.rows
++            .iter()
++            .try_fold(self.rhs.len(), |count, row| count.checked_add(row.len()))
++            .ok_or(Error::InvalidDimensions)
++    }
++}
++type Topology = (
++    Vec<Arc<[usize]>>,
++    Vec<Option<usize>>,
++    BTreeMap<GaussianFactorId, Option<usize>>,
++    usize,
++);
++
++/// Fixed-order scalar Gaussian Bayes forest with original factor ownership and
++/// cached square-root separator messages. Factor replacement/deletion replays
++/// only affected original factors and child messages; unchanged cliques share
++/// immutable conditionals/messages. No QR downdate or normal matrix is used.
++///
++/// Symbolic topology/factor ownership are analyzed globally on each nonempty
++/// update. Solve performs full rank checking and back-substitution. This is a
++/// Gaussian backend used by IsamSmoother's explicit selective Bayes-tree policy.
++#[derive(Debug, Clone)]
++pub struct EditableBayesTree {
++    tree: GaussianBayesTree,
++    messages: Vec<Arc<Message>>,
++    factors: BTreeMap<GaussianFactorId, Arc<GaussianFactor>>,
++    owners: BTreeMap<GaussianFactorId, Option<usize>>,
++    factor_entries: usize,
++    message_entries: usize,
++    last_update: EditableBayesTreeUpdate,
++}
++impl EditableBayesTree {
++    pub fn new(columns: usize, options: IncrementalQrOptions) -> Result<Self, Error> {
++        if columns > options.max_entries {
++            return Err(Error::SparseFillLimit {
++                limit: options.max_entries,
++            });
++        }
++        Self::new_ordered((0..columns).collect(), options)
++    }
++    /// Fixed permutation maps internal elimination indices to original columns.
++    pub fn new_ordered(
++        permutation: Vec<usize>,
++        options: IncrementalQrOptions,
++    ) -> Result<Self, Error> {
++        let n = permutation.len();
++        let mut qr = IncrementalQr::new(n, options)?;
++        qr.set_column_order(permutation)?;
++        let empty_message = Arc::new(Message::empty());
++        Ok(Self {
++            tree: GaussianBayesTree::from_qr(qr)?,
++            messages: vec![empty_message; n],
++            factors: BTreeMap::new(),
++            owners: BTreeMap::new(),
++            factor_entries: 0,
++            message_entries: 0,
++            last_update: EditableBayesTreeUpdate {
++                reused_cliques: n,
++                ..Default::default()
++            },
++        })
++    }
++    pub fn dimension(&self) -> usize {
++        self.tree.dimension()
++    }
++    pub fn factor_count(&self) -> usize {
++        self.factors.len()
++    }
++    pub fn factor(&self, id: GaussianFactorId) -> Option<&GaussianFactor> {
++        self.factors.get(&id).map(AsRef::as_ref)
++    }
++    /// Numeric conditional coefficients, separately bounded by max_entries.
++    pub fn stored_entries(&self) -> usize {
++        self.tree.stored_entries()
++    }
++    /// Original nonzero coefficients plus residual entries, separately bounded.
++    pub fn factor_entries(&self) -> usize {
++        self.factor_entries
++    }
++    /// Cached message nonzero coefficients plus right-hand sides, separately bounded.
++    pub fn separator_entries(&self) -> usize {
++        self.message_entries
++    }
++    pub fn last_update(&self) -> EditableBayesTreeUpdate {
++        self.last_update
++    }
++    pub fn column_permutation(&self) -> &[usize] {
++        &self.tree.to_original
++    }
++    pub fn parent(&self, clique: usize) -> Result<Option<usize>, Error> {
++        self.tree.parent(clique)
++    }
++    pub fn separator(&self, clique: usize) -> Result<&[usize], Error> {
++        self.tree.separator(clique)
++    }
++    pub fn solve(&self) -> Result<DVector<f64>, Error> {
++        self.tree.solve()
++    }
++    pub fn cost(&self, x: &DVector<f64>) -> Result<f64, Error> {
++        self.tree.cost(x)
++    }
++    /// Extend with unconstrained trailing original columns; earlier order is fixed.
++    pub fn extend_columns(&mut self, columns: usize) -> Result<(), Error> {
++        let mut candidate = self.clone();
++        candidate.tree.extend_columns(columns)?;
++        candidate
++            .messages
++            .resize_with(columns, || Arc::new(Message::empty()));
++        *self = candidate;
++        Ok(())
++    }
++    /// Atomically remove existing IDs and insert/replace Gaussian blocks. Lists
++    /// must contain unique, disjoint IDs. Replacement columns must match the
++    /// current dimension; measurements keep their supplied original coordinates.
++    /// Incomplete models can be installed: solve checks observability separately.
++    /// Any dimension, finite-value, fill or arithmetic error leaves state unchanged.
++    ///
++    /// max_entries separately limits original coefficients+residuals, cached
++    /// message coefficients+RHS, numeric conditionals, symbolic structure, and
++    /// each local gathered coefficient+residual workspace. It is not peak memory.
++    pub fn update(
++        &mut self,
++        removed: &[GaussianFactorId],
++        replacements: Vec<(GaussianFactorId, GaussianFactor)>,
++    ) -> Result<EditableBayesTreeUpdate, Error> {
++        self.update_shared(
++            removed,
++            replacements
++                .into_iter()
++                .map(|(id, factor)| (id, Arc::new(factor)))
++                .collect(),
++        )
++    }
++    pub(crate) fn update_shared(
++        &mut self,
++        removed: &[GaussianFactorId],
++        replacements: Vec<(GaussianFactorId, Arc<GaussianFactor>)>,
++    ) -> Result<EditableBayesTreeUpdate, Error> {
++        let mut candidate = self.clone();
++        candidate.update_in_place(removed, replacements)?;
++        let report = candidate.last_update;
++        *self = candidate;
++        Ok(report)
++    }
++    fn topology(&self) -> Result<Topology, Error> {
++        let n = self.dimension();
++        let mut filled = vec![BTreeSet::new(); n];
++        let mut owners = BTreeMap::new();
++        for (&id, factor) in &self.factors {
++            // Whole-block support is conservative when rows are disconnected.
++            let support = factor
++                .jacobian
++                .entries()
++                .map(|(_, column, _)| self.tree.to_internal[column])
++                .collect::<BTreeSet<_>>();
++            let owner = support.first().copied();
++            owners.insert(id, owner);
++            if let Some(k) = owner {
++                filled[k].extend(support.into_iter().skip(1));
++            }
++        }
++        let mut count = n;
++        for k in 0..n {
++            count = count
++                .checked_add(filled[k].len())
++                .ok_or(Error::InvalidDimensions)?;
++            if count > self.tree.options.max_entries {
++                return Err(Error::SparseFillLimit {
++                    limit: self.tree.options.max_entries,
++                });
++            }
++            if let Some(&parent) = filled[k].first() {
++                let tail = filled[k].iter().copied().skip(1).collect::<Vec<_>>();
++                filled[parent].extend(tail);
++            }
++        }
++        let separators = filled
++            .into_iter()
++            .map(|set| Arc::from(set.into_iter().collect::<Vec<_>>()))
++            .collect::<Vec<Arc<[usize]>>>();
++        let parents = separators
++            .iter()
++            .map(|separator| separator.first().copied())
++            .collect();
++        Ok((separators, parents, owners, count))
++    }
++    fn update_in_place(
++        &mut self,
++        removed: &[GaussianFactorId],
++        replacements: Vec<(GaussianFactorId, Arc<GaussianFactor>)>,
++    ) -> Result<(), Error> {
++        let n = self.dimension();
++        let limit = self.tree.options.max_entries;
++        let mut changed = BTreeSet::new();
++        let mut pending = Vec::new();
++        for &id in removed {
++            if !changed.insert(id) || !self.factors.contains_key(&id) {
++                return Err(Error::Evaluation(
++                    "duplicate or unknown removed Gaussian factor ID".into(),
++                ));
++            }
++            if let Some(Some(owner)) = self.owners.get(&id) {
++                pending.push(*owner);
++            }
++        }
++        for (id, factor) in &replacements {
++            if !changed.insert(*id) {
++                return Err(Error::Evaluation(
++                    "duplicate or overlapping Gaussian factor ID".into(),
++                ));
++            }
++            if factor.jacobian.shape().1 != n {
++                return Err(Error::InvalidDimensions);
++            }
++            if let Some(Some(owner)) = self.owners.get(id) {
++                pending.push(*owner);
++            }
++        }
++        if changed.is_empty() {
++            self.last_update = EditableBayesTreeUpdate {
++                reused_cliques: n,
++                ..Default::default()
++            };
++            return Ok(());
++        }
++        for &id in removed {
++            self.factors.remove(&id);
++        }
++        for (id, factor) in replacements {
++            self.factors.insert(id, factor);
++        }
++        let entries = self.factors.values().try_fold(0usize, |count, factor| {
++            count
++                .checked_add(factor.entries()?)
++                .ok_or(Error::InvalidDimensions)
++        })?;
++        if entries > limit {
++            return Err(Error::SparseFillLimit { limit });
++        }
++        let (separators, parents, owners, symbolic_entries) = self.topology()?;
++        for id in &changed {
++            if let Some(Some(owner)) = owners.get(id) {
++                pending.push(*owner);
++            }
++        }
++        for (k, separator) in separators.iter().enumerate() {
++            if self.tree.separators[k].as_ref() != separator.as_ref() {
++                pending.push(k);
++            }
++        }
++        let mut affected = BTreeSet::new();
++        while let Some(k) = pending.pop() {
++            if affected.insert(k) {
++                pending.extend(self.tree.parents[k]);
++                pending.extend(parents[k]);
++            }
++        }
++        let mut children = vec![Vec::new(); n];
++        let mut buckets = vec![Vec::new(); n];
++        for (child, parent) in parents.iter().enumerate() {
++            if let Some(parent) = parent {
++                children[*parent].push(child);
++            }
++        }
++        for (&id, &owner) in &owners {
++            if let Some(owner) = owner {
++                buckets[owner].push(id);
++            }
++        }
++        let mut report = EditableBayesTreeUpdate {
++            reeliminated_cliques: affected.len(),
++            reused_cliques: n - affected.len(),
++            ..Default::default()
++        };
++        for &k in &affected {
++            let mut columns = Vec::with_capacity(separators[k].len() + 1);
++            columns.push(k);
++            columns.extend(separators[k].iter().copied());
++            let local = columns
++                .iter()
++                .enumerate()
++                .map(|(i, &column)| (column, i))
++                .collect::<BTreeMap<_, _>>();
++            let mut rows = 0usize;
++            let mut workspace_entries = 0usize;
++            for &id in &buckets[k] {
++                let factor = &self.factors[&id];
++                rows = rows
++                    .checked_add(factor.residual.len())
++                    .ok_or(Error::InvalidDimensions)?;
++                workspace_entries = workspace_entries
++                    .checked_add(factor.entries()?)
++                    .ok_or(Error::InvalidDimensions)?;
++                report.input_factor_rows = report
++                    .input_factor_rows
++                    .checked_add(factor.residual.len())
++                    .ok_or(Error::InvalidDimensions)?;
++            }
++            for &child in &children[k] {
++                let message = &self.messages[child];
++                rows = rows
++                    .checked_add(message.rows.len())
++                    .ok_or(Error::InvalidDimensions)?;
++                workspace_entries = workspace_entries
++                    .checked_add(message.entries()?)
++                    .ok_or(Error::InvalidDimensions)?;
++                report.input_separator_rows = report
++                    .input_separator_rows
++                    .checked_add(message.rows.len())
++                    .ok_or(Error::InvalidDimensions)?;
++                if !affected.contains(&child) {
++                    report.reused_boundary_messages += 1;
++                }
++            }
++            if workspace_entries > limit {
++                return Err(Error::SparseFillLimit { limit });
++            }
++            let mut triplets = Vec::with_capacity(workspace_entries - rows);
++            let mut r = DVector::zeros(rows);
++            let mut start = 0;
++            let mut carried_constant = 0.;
++            for &id in &buckets[k] {
++                let factor = &self.factors[&id];
++                for (row, column, value) in factor.jacobian.entries() {
++                    let column = *local
++                        .get(&self.tree.to_internal[column])
++                        .ok_or(Error::InvalidDimensions)?;
++                    triplets.push((start + row, column, value));
++                }
++                r.rows_mut(start, factor.residual.len())
++                    .copy_from(&factor.residual);
++                start += factor.residual.len();
++            }
++            for &child in &children[k] {
++                let message = &self.messages[child];
++                carried_constant += message.constant_cost;
++                for (row, &rhs) in message.rows.iter().zip(&message.rhs) {
++                    r[start] = -rhs;
++                    for &(column, value) in row {
++                        triplets.push((
++                            start,
++                            *local.get(&column).ok_or(Error::InvalidDimensions)?,
++                            value,
++                        ));
++                    }
++                    start += 1;
++                }
++            }
++            if !carried_constant.is_finite() {
++                return Err(Error::NonFinite);
++            }
++            let j = CsrMatrix::from_triplets(rows, columns.len(), triplets)?;
++            let mut qr = IncrementalQr::new(columns.len(), self.tree.options)?;
++            qr.rebuild_in_place(&j, &r)?;
++            let factor = qr.into_factor();
++            let mut eliminated = factor.rows.into_iter().enumerate();
++            let (_, frontal) = eliminated.next().ok_or(Error::InvalidDimensions)?;
++            let conditional = Conditional {
++                row: frontal
++                    .into_iter()
++                    .map(|(column, value)| (columns[column], value))
++                    .collect(),
++                rhs: factor.rhs[0],
++            };
++            self.tree.entries = (self.tree.entries - self.tree.conditionals[k].row.len())
++                .checked_add(conditional.row.len())
++                .ok_or(Error::InvalidDimensions)?;
++            if self.tree.entries > limit {
++                return Err(Error::SparseFillLimit { limit });
++            }
++            let mut message = Message {
++                rows: Vec::new(),
++                rhs: Vec::new(),
++                constant_cost: carried_constant + factor.constant_cost,
++            };
++            for (row, coefficients) in eliminated {
++                if coefficients.is_empty() {
++                    message.constant_cost += 0.5 * factor.rhs[row] * factor.rhs[row];
++                } else {
++                    message.rows.push(
++                        coefficients
++                            .into_iter()
++                            .map(|(column, value)| (columns[column], value))
++                            .collect(),
++                    );
++                    message.rhs.push(factor.rhs[row]);
++                }
++            }
++            if !message.constant_cost.is_finite() {
++                return Err(Error::NonFinite);
++            }
++            self.message_entries = (self.message_entries - self.messages[k].entries()?)
++                .checked_add(message.entries()?)
++                .ok_or(Error::InvalidDimensions)?;
++            if self.message_entries > limit {
++                return Err(Error::SparseFillLimit { limit });
++            }
++            self.tree.conditionals[k] = Arc::new(conditional);
++            self.messages[k] = Arc::new(message);
++        }
++        // Only current roots contribute marginalized constants. Adding every
++        // orphan's original rows or every message constant would double-count.
++        let mut constant = 0.;
++        for (&id, &owner) in &owners {
++            if owner.is_none() {
++                for &value in self.factors[&id].residual.iter() {
++                    constant += 0.5 * value * value;
++                }
++            }
++        }
++        for (k, parent) in parents.iter().enumerate() {
++            if parent.is_none() {
++                constant += self.messages[k].constant_cost;
++            }
++        }
++        if !constant.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        self.tree.constant_cost = constant;
++        self.tree.separators = separators;
++        self.tree.parents = parents;
++        self.tree.symbolic_entries = symbolic_entries;
++        self.owners = owners;
++        self.factor_entries = entries;
++        self.last_update = report;
++        Ok(())
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn orphan_conditionals_and_nonzero_separator_messages_share_identity() {
++        let leaf = |column: usize, target: f64| {
++            GaussianFactor::new(
++                CsrMatrix::from_triplets(2, 4, vec![(0, column, 1.), (1, column, 1.), (1, 3, -1.)])
++                    .unwrap(),
++                DVector::from_vec(vec![-target, -0.5]),
++            )
++            .unwrap()
++        };
++        let mut tree = EditableBayesTree::new(4, Default::default()).unwrap();
++        tree.update(
++            &[],
++            vec![(0, leaf(0, 1.)), (1, leaf(1, 2.)), (2, leaf(2, 3.))],
++        )
++        .unwrap();
++        let conditional = tree.tree.conditionals[1].clone();
++        let message = tree.messages[1].clone();
++        let factor = tree.factors[&1].clone();
++        assert!(!message.rows.is_empty());
++        for root in [-2., 0., 4.] {
++            let actual = message
++                .rows
++                .iter()
++                .zip(&message.rhs)
++                .map(|(row, rhs)| {
++                    0.5 * (row
++                        .iter()
++                        .map(|&(col, a)| {
++                            assert_eq!(col, 3);
++                            a * root
++                        })
++                        .sum::<f64>()
++                        - rhs)
++                        .powi(2)
++                })
++                .sum::<f64>()
++                + message.constant_cost;
++            assert!((actual - 0.25 * (root + 0.5 - 2.).powi(2)).abs() < 1e-13);
++        }
++        tree.update(&[], vec![(0, leaf(0, 4.))]).unwrap();
++        assert!(Arc::ptr_eq(&conditional, &tree.tree.conditionals[1]));
++        assert!(Arc::ptr_eq(&message, &tree.messages[1]));
++        assert!(Arc::ptr_eq(&factor, &tree.factors[&1]));
++    }
++}
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -4,7 +4,9 @@
+ //! mode reevaluates incident factors, retaining unrelated rows, then rebuilds QR.
+ //! An optional Gaussian Bayes tree selectively re-eliminates appended row paths.
+ mod selective;
+-use crate::bayes_tree::{BayesTreeUpdate, GaussianBayesTree};
++use crate::bayes_tree::{
++    BayesTreeUpdate, EditableBayesTree, EditableBayesTreeUpdate, GaussianBayesTree,
++};
+ use crate::factor::{FactorGraph, VariableId};
+ use crate::fixed_lag::{Key, SmootherFactor, SmootherUpdate, WindowVariable, build_graph};
+ use crate::incremental_qr::{IncrementalQr, IncrementalQrOptions};
+@@ -75,38 +77,53 @@
+     /// Optional scalar-frontal Gaussian tree work. Full nonlinear refreshes still
+     /// rebuild every conditional; cached updates re-eliminate affected paths.
+     pub bayes_tree_update: Option<BayesTreeUpdate>,
+-    /// Optional threshold-selected factor evaluation. This mode rebuilds the
+-    /// complete Gaussian QR, while preserving unrelated nonlinear factor rows.
++    /// Optional threshold-selected factor evaluation, preserving unrelated rows.
++    /// The ordinary selected mode rebuilds QR globally; the explicit editable
++    /// mode reports affected clique replacement in editable_bayes_tree_update.
+     pub selective_update: Option<SelectiveRelinearizationReport>,
++    /// Original-factor replacement through cached separator messages. Counts
++    /// scalar Gaussian cliques; symbolic analysis/back-substitution remain global.
++    pub editable_bayes_tree_update: Option<EditableBayesTreeUpdate>,
+ }
+ #[derive(Clone)]
+ enum GaussianCache {
+     Qr(IncrementalQr),
+     Tree(GaussianBayesTree),
++    Editable(EditableBayesTree),
+ }
+ impl GaussianCache {
+     fn into_tree(self) -> Result<Self, Error> {
+         match self {
+             Self::Qr(qr) => Ok(Self::Tree(GaussianBayesTree::from_qr(qr)?)),
++            Self::Editable(_) => Err(Error::InvalidOptions),
+             tree => Ok(tree),
+         }
+     }
+     fn tree_update(&self) -> Option<BayesTreeUpdate> {
+         match self {
+             Self::Qr(_) => None,
++            Self::Editable(_) => None,
+             Self::Tree(tree) => Some(tree.last_update()),
+         }
+     }
++    fn editable_update(&self) -> Option<EditableBayesTreeUpdate> {
++        match self {
++            Self::Editable(tree) => Some(tree.last_update()),
++            _ => None,
++        }
++    }
+     fn column_permutation(&self) -> Option<&[usize]> {
+         match self {
+             Self::Qr(qr) => qr.column_permutation(),
+             Self::Tree(tree) => Some(tree.column_permutation()),
++            Self::Editable(tree) => Some(tree.column_permutation()),
+         }
+     }
+     fn extend_columns(&mut self, n: usize) -> Result<(), Error> {
+         match self {
+             Self::Qr(qr) => qr.extend_columns(n),
+             Self::Tree(tree) => tree.extend_columns(n),
++            Self::Editable(tree) => tree.extend_columns(n),
+         }
+     }
+     fn append_in_place(
+@@ -117,6 +134,7 @@
+         match self {
+             Self::Qr(qr) => qr.append_in_place(j, r),
+             Self::Tree(tree) => tree.append_in_place(j, r),
++            Self::Editable(_) => Err(Error::InvalidOptions),
+         }
+     }
+     fn rebuild_in_place(
+@@ -126,37 +144,40 @@
+     ) -> Result<(), Error> {
+         match self {
+             Self::Qr(qr) => qr.rebuild_in_place(j, r),
+-            Self::Tree(_) => Err(Error::InvalidOptions),
++            Self::Tree(_) | Self::Editable(_) => Err(Error::InvalidOptions),
+         }
+     }
+     fn set_column_order(&mut self, order: Vec<usize>) -> Result<(), Error> {
+         match self {
+             Self::Qr(qr) => qr.set_column_order(order),
+-            Self::Tree(_) => Err(Error::InvalidOptions),
++            Self::Tree(_) | Self::Editable(_) => Err(Error::InvalidOptions),
+         }
+     }
+     fn solve(&self) -> Result<DVector<f64>, Error> {
+         match self {
+             Self::Qr(qr) => qr.solve(),
+             Self::Tree(tree) => tree.solve(),
++            Self::Editable(tree) => tree.solve(),
+         }
+     }
+     fn solve_gradient(&self, g: &DVector<f64>) -> Result<DVector<f64>, Error> {
+         match self {
+             Self::Qr(qr) => qr.solve_gradient(g),
+-            Self::Tree(_) => Err(Error::InvalidOptions),
++            Self::Tree(_) | Self::Editable(_) => Err(Error::InvalidOptions),
+         }
+     }
+     fn cost(&self, x: &DVector<f64>) -> Result<f64, Error> {
+         match self {
+             Self::Qr(qr) => qr.cost(x),
+             Self::Tree(tree) => tree.cost(x),
++            Self::Editable(tree) => tree.cost(x),
+         }
+     }
+     fn stored_entries(&self) -> usize {
+         match self {
+             Self::Qr(qr) => qr.stored_entries(),
+             Self::Tree(tree) => tree.stored_entries(),
++            Self::Editable(tree) => tree.stored_entries(),
+         }
+     }
+ }
+@@ -226,6 +247,19 @@
+         self.selective_cache = Some(FactorCache::new(max_passes));
+         Ok(self)
+     }
++    /// Opt into selected nonlinear factor evaluation with affected Gaussian
++    /// clique replacement, before the first update. Unaffected separator
++    /// messages/conditionals are shared; symbolic analysis, coordinate handling
++    /// and back-substitution remain global. Pass bounds and nonlinear convergence
++    /// limitations are the same as with_selective_relinearization.
++    /// Forced/interval refreshes rebuild the full original-factor tree.
++    /// This selects the editable backend instead of the append-only Bayes tree.
++    pub fn with_selective_bayes_tree(self, max_passes: usize) -> Result<Self, Error> {
++        let mut smoother = self.with_selective_relinearization(max_passes)?;
++        smoother.qr = GaussianCache::Editable(EditableBayesTree::new(0, smoother.options.qr)?);
++        smoother.use_bayes_tree = false;
++        Ok(smoother)
++    }
+     /// Opt into carrying adaptive LM damping between successful full refreshes.
+     /// The first refresh uses the configured initial value. Ordinary updates and
+     /// failed refreshes leave this state unchanged. The default restarts damping.
+@@ -314,6 +348,7 @@
+         let mut anchors = self.anchors.clone();
+         let mut order = self.order.clone();
+         let mut selective_cache = self.selective_cache.clone();
++        let editable_mode = matches!(self.qr, GaussianCache::Editable(_));
+         for v in update.variables {
+             v.kind.validate(&v.value)?;
+             if variables.contains_key(&v.key) {
+@@ -348,7 +383,14 @@
+             if let Some(cache) = &mut selective_cache {
+                 cache.append(&j, &r, &update.factors, self.options.qr.max_entries)?;
+             }
+-            qr.append_in_place(&j, &r)?;
++            if let GaussianCache::Editable(tree) = &mut qr {
++                selective_cache
++                    .as_ref()
++                    .unwrap()
++                    .install_new(tree, new_count)?;
++            } else {
++                qr.append_in_place(&j, &r)?;
++            }
+             let delta = qr.solve()?;
+             let state = new_graph.retract(&new_graph.initial(), &delta)?;
+             // This graph already has the full insertion-order variable layout.
+@@ -392,7 +434,6 @@
+                 .chain(&update.factors)
+                 .cloned()
+                 .collect::<Vec<_>>();
+-            let permutation = qr.column_permutation().map(<[usize]>::to_vec);
+             let result = selective_cache.as_mut().unwrap().relinearize(
+                 &mut variables,
+                 &mut anchors,
+@@ -403,7 +444,7 @@
+                     new_count,
+                 },
+                 keys,
+-                permutation,
++                qr,
+             )?;
+             qr = result.qr;
+             cached_coordinates = Some(result.coordinates);
+@@ -601,6 +642,13 @@
+             Some(coordinates) => coordinates,
+             None => anchor_coordinates(&variables, &anchors, &new_graph, &new_ids)?,
+         };
++        if editable_mode && !matches!(qr, GaussianCache::Editable(_)) {
++            qr = GaussianCache::Editable(selective_cache.as_ref().unwrap().build_tree(
++                n,
++                qr.column_permutation(),
++                self.options.qr,
++            )?);
++        }
+         let linearized_cost = qr.cost(&delta)?;
+         let estimates = variables
+             .iter()
+@@ -611,6 +659,7 @@
+             qr = qr.into_tree()?;
+         }
+         let bayes_tree_update = qr.tree_update();
++        let editable_bayes_tree_update = qr.editable_update();
+         self.variables = variables;
+         self.anchors = anchors;
+         self.order = order;
+@@ -643,6 +692,7 @@
+             refinement_steps,
+             bayes_tree_update,
+             selective_update,
++            editable_bayes_tree_update,
+         })
+     }
+ }
+--- a/crates/ropt/src/isam/selective.rs
++++ b/crates/ropt/src/isam/selective.rs
+@@ -2,9 +2,11 @@
+ use super::{GaussianCache, IsamOptions, anchor_coordinates};
+ use crate::{
+     DVector, Error, LocalProblem,
++    bayes_tree::{EditableBayesTree, GaussianFactor},
+     factor::{FactorGraph, VariableId},
+     fixed_lag::{Key, SmootherFactor, WindowVariable, build_graph},
+     incremental_qr::IncrementalQr,
++    incremental_qr::IncrementalQrOptions,
+     sparse::CsrMatrix,
+ };
+ use std::{
+@@ -13,8 +15,8 @@
+ };
+ 
+ /// Work in a threshold-selected update. Counts describe factor linearizations,
+-/// not individual AD chunk callbacks. Gaussian elimination and back-substitution
+-/// are global; the report does not claim selective clique elimination.
++/// not individual AD chunk callbacks. The explicit editable backend reports
++/// Gaussian clique work separately; back-substitution remains global.
+ #[derive(Debug, Clone, PartialEq, Eq)]
+ pub struct SelectiveRelinearizationReport {
+     pub passes: usize,
+@@ -30,21 +32,9 @@
+     pub threshold_remaining: bool,
+ }
+ 
+-#[derive(Debug)]
+-struct FactorRows {
+-    residual: Vec<f64>,
+-    offsets: Vec<usize>,
+-    columns: Vec<usize>,
+-    values: Vec<f64>,
+-}
+-impl FactorRows {
+-    fn entries(&self) -> usize {
+-        self.residual.len() + self.values.len()
+-    }
+-}
+ #[derive(Clone)]
+ pub(super) struct FactorCache {
+-    blocks: Vec<Arc<FactorRows>>,
++    blocks: Vec<Arc<GaussianFactor>>,
+     entries: usize,
+     max_passes: usize,
+ }
+@@ -65,7 +55,7 @@
+     r: &DVector<f64>,
+     factors: &[SmootherFactor],
+     limit: usize,
+-) -> Result<Vec<Arc<FactorRows>>, Error> {
++) -> Result<Vec<Arc<GaussianFactor>>, Error> {
+     if j.shape().0 != r.len()
+         || factors
+             .iter()
+@@ -93,12 +83,10 @@
+             }
+             offsets.push(values.len());
+         }
+-        blocks.push(Arc::new(FactorRows {
+-            residual: r.as_slice()[start..start + factor.residuals].to_vec(),
+-            offsets,
+-            columns,
+-            values,
+-        }));
++        blocks.push(Arc::new(GaussianFactor::new(
++            CsrMatrix::from_canonical(factor.residuals, j.shape().1, offsets, columns, values)?,
++            r.rows(start, factor.residuals).into_owned(),
++        )?));
+         start += factor.residuals;
+     }
+     Ok(blocks)
+@@ -147,22 +135,58 @@
+         let mut indices = Vec::new();
+         let mut values = Vec::new();
+         for block in &self.blocks {
+-            residual.extend_from_slice(&block.residual);
++            residual.extend_from_slice(block.residual().as_slice());
+             let base = values.len();
+-            offsets.extend(block.offsets.iter().skip(1).map(|&offset| base + offset));
+-            indices.extend_from_slice(&block.columns);
+-            values.extend_from_slice(&block.values);
++            let (block_offsets, block_columns) = block.jacobian().pattern();
++            offsets.extend(block_offsets.iter().skip(1).map(|&offset| base + offset));
++            indices.extend_from_slice(block_columns);
++            values.extend_from_slice(block.jacobian().values());
+         }
+         let j = CsrMatrix::from_canonical(residual.len(), columns, offsets, indices, values)?;
+         Ok((DVector::from_vec(residual), j))
+     }
++    fn shared_factors(
++        &self,
++        indices: impl Iterator<Item = usize>,
++    ) -> Result<Vec<(u64, Arc<GaussianFactor>)>, Error> {
++        indices
++            .map(|index| {
++                Ok((
++                    u64::try_from(index).map_err(|_| Error::InvalidDimensions)?,
++                    self.blocks[index].clone(),
++                ))
++            })
++            .collect()
++    }
++    pub fn install_new(&self, tree: &mut EditableBayesTree, count: usize) -> Result<(), Error> {
++        let start = self
++            .blocks
++            .len()
++            .checked_sub(count)
++            .ok_or(Error::InvalidDimensions)?;
++        tree.update_shared(&[], self.shared_factors(start..self.blocks.len())?)?;
++        Ok(())
++    }
++    pub fn build_tree(
++        &self,
++        columns: usize,
++        permutation: Option<&[usize]>,
++        options: IncrementalQrOptions,
++    ) -> Result<EditableBayesTree, Error> {
++        let mut tree = EditableBayesTree::new_ordered(
++            permutation.map_or_else(|| (0..columns).collect(), <[usize]>::to_vec),
++            options,
++        )?;
++        tree.update_shared(&[], self.shared_factors(0..self.blocks.len())?)?;
++        Ok(tree)
++    }
+     pub fn relinearize(
+         &mut self,
+         variables: &mut BTreeMap<Key, WindowVariable>,
+         anchors: &mut BTreeMap<Key, WindowVariable>,
+         context: SelectiveContext<'_>,
+         mut keys: BTreeSet<Key>,
+-        permutation: Option<Vec<usize>>,
++        mut gaussian: GaussianCache,
+     ) -> Result<SelectiveResult, Error> {
+         if self.blocks.len() != context.factors.len()
+             || context.new_count > self.blocks.len()
+@@ -180,6 +204,7 @@
+             retained_factors: 0,
+             threshold_remaining: false,
+         };
++        let permutation = gaussian.column_permutation().map(<[usize]>::to_vec);
+         for _ in 0..self.max_passes {
+             for &key in &keys {
+                 let variable = variables.get(&key).ok_or(Error::InvalidDimensions)?;
+@@ -203,10 +228,10 @@
+             let (graph, ids) = build_graph(anchors, &factors, context.order)?;
+             let (r, j) = graph.evaluate_sparse(&graph.initial())?;
+             let replacement = capture(&j, &r, &factors, context.options.qr.max_entries)?;
+-            let removed = indices
+-                .iter()
+-                .map(|&index| self.blocks[index].entries())
+-                .sum::<usize>();
++            let removed = indices.iter().try_fold(0usize, |sum, &index| {
++                sum.checked_add(self.blocks[index].entries()?)
++                    .ok_or(Error::InvalidDimensions)
++            })?;
+             let entries = (self.entries - removed)
+                 .checked_add(r.len())
+                 .and_then(|n| n.checked_add(j.nnz()))
+@@ -219,13 +244,18 @@
+                 touched.insert(index);
+             }
+             self.entries = entries;
+-            let (r, j) = self.assemble(graph.dimensions().1)?;
+-            let mut qr = IncrementalQr::new(j.shape().1, context.options.qr)?;
+-            if let Some(order) = &permutation {
+-                qr.set_column_order(order.clone())?;
++            if let GaussianCache::Editable(tree) = &mut gaussian {
++                tree.update_shared(&[], self.shared_factors(indices.iter().copied())?)?;
++            } else {
++                let (r, j) = self.assemble(graph.dimensions().1)?;
++                let mut qr = IncrementalQr::new(j.shape().1, context.options.qr)?;
++                if let Some(order) = &permutation {
++                    qr.set_column_order(order.clone())?;
++                }
++                qr.rebuild_in_place(&j, &r)?;
++                gaussian = GaussianCache::Qr(qr);
+             }
+-            qr.rebuild_in_place(&j, &r)?;
+-            let delta = qr.solve()?;
++            let delta = gaussian.solve()?;
+             let state = graph.retract(&graph.initial(), &delta)?;
+             for (&key, &id) in &ids {
+                 variables.get_mut(&key).unwrap().value = graph.value(&state, id)?;
+@@ -245,7 +275,7 @@
+                 report.retained_factors = self.blocks.len() - touched.len();
+                 report.variables_relinearized = moved.into_iter().collect();
+                 return Ok(SelectiveResult {
+-                    qr: GaussianCache::Qr(qr),
++                    qr: gaussian,
+                     coordinates: anchor_coordinates(variables, anchors, &graph, &ids)?,
+                     report,
+                     distinct_factors: touched.len(),

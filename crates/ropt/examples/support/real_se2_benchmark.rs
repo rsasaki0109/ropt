@@ -12,11 +12,32 @@ use std::{
     time::Instant,
 };
 
-struct Frame {
-    variable: WindowVariable,
-    factors: Vec<SmootherFactor>,
+pub(super) struct Frame {
+    pub variable: WindowVariable,
+    pub factors: Vec<SmootherFactor>,
 }
-fn load(path: &str) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::Error>> {
+pub(super) fn load(
+    path: &str,
+    linearize: impl Fn(RelativePose2, &DVector<f64>, &DVector<f64>) -> Result<Pose2Linearization, Error>
+    + Copy
+    + 'static,
+    kind: VariableKind,
+) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::Error>> {
+    load_with_differentiation(path, linearize, kind, None)
+}
+/// Explicit benchmark-only AD selection: every nth original edge, starting at zero.
+pub(super) fn load_with_differentiation(
+    path: &str,
+    linearize: impl Fn(RelativePose2, &DVector<f64>, &DVector<f64>) -> Result<Pose2Linearization, Error>
+    + Copy
+    + 'static,
+    kind: VariableKind,
+    autodiff: Option<(usize, usize)>, // (chunk size, edge stride)
+) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::Error>> {
+    if autodiff.is_some_and(|(chunk, stride)| chunk == 0 || stride == 0) {
+        return Err(Error::InvalidOptions.into());
+    }
+    let mut edge_index = 0usize;
     let text = fs::read_to_string(path)?;
     let mut tokens = text.split_whitespace();
     let mut next = || tokens.next().ok_or("truncated stream");
@@ -25,7 +46,7 @@ fn load(path: &str) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::
     }
     let root = WindowVariable {
         key: 0,
-        kind: VariableKind::SE2,
+        kind,
         value: DVector::from_vec(
             (0..3)
                 .map(|_| next()?.parse::<f64>().map_err(Into::into))
@@ -79,15 +100,19 @@ fn load(path: &str) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::
                 &[w[0], w[1], w[2], w[1], w[3], w[4], w[2], w[4], w[5]],
             ))?;
             let relative = RelativePose2::new(read_se2(&z)?)?;
-            factors.push(SmootherFactor::analytic(
-                &[a, b],
-                3,
-                FactorOptions {
-                    noise,
-                    ..Default::default()
-                },
-                move |v| {
-                    let (r, ja, jb) = relative.linearize(read_se2(&v[0])?, read_se2(&v[1])?)?;
+            let options = FactorOptions {
+                noise,
+                ..Default::default()
+            };
+            let factor = if let Some((chunk, _)) =
+                autodiff.filter(|(_, stride)| edge_index.is_multiple_of(*stride))
+            {
+                SmootherFactor::autodiff(&[a, b], 3, chunk, options, move |v| {
+                    relative.residual_autodiff(v[0], v[1])
+                })
+            } else {
+                SmootherFactor::analytic(&[a, b], 3, options, move |v| {
+                    let (r, ja, jb) = linearize(relative, &v[0], &v[1])?;
                     Ok((
                         DVector::from_column_slice(r.as_slice()),
                         vec![
@@ -95,13 +120,15 @@ fn load(path: &str) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::
                             DMatrix::from_column_slice(3, 3, jb.as_slice()),
                         ],
                     ))
-                },
-            ));
+                })
+            };
+            factors.push(factor);
+            edge_index += 1;
         }
         frames.push(Frame {
             variable: WindowVariable {
                 key,
-                kind: VariableKind::SE2,
+                kind,
                 value,
                 timestamp: None,
                 fixed: false,
@@ -114,11 +141,56 @@ fn load(path: &str) -> Result<(WindowVariable, Vec<Frame>), Box<dyn std::error::
     }
     Ok((root, frames))
 }
+#[allow(dead_code)] // Existing benchmark entry points select this typed-group path.
 pub fn run(
     policy: &str,
     constructor: impl Fn(IsamOptions) -> Result<IsamSmoother, Error>,
     telemetry: impl Fn(&IsamReport) -> Option<(usize, f64, f64)>,
+    batch_solver: Option<Options>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_linearization(
+        policy,
+        constructor,
+        telemetry,
+        batch_solver,
+        |relative, a, b| relative.linearize(read_se2(a)?, read_se2(b)?),
+    )
+}
+#[allow(dead_code)] // Shared module is compiled separately by each benchmark entry.
+pub fn run_with_linearization(
+    policy: &str,
+    constructor: impl Fn(IsamOptions) -> Result<IsamSmoother, Error>,
+    telemetry: impl Fn(&IsamReport) -> Option<(usize, f64, f64)>,
+    batch_solver: Option<Options>,
+    linearize: impl Fn(RelativePose2, &DVector<f64>, &DVector<f64>) -> Result<Pose2Linearization, Error>
+    + Copy
+    + 'static,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_with_chart(
+        policy,
+        constructor,
+        telemetry,
+        batch_solver,
+        linearize,
+        VariableKind::SE2,
+        false,
+    )
+}
+#[allow(dead_code)] // Explicit benchmark chart selector.
+pub fn run_with_chart(
+    policy: &str,
+    constructor: impl Fn(IsamOptions) -> Result<IsamSmoother, Error>,
+    telemetry: impl Fn(&IsamReport) -> Option<(usize, f64, f64)>,
+    batch_solver: Option<Options>,
+    linearize: impl Fn(RelativePose2, &DVector<f64>, &DVector<f64>) -> Result<Pose2Linearization, Error>
+    + Copy
+    + 'static,
+    kind: VariableKind,
+    report_gn_trials: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !matches!(kind, VariableKind::SE2 | VariableKind::SE2Cartesian) {
+        return Err("requires SE2 chart".into());
+    }
     if cfg!(debug_assertions) {
         return Err("requires release".into());
     }
@@ -132,11 +204,11 @@ pub fn run(
     if repeats == 0 || warmup.checked_add(repeats).is_none() || (alloc && args[4] != "alloc") {
         return Err("invalid arguments".into());
     }
-    let (root, frames) = load(&args[0])?;
+    let (root, frames) = load(&args[0], linearize, kind)?;
     let out = PathBuf::from(&args[1]);
     fs::create_dir(&out)?;
     let options = IsamOptions {
-        batch_solver: Options {
+        batch_solver: batch_solver.unwrap_or(Options {
             linear_solver: LinearSolver::SparseLdl(SparseLdlOptions {
                 ordering: SparseOrdering::BlockMinimumDegree { block_size: 3 },
                 ..Default::default()
@@ -148,7 +220,7 @@ pub fn run(
             step_tolerance: 1e-12,
             max_iterations: 200,
             ..Default::default()
-        },
+        }),
         ..Default::default()
     };
     fs::write(
@@ -197,7 +269,17 @@ pub fn run(
             calls += a;
             bytes += b;
             let (trials, initial, final_value) = telemetry(&result).map_or_else(
-                || (String::new(), String::new(), String::new()),
+                || {
+                    (
+                        if report_gn_trials {
+                            result.batch_trials.to_string()
+                        } else {
+                            String::new()
+                        },
+                        String::new(),
+                        String::new(),
+                    )
+                },
                 |(n, a, b)| (n.to_string(), format!("{a:.17e}"), format!("{b:.17e}")),
             );
             if round >= warmup {

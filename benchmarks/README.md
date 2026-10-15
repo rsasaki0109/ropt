@@ -1,5 +1,10 @@
 # Reproducible small pose-graph benchmark
 
+[Gaussian Bayes-tree updates](BAYES_TREE.md) add optional cached conditional-path
+re-elimination. Measurements compare the same build's existing incremental QR,
+with complete original-model checks and alternating paired Gaussian streams.
+Nonlinear iSAM refreshes remain full batch solves.
+
 This measures complete optimization calls on the pinned public GTSAM
 `w100_30.g2o` sample: 30 poses, 59 constraints, 177 residuals, 87 active tangent
 coordinates, vertex 0 fixed exactly at its input pose, squared loss. The residual
@@ -163,7 +168,270 @@ passing common quality gate; see its comparison above. Remaining work includes
 larger complete public graphs/BA datasets, representative
 robust/noisy cases, peak-memory measurement and comparable Ceres/g2o runs.
 
+## Rejected refinement termination candidate
+
+[Unused next-step solves](REFINEMENT_STEP.md) were skipped after final refinement
+reaches its cap or gradient stop. Eighteen paired allocation configurations
+(180 refreshes) preserve callbacks, refinement counts and result fingerprints.
+At 128 variables the editable-tree refresh saves **2 allocation requests / 2 KiB**.
+[Complete-stream timing](REFINEMENT_STEP_TIMING.md) finds **8.2% higher observed
+median, 1/6 faster pairs**. Adoption is withdrawn and production is restored.
+All 12,528 timed arrivals preserve exact poses/non-timing work and pass unchanged
+accuracy/native agreement checks. The candidate's 54-stage recipe stays frozen;
+the live builder returns to the preceding 53 stages.
+
+## Fresh native iSAM2 comparison before refinement termination change
+
+[Mixed-AD selective ropt versus freshly built GTSAM 4.2.1](CURRENT_NATIVE_ISAM2.md)
+uses two planned six-pair complete CSAIL campaigns, with no overlapping builds
+or tests. Stream medians are **13.739 / 16.865 s** for ropt and
+**25.609 / 26.878 s** for the accuracy-targeted native reference:
+**1.86x / 1.59x**, with **6/6 / 5/6** faster pairs. All **25,056** timed arrivals
+pass the unchanged original-information and inter-library agreement gates.
+Timing varies substantially; the final confirmation pair favors native GTSAM.
+The policies differ, and native fully relinearizes with timed empty updates to
+the shared target; this is not a default-iSAM2 or general speed claim.
+Arrival tails are mixed: confirmation P99 is **209.910 versus 179.719 ms**,
+and both observed maxima favor native.
+Native precision tests and 27 Python checks pass. The guide retains the build
+provenance, raw samples, source snapshots and independently recomputed audit.
+
 ## Historical kernel reproduction
+
+The [cache append-reservation candidate](CACHE_RESERVE.md) saves **one
+reallocation / 8,184 requested bytes** on a 512-factor graph, but [complete CSAIL
+timing](CACHE_RESERVE_TIMING.md) has **2.0% / 2.0% higher observed stream medians
+(2/6 / 3/6 faster pairs)**. Adoption is withdrawn and production is restored to
+the preceding implementation. All 25,056 timed arrivals preserve exact poses/work
+and unchanged gates. Candidate source and its original 48-stage reconstruction
+recipe are archived; the live builder returns to its preceding 47-stage chain.
+See the timing guide for candidate reproduction and restored-source audit.
+
+[Editable-tree recovery](TREE_REFINEMENT.md) removes the extra global QR rebuild
+by using the committed editable tree's frozen factor for refinement. Two
+complete CSAIL six-pair campaigns have **4.0% / 4.2% lower stream medians**, with
+**5/6 / 6/6** faster pairs; both meet the predefined criterion. All 25,056 timed
+arrivals pass unchanged accuracy/native-agreement gates. Complete MIT passes
+functional gates. Arrival latency is mixed; the confirmation maximum rises
+**73.607 → 81.491 ms**. Rounding changes means slightly; fresh native timing and
+peak memory are unmeasured. Restore the preceding kernel with
+`--before-tree-refinement`, or the pre-gradient-API kernel with
+`--before-tree-gradient`.
+
+The preceding [scheduled cache refresh](CACHE_REFRESH.md) skips the old factor-row
+reference vector on forced/interval rebuilds, saving one allocation and **4,096
+requested bytes** in a 512-factor forced refresh. Failed-refresh cache/schedule
+regressions pass for both selective backends; complete MIT preserves exact
+poses/work and unchanged gates. Rust 334 + 2 benchmark tests, Python 23 and 47
+source-only rollback stages pass. The subsequent [complete-stream timing
+follow-up](CACHE_REFRESH_TIMING.md) finds **0.9% less / 0.5% more median stream
+time (2/6 faster pairs each)**; neither campaign qualifies. All 25,056 timed
+arrivals preserve exact poses/work and unchanged gates. Arrival-latency changes
+are mixed, including primary maximum **76.144 → 100.977 ms**. Restore the old
+copies with `--before-cache-refresh`; native timing figures stay frozen.
+
+The preceding [Gaussian factor capture](FACTOR_CAPTURE.md) copies consecutive CSR
+rows without incremental vector growth. A 512-factor, 3-row steady Gaussian
+refresh saves **2,560 allocation requests / 159,744 requested bytes**. Complete
+CSAIL with identical cap-0 policies has **2.5% / 4.6% lower stream medians (4/6 /
+5/6 faster pairs)**; only confirmation meets the criterion, so a repeatable
+whole-update speedup remains unestablished. Arrival medians rise slightly, P95/P99
+decrease, and observed maximum latency is mixed. All 25,056 timed arrivals and
+complete MIT regression preserve exact poses/work and original gates. Rust
+333 + 2 benchmark tests, Python 23 and 46 source-only rollback stages pass.
+Restore row-iterator capture with `--before-factor-capture`. Native timing figures
+and library defaults are unchanged.
+
+The [full-stream phase diagnosis](STREAM_PHASES.md) retains cold/warm CSAIL and
+cold MIT budgets with exact pose/work agreement. Full recovery consumes **38–46%**
+of recorded time, direct probes **20–22%**. The subsequent [recovery-cap policy
+comparison](RECOVERY_CAPS.md) uses one uninstrumented binary for caps 1 and 0.
+The additional isolated CSAIL campaign takes **7.2% less total update time (5/6
+faster pairs)**; all 37,584 timed arrivals across three campaigns pass unchanged
+original-information and archived-native gates. Initial campaigns and their
+overlapping archival work remain disclosed. The subsequent [complete MIT
+comparison](MIT_RECOVERY_CAPS.md) takes **12.4% / 10.7% less total update time
+(6/6 faster pairs each)**; all 29,448 timed arrivals pass the same gates. Pooled
+median arrival latency rises approximately 1%, P95/P99 decrease, and maximum
+latency is mixed (confirmation **123.898 → 131.090 ms**). Both MIT campaigns run
+without overlapping separate archival/audit work. Library defaults and native
+timing figures are unchanged.
+
+The latest [stack AD input wrappers](INLINE_AD_INPUTS.md) save **1,024 allocation
+requests / 65,536 requested bytes** per successful 512-factor all-AD/chunk-8 probe.
+**12/16 synthetic probe cases** meet the speed criterion in both campaigns;
+ColumnNormalized 2,048-factor all-AD/chunk-1 queries take **16.8% / 16.3% less time
+(6/6 faster pairs each)**. Complete CSAIL medians are 1.1% faster / 0.04% slower,
+with 2/6 faster pairs each; repeatable full-update speedup remains unestablished.
+All 25,056 timed arrivals and complete MIT regression retain exact poses/work and
+unchanged gates. Rust 331 + 2 benchmark tests/Python 23 and 45 source-only rollback
+stages pass. The rejected strided-write proposal and all measurements are retained.
+Restore heap wrappers with `--before-inline-ad-inputs`; native figures stay frozen.
+
+The preceding [direct AD block Jacobians](BLOCK_JACOBIAN.md) save **1,024 allocation
+requests / 53,248 requested bytes** per successful 512-factor all-AD query by
+removing the flat tangent Jacobian and zero input vector. Analytic-only allocation
+totals are unchanged. Complete CSAIL primary is **2.3% slower (3/6 faster pairs)**,
+confirmation **1.8% faster (4/6)**; repeatable full-update speedup remains
+unestablished. All 25,056 timed arrivals and complete MIT regression retain exact
+poses/work and unchanged gates. Rust 329 + 2 benchmark tests/Python 23 and 44
+source-only rollback stages pass. Restore the flat adapter with
+`--before-block-jacobian`; native timings stay frozen.
+
+The preceding [dense probe indexing](DENSE_PROBE.md) saves **83 allocation requests /
+22,944 requested bytes** per successful 512-factor query by indexing contiguous
+variable keys in a bounded vector; sparse and partial key spaces retain trees.
+Exact result bits/work pass for analytic/mixed/AD diagnostics. Complete CSAIL
+medians decrease **1.5% / 5.3%**, with only **4/6 faster pairs** in either campaign;
+repeatable whole-update speedup remains unestablished. All 25,056 timed arrivals
+and complete MIT regression pass unchanged gates with exact poses/work. Rust 327
++ 2 benchmark tests/Python 23 and 43 source-only rollback stages pass. Restore
+tree-only indexing with `--before-dense-probe`; native figures stay frozen.
+
+The preceding [streaming compensated probe cost](PROBE_COST.md) removes full residual/
+zero vectors, saving two allocation requests and **16 requested bytes per residual**
+for successful nonempty probes. Allocation diagnostics preserve exact cost/gradient/
+estimate bits and callback counts for analytic/mixed/AD configurations and both
+norms. Complete CSAIL update medians are **1.4% / 0.6% slower (2/6 and 4/6)**;
+this is a workspace/allocation improvement with a recorded latency tradeoff.
+All 25,056 timed arrivals and complete MIT functional regression pass unchanged
+gates with exact poses/work. Rust 325 + 2 benchmark tests/Python 23 and 42 source-
+only rollback stages pass. Restore full vectors with `--before-probe-cost`.
+Native figures stay frozen.
+
+The preceding [validity-preserving Jet negation](JET_NEGATION.md) improves isolated
+width-6 owned negation **1.51x / 1.59x**, borrowed negation **1.19x / 1.17x**, with
+6/6 faster pairs in both campaigns for either ownership form. Bits and allocation
+work match. Complete CSAIL primary improves **5.1% (6/6)**, while confirmation is
+**2.0% slower (3/6)**; repeatable full-stream improvement remains unestablished.
+All 25,056 timed arrivals and complete MIT functional regression retain exact
+poses/work and pass unchanged gates. Rust 323 + 2 benchmark tests/Python 23 and
+41 source-only rollback stages pass. Three rejected broader validation proposals
+remain archived. Restore generic negation with `--before-jet-negation`; native
+timings are frozen. The new performance claim is negation-specific.
+
+The preceding [width-aware owned Jet loops](JET_LOOP_SPLIT.md) reduce width-65
+AD evaluation time **24.5% / 24.6%** and width-32 time **16.3% / 18.6%**, with
+6/6 faster pairs in both width campaigns and unchanged allocations/result bits.
+Small widths show mixed results. Complete mixed-AD CSAIL primary improves 1.7%
+(4/6 pairs), but confirmation is **2.9% slower (1/6)**; repeatable complete-stream
+speedup is not established. All 25,056 timed arrivals and complete MIT functional
+regression pass unchanged gates, with exact before/after poses/work. Rust 322 +
+2 benchmark tests/Python 23 and 40 source-only rollback fingerprints pass.
+The unconditional split-loop trial is preserved with its negative complete-stream
+results. Restore indexed loops with `--before-jet-loops`; native timings remain
+frozen. This remains a width-specific diagnostic gain.
+
+The [owned Jet-buffer reuse](JET_BUFFER_REUSE.md) avoids allocating when an
+arithmetic operand's derivative vector can be consumed. Complete mixed-AD CSAIL
+time falls **1.2% / 4.6%**, with 5/6 faster pairs in both campaigns and exact
+before/after complete poses/work. All 25,056 timed arrivals pass unchanged gates.
+Separate width diagnostics lower allocations/bytes while retaining a **5.5% slower
+65-wide latency case**. Rejected fixed-storage, width-guard and inlining prototypes
+remain archived. Complete mixed-AD MIT regression, Rust 322 + 2 benchmark tests,
+Python 23 and 39 source-only rollback fingerprints pass. Restore the preceding
+kernel with `--before-jet-buffers`. Native figures keep their measured kernels.
+
+The [complete mixed-AD CSAIL replay](REAL_AD_PROBE.md) uses 586 runtime AD /
+586 analytic factors with unchanged observations and information. Median update
+stream time falls **3.0% / 1.6%** in paired campaigns, but confirmation wins only
+4/6 pairs and misses the speed criterion; a repeatable stream gain is not
+established. All 25,056 timed arrivals pass unchanged accuracy/native agreement
+with exact before/after poses and non-timing work. Complete mixed-AD MIT regression
+passes, including AD on the ill-conditioned edge 160→161. This measures the
+existing direct-probe feature in a new workload; core fingerprints are unchanged.
+Rust 320 + 2 benchmark tests/Python 23 and all-target Clippy pass. Native figures
+retain their measured kernels and drivers.
+
+The [mixed/AD probe extension](MIXED_AUTODIFF_PROBE.md) shares tangent-space AD
+with factor graphs and eliminates temporary graph/CSR assembly for all supported
+iSAM probe recipes. All 16 synthetic query conditions improve in both six-pair
+campaigns (**11.1–25.8% / 9.6–26.3%** time reduction), with unchanged result bits,
+digests and callback counts. Separate allocation diagnostics reduce calls
+8.2–17.5% and requested bytes 24.5–46.8%. These are query measurements; complete
+AD streams/native timings are unmeasured. Complete analytic CSAIL/MIT functional
+replays pass unchanged gates with identical poses/non-timing work. Rust 320,
+Python 23 and all 38 source-only rollback checks pass. Restore the preceding
+kernel with `--before-mixed-probe`.
+
+The [direct current-estimate probe comparison](DIRECT_NONLINEAR_PROBE.md)
+removes temporary graph registration and global CSR assembly from all-analytic
+iSAM probes, preserving exact reduction order, validation and whitening. At that
+measured stage, mixed AD recipes retain the original path. Complete CSAIL editable time falls
+**8.6% / 8.9%**, winning 11/12 before/after pairs; all 37,584 timed arrivals pass
+unchanged gates with identical complete costs, gradients, means and work. Current
+full refresh also uses direct probes and remains faster. The complete MIT
+functional replay matches exactly. Rust 318/Python 23 checks and 37 source-only
+rollback fingerprints pass. Restore the preceding kernel with
+`--before-direct-probe`. Native timings/figures retain their measured kernels.
+
+The [cached-incidence comparison](INCIDENCE_CACHE.md) reuses child/factor-owner
+lists and updates changed memberships with sorted linear merges. Complete CSAIL
+editable time falls **1.9% / 4.5%**, winning 10/12 before/after pairs; all 37,584
+timed arrivals pass unchanged gates with identical complete means/work.
+The improved policy remains slower than full refresh; that result is retained.
+The complete MIT functional replay also matches exactly. Rust 315/Python 23
+checks and 36 source-only historical fingerprints pass. Restore the preceding
+metadata-sharing kernel with `--before-incidence-cache`.
+
+The [editable metadata-sharing comparison](EDITABLE_METADATA_SHARING.md) reduces
+clone-only allocation calls **99.1%** and requested-byte traffic **56.4%** in
+an independently compiled 2,048-variable/64-clone diagnostic. Complete CSAIL
+latency is mixed (1.021x / 0.991x, 4/6 / 2/6 faster pairs), so no repeatable
+stream speedup is claimed. All 37,584 timed arrivals pass unchanged gates and
+exact means/work comparisons; the complete MIT functional replay also matches.
+Rust 314/Python 23 checks and 35 source-only rollback fingerprints pass.
+Restore the preceding canonical-CSR kernel with `--before-editable-cow`.
+
+The [canonical local-clique CSR comparison](LOCAL_CLIQUE_CSR.md) removes global
+triplet sorting and per-clique column tree maps from editable Gaussian assembly.
+Complete CSAIL stream time falls **16.0% / 11.2%** in primary/confirmation,
+winning 12/12 before/after pairs, with identical complete means and non-timing
+work records. Both campaigns pass unchanged accuracy gates. The editable policy
+remains slower than current full refresh; its negative result is retained.
+MIT1228's complete functional replay also preserves means/work exactly. Rust
+313/Python 23 checks and 34 source-only historical fingerprints pass. Use
+`--before-local-clique-csr` to restore the preceding measured kernel.
+
+The [stationarity-controlled recorded comparison](STATIONARITY_CONTROL.md)
+adds explicit nonlinear probes/requested keys and reuses symbolic topology for
+same-support replacements and additions. On complete CSAIL, selected global QR
+beats current full ropt by **1.12x / 1.11x** in primary/confirmation, winning
+12/12 pairs with unchanged gates and explicit timed recovery. Editable-tree
+latency remains worse and is archived alongside it. Native poses/costs provide
+hashed correctness agreement only; there is no new native speed comparison.
+Rust 312/Python 23 checks and 33 source-only historical kernels pass.
+
+The additional [editable Gaussian Bayes-tree mode](EDITABLE_BAYES_TREE.md)
+connects selected nonlinear factors to affected clique replacement through
+cached separator messages. The synthetic nonlinear example re-eliminates 2 of
+1,025 scalar cliques; global metadata/solve work remains. Independent original
+quadratic/SVD and mixed-chart checks pass. Source-only rollback checks 32 kernels;
+the prior recorded-data speed results remain frozen. New-policy latency is not
+yet measured.
+
+The new [threshold-selected nonlinear factor mode](SELECTIVE_RELINEARIZATION.md)
+retains unrelated whitened rows and exposes bounded-pass reports. Its Gaussian
+QR rebuild is global. Eight independent regression tests and the complete suite
+pass; forced-refresh CSAIL/MIT1228 poses and non-timing reports are unchanged.
+No native speed claim is made for this new policy; preceding measurements stay
+frozen. Source-only rollback now checks 31 historical kernels.
+
+The new [optional sparse QR/GN path](SPARSE_QR.md) completes the MIT1228 replay
+that stalled under LDL/LM, with unchanged gradient and native pose/cost agreement
+gates. The subsequent [information precision fix](INFORMATION_PRECISION.md)
+passes every ropt quality gate; the old native reference remains ineligible.
+The subsequent [Cartesian/precision comparison](PRECISE_REAL_ISAM2.md) corrects
+native measurement arithmetic and passes every common gate. It records 1.39x
+primary and 1.33x confirmation speedups on complete MIT1228, with 12/12 faster
+pairs. All preceding failed or unstable comparisons remain archived.
+
+The additional [CSAIL recorded replay](CSAIL_REAL_ISAM2.md) extends this policy
+to a different recording: 1,045 poses and 1,172 original constraints, initialized
+identically from original odometry. All 1,044 arrivals pass the same gates;
+primary/confirmation median speedups are **2.29x / 2.28x**, with **12/12 faster
+pairs**. Archived full poses, samples and a standalone comparison figure are
+included. This is common-accuracy full refresh, not default iSAM2 latency.
 
 The [recorded Intel replay](REAL_ISAM2.md) uses complete pinned real-data graphs,
 an explicitly shared column-normalized gradient criterion and all-prefix native

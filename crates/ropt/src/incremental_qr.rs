@@ -74,7 +74,70 @@ struct ColumnOrder {
     to_original: Vec<usize>,
     to_internal: Vec<usize>,
 }
+pub(crate) struct QrFactor {
+    pub rows: Vec<Vec<(usize, f64)>>,
+    pub rhs: DVector<f64>,
+    pub constant_cost: f64,
+    pub options: IncrementalQrOptions,
+    pub permutation: Option<Vec<usize>>,
+}
+/// Exact CSR pattern plus sorted internal columns and their original value slots.
+pub(crate) struct QrRowOrder {
+    shape: (usize, usize),
+    offsets: Vec<usize>,
+    original_indices: Vec<usize>,
+    columns: Vec<usize>,
+    positions: Vec<usize>,
+    permutation: Vec<usize>,
+}
+impl QrRowOrder {
+    pub(crate) fn new(j: &CsrMatrix, permutation: &[usize]) -> Result<Self, Error> {
+        let n = j.shape().1;
+        if permutation.len() != n {
+            return Err(Error::InvalidDimensions);
+        }
+        let mut inverse = vec![usize::MAX; n];
+        for (internal, &original) in permutation.iter().enumerate() {
+            if original >= n || inverse[original] != usize::MAX {
+                return Err(Error::InvalidDimensions);
+            }
+            inverse[original] = internal;
+        }
+        let (offsets, indices) = j.pattern();
+        let mut columns = Vec::with_capacity(indices.len());
+        let mut positions = Vec::with_capacity(indices.len());
+        let mut row = Vec::new();
+        for r in 0..j.shape().0 {
+            row.clear();
+            row.extend((offsets[r]..offsets[r + 1]).map(|p| (inverse[indices[p]], p)));
+            row.sort_unstable_by_key(|&(c, _)| c);
+            columns.extend(row.iter().map(|&(c, _)| c));
+            positions.extend(row.iter().map(|&(_, p)| p));
+        }
+        Ok(Self {
+            shape: j.shape(),
+            offsets: offsets.to_vec(),
+            original_indices: indices.to_vec(),
+            columns,
+            positions,
+            permutation: permutation.to_vec(),
+        })
+    }
+    pub(crate) fn matches(&self, j: &CsrMatrix) -> bool {
+        let (offsets, indices) = j.pattern();
+        self.shape == j.shape() && self.offsets == offsets && self.original_indices == indices
+    }
+}
 impl IncrementalQr {
+    pub(crate) fn into_factor(self) -> QrFactor {
+        QrFactor {
+            rows: self.rows,
+            rhs: self.rhs,
+            constant_cost: self.constant_cost,
+            options: self.options,
+            permutation: self.column_order.map(|order| order.to_original),
+        }
+    }
     pub fn new(columns: usize, options: IncrementalQrOptions) -> Result<Self, Error> {
         if !options.relative_rank_tolerance.is_finite()
             || options.relative_rank_tolerance <= 0.
@@ -99,6 +162,33 @@ impl IncrementalQr {
     }
     pub fn stored_entries(&self) -> usize {
         self.entries
+    }
+    /// Private numeric workspace reset; retains row capacity but no old model.
+    pub(crate) fn reset_for_rebuild(
+        &mut self,
+        columns: usize,
+        permutation: &[usize],
+    ) -> Result<(), Error> {
+        if columns > self.options.max_entries {
+            return Err(Error::SparseFillLimit {
+                limit: self.options.max_entries,
+            });
+        }
+        if permutation.len() != columns {
+            return Err(Error::InvalidDimensions);
+        }
+        self.rows.resize_with(columns, Vec::new);
+        for row in &mut self.rows {
+            row.clear();
+        }
+        self.rhs.resize_vertically_mut(columns, 0.);
+        self.rhs.fill(0.);
+        self.entries = 0;
+        self.constant_cost = 0.;
+        if self.column_permutation() != Some(permutation) {
+            self.set_column_order(permutation.to_vec())?;
+        }
+        Ok(())
     }
     /// Extend with unconstrained trailing columns. Earlier column indices stay fixed.
     pub fn extend_columns(&mut self, columns: usize) -> Result<(), Error> {
@@ -137,6 +227,25 @@ impl IncrementalQr {
         j: &CsrMatrix,
         residual: &DVector<f64>,
     ) -> Result<(), Error> {
+        self.rebuild_with_row_order(j, residual, None)
+    }
+    pub(crate) fn rebuild_cached_row_order(
+        &mut self,
+        j: &CsrMatrix,
+        residual: &DVector<f64>,
+        order: &QrRowOrder,
+    ) -> Result<(), Error> {
+        if !order.matches(j) || self.column_permutation() != Some(order.permutation.as_slice()) {
+            return Err(Error::InvalidDimensions);
+        }
+        self.rebuild_with_row_order(j, residual, Some(order))
+    }
+    fn rebuild_with_row_order(
+        &mut self,
+        j: &CsrMatrix,
+        residual: &DVector<f64>,
+        cached: Option<&QrRowOrder>,
+    ) -> Result<(), Error> {
         // A complete new model can group rows by their first pivot, avoiding
         // late rotations through already populated downstream rows. Preserve
         // original order within each group. Incremental append stays in input
@@ -144,22 +253,43 @@ impl IncrementalQr {
         if self.entries != 0 || self.constant_cost != 0. || self.rhs.iter().any(|&v| v != 0.) {
             return Err(Error::InvalidOptions);
         }
+        let (m, n) = j.shape();
+        if n != self.dimension() || m != residual.len() {
+            return Err(Error::InvalidDimensions);
+        }
         let (offsets, indices) = j.pattern();
-        let mut rows = (0..j.shape().0).collect::<Vec<_>>();
-        rows.sort_by_key(|&r| {
-            if offsets[r] == offsets[r + 1] {
-                j.shape().1
-            } else if let Some(order) = &self.column_order {
-                indices[offsets[r]..offsets[r + 1]]
-                    .iter()
-                    .map(|&c| order.to_internal[c])
-                    .min()
-                    .unwrap()
-            } else {
-                indices[offsets[r]]
-            }
-        });
-        self.append_rows_in_place(j, residual, rows.into_iter())
+        // Leading pivots are integers in 0..=n. Compute each key once and
+        // stably count into buckets, keeping the exact previous row sequence.
+        // Empty rows belong to the final bucket and retain residual energy.
+        let mut starts = vec![0_usize; n.checked_add(2).ok_or(Error::InvalidDimensions)?];
+        let keys: Vec<_> = (0..m)
+            .map(|r| {
+                let key = if offsets[r] == offsets[r + 1] {
+                    n
+                } else if let Some(order) = cached {
+                    order.columns[offsets[r]]
+                } else if let Some(order) = &self.column_order {
+                    indices[offsets[r]..offsets[r + 1]]
+                        .iter()
+                        .map(|&c| order.to_internal[c])
+                        .min()
+                        .unwrap()
+                } else {
+                    indices[offsets[r]]
+                };
+                starts[key + 1] += 1;
+                key
+            })
+            .collect();
+        for k in 1..starts.len() {
+            starts[k] += starts[k - 1];
+        }
+        let mut rows = vec![0; m];
+        for (r, key) in keys.into_iter().enumerate() {
+            rows[starts[key]] = r;
+            starts[key] += 1;
+        }
+        self.append_rows_with_order(j, residual, rows.into_iter(), cached)
     }
     /// Internal column ordering only. Input Jacobians, returned steps, supplied
     /// cost vectors and future appended columns retain original coordinates.
@@ -194,6 +324,15 @@ impl IncrementalQr {
         residual: &DVector<f64>,
         rows: impl Iterator<Item = usize>,
     ) -> Result<(), Error> {
+        self.append_rows_with_order(j, residual, rows, None)
+    }
+    fn append_rows_with_order(
+        &mut self,
+        j: &CsrMatrix,
+        residual: &DVector<f64>,
+        rows: impl Iterator<Item = usize>,
+        cached: Option<&QrRowOrder>,
+    ) -> Result<(), Error> {
         let (m, n) = j.shape();
         if n != self.dimension() || m != residual.len() {
             return Err(Error::InvalidDimensions);
@@ -208,8 +347,17 @@ impl IncrementalQr {
         for r in rows {
             let residual = residual[r];
             row.clear();
-            row.extend(j.row(r)?);
-            if let Some(order) = &self.column_order {
+            if let Some(order) = cached {
+                row.extend(
+                    (order.offsets[r]..order.offsets[r + 1])
+                        .map(|p| (order.columns[p], j.values()[order.positions[p]])),
+                );
+            } else {
+                row.extend(j.row(r)?);
+            }
+            if cached.is_none()
+                && let Some(order) = &self.column_order
+            {
                 for (column, _) in &mut row {
                     *column = order.to_internal[*column];
                 }
@@ -229,6 +377,29 @@ impl IncrementalQr {
                     return Err(Error::NonFinite);
                 }
                 let (c, s) = (diagonal / norm, below / norm);
+                // An empty pivot with an exact unit sine absorbs this whole
+                // incoming suffix. Preserve the computed norm and RHS arithmetic;
+                // every eliminated lower coefficient is exactly zero.
+                if old.is_empty() && s.abs() == 1. {
+                    let suffix = &row[row_start + 1..];
+                    let added = 1 + suffix.iter().filter(|entry| entry.1 != 0.).count();
+                    if added > max_entries - self.entries {
+                        return Err(Error::SparseFillLimit { limit: max_entries });
+                    }
+                    old.reserve(added);
+                    old.push((k, norm));
+                    old.extend(suffix.iter().filter_map(|&(col, value)| {
+                        (value != 0.).then_some((col, c * 0. + s * value))
+                    }));
+                    self.entries += added;
+                    let previous = self.rhs[k];
+                    self.rhs[k] = c * previous + s * b;
+                    b = -s * previous + c * b;
+                    if !self.rhs[k].is_finite() || !b.is_finite() {
+                        return Err(Error::NonFinite);
+                    }
+                    break;
+                }
                 upper_row.clear();
                 lower_row.clear();
                 let has_diagonal = !old.is_empty();
@@ -951,5 +1122,131 @@ mod rebuild_tests {
             assert_eq!(qr.solve().unwrap(), expected);
             assert_eq!(qr.cost(&expected).unwrap(), 0.);
         }
+    }
+}
+
+#[cfg(test)]
+mod rebuild_order_tests {
+    use super::*;
+    #[test]
+    fn cached_row_mapping_matches_uncached_factors_and_rejects_stale_patterns_and_orders() {
+        let n = 8;
+        let j = CsrMatrix::from_triplets(
+            18,
+            n,
+            (0..18)
+                .flat_map(|r| {
+                    (0..n).filter_map(move |c| {
+                        ((r < n && r == c) || (r >= n && r % 5 != 0 && (r + 2 * c) % 3 == 0))
+                            .then_some((r, c, ((r + c + 1) as f64).sin() + 2.))
+                    })
+                })
+                .collect(),
+        )
+        .unwrap();
+        let permutation = vec![7, 4, 1, 6, 3, 0, 5, 2];
+        let order = QrRowOrder::new(&j, &permutation).unwrap();
+        let residual = DVector::from_fn(18, |r, _| (r as f64).cos());
+        let mut reference = IncrementalQr::new(n, Default::default()).unwrap();
+        reference.set_column_order(permutation.clone()).unwrap();
+        let mut actual = reference.clone();
+        reference.rebuild_in_place(&j, &residual).unwrap();
+        actual
+            .rebuild_cached_row_order(&j, &residual, &order)
+            .unwrap();
+        assert_eq!(actual.rows, reference.rows);
+        assert_eq!(actual.rhs, reference.rhs);
+        assert_eq!(
+            actual.constant_cost.to_bits(),
+            reference.constant_cost.to_bits()
+        );
+        let wrong = CsrMatrix::from_triplets(18, n, vec![(0, 7, 1.)]).unwrap();
+        let mut blank = IncrementalQr::new(n, Default::default()).unwrap();
+        blank.set_column_order(permutation).unwrap();
+        assert_eq!(
+            blank.rebuild_cached_row_order(&wrong, &residual, &order),
+            Err(Error::InvalidDimensions)
+        );
+        blank.set_column_order((0..n).collect()).unwrap();
+        assert_eq!(
+            blank.rebuild_cached_row_order(&j, &residual, &order),
+            Err(Error::InvalidDimensions)
+        );
+        assert!(matches!(
+            QrRowOrder::new(&j, &[0, 0, 1, 2, 3, 4, 5, 6]),
+            Err(Error::InvalidDimensions)
+        ));
+        assert_eq!(blank.stored_entries(), 0);
+    }
+    #[test]
+    fn counted_groups_preserve_triangular_factor_bits_and_constant_energy() {
+        for n in [1, 7, 31] {
+            for scale in [1e-80, 1., 1e80] {
+                let m = 3 * n + 5;
+                let j =
+                    CsrMatrix::from_triplets(
+                        m,
+                        n,
+                        (0..m)
+                            .flat_map(|r| {
+                                (0..n).filter_map(move |c| {
+                                    (r % 5 != 0 && (r % n == c || (r + 3 * c) % 7 == 0))
+                                        .then_some((r, c, ((r + c + 1) as f64).sin() * scale))
+                                })
+                            })
+                            .collect(),
+                    )
+                    .unwrap();
+                let residual = DVector::from_fn(m, |r, _| ((r + 1) as f64).cos() * scale);
+                for reverse in [false, true] {
+                    let mut actual = IncrementalQr::new(n, Default::default()).unwrap();
+                    if reverse {
+                        actual.set_column_order((0..n).rev().collect()).unwrap();
+                    }
+                    let mut reference = actual.clone();
+                    let mut rows = (0..m).collect::<Vec<_>>();
+                    rows.sort_by_key(|&r| {
+                        j.row(r)
+                            .unwrap()
+                            .map(|(c, _)| {
+                                reference
+                                    .column_order
+                                    .as_ref()
+                                    .map_or(c, |order| order.to_internal[c])
+                            })
+                            .min()
+                            .unwrap_or(n)
+                    });
+                    reference
+                        .append_rows_in_place(&j, &residual, rows.into_iter())
+                        .unwrap();
+                    actual.rebuild_in_place(&j, &residual).unwrap();
+                    assert_eq!(actual.rows, reference.rows);
+                    assert_eq!(
+                        actual.rhs.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                        reference
+                            .rhs
+                            .iter()
+                            .map(|v| v.to_bits())
+                            .collect::<Vec<_>>()
+                    );
+                    assert_eq!(
+                        actual.constant_cost.to_bits(),
+                        reference.constant_cost.to_bits()
+                    );
+                }
+            }
+        }
+    }
+    #[test]
+    fn ordered_rebuild_rejects_dimensions_before_indexing_permutation() {
+        let mut qr = IncrementalQr::new(2, Default::default()).unwrap();
+        qr.set_column_order(vec![1, 0]).unwrap();
+        let j = CsrMatrix::from_triplets(1, 3, vec![(0, 2, 1.)]).unwrap();
+        assert_eq!(
+            qr.rebuild_in_place(&j, &DVector::zeros(1)),
+            Err(Error::InvalidDimensions)
+        );
+        assert_eq!(qr.stored_entries(), 0);
     }
 }

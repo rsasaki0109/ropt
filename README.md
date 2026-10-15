@@ -16,8 +16,31 @@ arrival checkpoints; pose-ID order is inferred because the source has no timesta
 Playback is accelerated. At the shared accuracy target, the complete replay is
 1.22x faster than verified GTSAM iSAM2 in the primary campaign and 1.09x in the
 independent confirmation, with 12/12 faster pairs. These are forced full-refresh
-policies; the separately selected MIT1228 version remains ineligible.*
+policies. The separately selected MIT1228 artifact now passes a
+[Cartesian-chart comparison](benchmarks/PRECISE_REAL_ISAM2.md), with a
+precision-corrected native reference; the historical hero data stays frozen.*
 [Results and limits](benchmarks/REAL_ISAM2.md) · [Reproduce every visual](docs/visualization/README.md)
+
+On a different recorded graph, [CSAIL](benchmarks/CSAIL_REAL_ISAM2.md), the same
+common-accuracy full-refresh policy is **2.29x / 2.28x faster** than the corrected
+GTSAM iSAM2 reference in primary/confirmation measurements, winning **12/12 pairs**.
+
+A [fresh comparison of the mixed-AD selective backend](benchmarks/CURRENT_NATIVE_ISAM2.md)
+rebuilds GTSAM 4.2.1 and measures both solvers again on CSAIL: ropt stream medians
+are **13.739 / 16.865 s**, versus **25.609 / 26.878 s** for the accuracy-targeted
+native reference (**1.86x / 1.59x**, **6/6 / 5/6** faster pairs). All 25,056 timed
+arrivals pass the common accuracy gates. Cloud timing varies substantially;
+the final confirmation pair favors GTSAM. These are selected, different policies,
+and the native policy fully relinearizes to the target; this does not measure
+default iSAM2 or establish general superiority.
+Arrival tails are mixed: confirmation P99 is **209.910 ms versus 179.719 ms**,
+and both observed maxima favor native GTSAM.
+A [refinement termination candidate](benchmarks/REFINEMENT_STEP.md) saves
+**2 allocation requests / 2 KiB** per 128-variable editable-tree refresh, but
+[complete-stream timing](benchmarks/REFINEMENT_STEP_TIMING.md) has an **8.2%
+higher observed median (1/6 faster pairs)**. Adoption is withdrawn and production
+is restored. All 12,528 timed arrivals preserve exact poses/non-timing work and
+unchanged accuracy gates; this is not a speed improvement.
 
 ### Watch the solver work
 
@@ -42,21 +65,41 @@ Run `cargo run -p ropt --example bundle_adjustment --locked` or
 mark medians. All arrival-level accuracy checks pass on Intel943. Cloud variation
 is visible, and the result applies to the stated graph and policies.*
 
+![Recorded CSAIL odometry seeds and actual final geometry alongside all twelve accuracy-matched paired timings](docs/assets/csail-comparison.png)
+
+*CSAIL: 1,045 poses · 1,172 original constraints. Both solvers use the same seeds
+integrated from original odometry. All 1,044 arrivals pass the unchanged accuracy
+gates. Every timing line is an archived pair; black bars mark campaign medians.
+[Data, results and reproduction](benchmarks/CSAIL_REAL_ISAM2.md).*
+
 ## Implemented
 
 - Dense Gauss–Newton using SVD or column-pivoted QR with explicit rank failure.
 - Levenberg–Marquardt with scaled damping, predicted/actual improvement ratio,
   accepted/rejected trials, adaptive damping, and iteration records.
 - Optional dense QR LM solves augmented least squares without forming `JᵀJ`.
+- Optional ordered sparse Givens QR for GN and augmented LM, without a numeric
+  normal matrix. GN can explicitly permit finite uphill trials; this is disabled
+  by default and does not turn iteration limits into convergence.
 - Gradient, accepted-step, cost-change, iteration-limit and stagnation outcomes,
   with explicit absolute or weighted-column-normalized gradient stopping.
 - Squared, Huber and Cauchy loss using IRLS: a scalar fallback plus optional
   per-factor joint loss on whitened observation vectors.
+  Joint norms [use a stable fallback](benchmarks/ROBUST_BLOCK_NORM.md) when their
+  squared sum underflows or overflows.
+  Cauchy loss [preserves representable costs, weights and reductions](benchmarks/CAUCHY_RANGE.md)
+  when intermediate ratios or squares exceed the floating-point range.
+  Huber/Cauchy [square-root weights remain usable](benchmarks/ROBUST_ROOT_WEIGHTS.md)
+  even when the raw weights underflow, including in frozen-IRLS marginalization.
 - Unit, isotropic, diagonal and correlated covariance noise models, consistently
   whitening both residuals and Jacobians.
 - Analytic `Residual` trait, fixed-size `Jet`, chunked runtime-sized `DynamicJet`,
   and explicit central differences. AD factors support Euclidean and all four Lie groups
   through right-tangent differentiation.
+  The Euclidean [`CentralDifference` adapter](benchmarks/CENTRAL_DIFFERENCE_GUARDS.md)
+  rejects unrepresentable perturbations and nonfinite callback/derivative results.
+  [Numeric factor evaluation](benchmarks/NUMERIC_FACTOR_ERRORS.md) validates each
+  sample and derivative column before advancing to later callbacks.
 - Contiguous parameter block ranges; the solver operates on their flattened vector.
 - SO(2), SO(3), SE(2), SE(3) Exp/Log, composition, inverse, right retract/local;
   Euclidean retract/local. SE(3) tangent ordering is translation then rotation.
@@ -64,6 +107,8 @@ is visible, and the result applies to the stated graph and policies.*
 - `FactorGraph` with dense and CSR assembly, graph-owned variable IDs, fixed blocks,
   analytic, forward AD or explicitly requested numeric factors, and a small anchored
   SE(3) chain with loop closure.
+  Residual-count and terminal CSR-offset overflow are rejected before registration
+  changes the graph or evaluates callbacks.
 - AD SE(2) relative pose factors, strict 2D g2o reading/writing and a public
   30-pose sample validated with dense and sparse LM.
 - Four-coefficient Brown–Conrady projection and joint BA estimation of shared
@@ -74,12 +119,33 @@ is visible, and the result applies to the stated graph and policies.*
   with explicit Gaussian or frozen-IRLS models and known noise scaling.
 - Batch fixed-lag smoothing with timestamped/persistent variables, square-root
   marginalization, frozen manifold priors and transactional observation updates.
+  Prior compression [preserves tiny columns beside large residuals](benchmarks/PRIOR_COLUMN_SCALING.md)
+  using separate column scales when shared scaling would underflow QR norms.
+  Elimination [bounds extreme projection intermediates](benchmarks/PROJECTION_RANGE.md)
+  while preserving tiny components of the same column.
+  Carried costs [retain finite half-squared sums](benchmarks/FIXED_LAG_COST_RANGE.md)
+  across robust marginalization, repeated retirement and empty-window updates.
 - Initial iSAM-style sparse Givens QR row updates, with cached linearizations
-  and threshold/periodic full nonlinear refresh; no Bayes tree or iSAM2 yet.
+  and threshold/periodic full nonlinear refresh. Optional scalar Gaussian Bayes
+  tree updates re-eliminate touched conditional paths. An explicit editable
+  mode replaces selected Gaussian factors through cached separator messages,
+  retaining unaffected cliques; symbolic analysis/back-substitution stay global.
+  Optional threshold-selected nonlinear factor evaluation retains unrelated
+  whitened rows and reports bounded-pass exhaustion. Its ordinary QR backend
+  rebuilds globally; the editable mode re-eliminates affected cliques.
+  Forced/interval refreshes retain the full batch solver.
   Optional batch-order reuse controls QR fill; bounded frozen-QR refinement can
   improve the accepted nonlinear estimate while preserving the cache anchor.
 - Canonical CSR matrices, Jacobi-preconditioned CG with true-residual checks, and
   matrix-free sparse LM normal operators. Dense mode remains the default.
+  [PCG residual norms](benchmarks/PCG_RESIDUAL_NORM.md) avoid false convergence
+  from underflow when squaring tiny residuals.
+  The [final allowed PCG step](benchmarks/PCG_ITERATION_LIMIT.md) always checks
+  the true residual before returning an iteration-limit error.
+  [PCG breakdown checks](benchmarks/PCG_DIRECTION.md) reject nonfinite search
+  directions before passing them to operator callbacks.
+  [CSR construction](benchmarks/CSR_DIMENSIONS.md) rejects unrepresentable row-offset storage with
+  `InvalidDimensions`; this is a layout check, not a memory budget.
 - Optional variable-block Jacobi for full sparse LM, with heterogeneous tangent
   blocks, local Cholesky solves and exchangeable PCG preconditioners.
 - A dense Schur elimination reference backend for LM.
@@ -105,6 +171,7 @@ cargo run -p ropt --example pose_graph_g2o --locked -- --input crates/ropt/tests
 cargo run -p ropt --example pose_graph_3d --locked
 cargo run -p ropt --example gnss_odometry --locked
 cargo run -p ropt --example fixed_lag_odometry --locked
+cargo run -p ropt --example fixed_lag_covariance --locked
 cargo run -p ropt --example isam_pose_graph --locked
 cargo run -p ropt --example block_jacobi --locked
 cargo run -p ropt --example bundle_adjustment --locked
@@ -139,7 +206,9 @@ fn main() -> Result<(), ropt::Error> {
 
 Inspect `Report::termination`; an iteration limit or `NoProgress` does **not**
 prove convergence. Evaluation failures and nonfinite results return errors.
-GN has no line search and reports `NoProgress` when its full step fails to improve.
+Default GN has no line search and reports `NoProgress` when its full step fails
+to improve. Explicit nonmonotonic GN permits uphill steps with positive predicted
+improvement; final convergence must still be checked.
 LM's robust model is a first-order IRLS approximation; it is not the full robust
 Hessian. Default dense LM normal equations square the condition number;
 `DenseQr` avoids that extra conditioning penalty by solving augmented least
@@ -152,7 +221,7 @@ suitability remains unvalidated.
 
 Sparse covariance, rank-revealing sparse methods, supernodal factorization,
 heterogeneous/coupled eliminated Schur blocks,
-parallel evaluation, sparse marginalization, iSAM2/Bayes-tree updates,
+parallel evaluation, sparse marginalization, selective nonlinear iSAM2 updates,
 IMU preintegration/raw GNSS processing
 and large-scale, equal-accuracy comparative benchmarks. BA supports undistorted pinhole and four-coefficient
 Brown–Conrady cameras; validation still uses synthetic image observations only.
@@ -160,9 +229,9 @@ Sparse LM supports direct LDLᵀ and PCG with
 scalar or variable-block Jacobi preconditioning; difficult conditioning can require
 stronger preconditioners, scaling or different linear methods.
 The SE(2) example solves a graph with AD tangent Jacobians and a fixed pose.
-Recorded-data replay now includes a complete 943-pose Intel graph; a separate
-1,228-pose version still fails to converge. This does not establish production
-SLAM readiness.
+Recorded-data replay includes a complete 943-pose Intel graph. An optional sparse
+QR/GN path now completes the separate 1,228-pose version, but its strict reported
+cost check remains unmet. This does not establish production SLAM readiness.
 
 Exp/Log use principal rotations, with the usual ambiguity at pi; inputs to the
 standalone manifold primitives must be finite. No global convergence guarantees.
@@ -183,6 +252,9 @@ fixed variables are not differentiated. Neither path silently falls back to the
 other. Factors must have distinct variable IDs. `Options::loss` is a per-scalar
 fallback. `FactorOptions` can add measurement whitening and replace that fallback
 with a joint robust loss for the whole factor, as described below.
+Numeric factor [step checks](benchmarks/NUMERIC_FACTOR_STEPS.md) reject an
+overflowing `2*step` at registration and coincident active perturbations during
+evaluation, before calling the affected perturbation callbacks.
 `solve_local` step tolerance uses a dimensionless scale of 1 for graphs; choose
 appropriate units and tolerances when mixing translation and rotation.
 
@@ -364,7 +436,30 @@ are replaced by a square-root prior on their live neighbors. Other factors stay
 nonlinear and are not duplicated into the prior. `timestamp: None` keeps a
 persistent variable such as calibration. Existing timestamps may be refreshed.
 Time must be finite and nondecreasing; late factors must reference live keys.
+A still-live key can receive a delayed factor in its retirement update; the
+factor is optimized before its information is marginalized.
 Application keys remain stable across window compaction.
+`set_lag()` changes the duration for subsequent updates; expiry is applied only
+on a successful update, and increasing the lag does not restore retired states.
+Reports return live `estimates` and the last optimized values of removed keys in
+`marginalized_estimates`, so applications can [retain finalized trajectory poses](docs/fixed-lag-output.md).
+These owned snapshots are not revised by later updates.
+`marginalized_timestamps` pairs each retired key with its last assigned variable
+time, including earlier timestamp refreshes, for trajectory logging.
+Empty windows accept time-only updates and preserve carried marginalization
+cost across observation gaps; new observations can resume afterward.
+`update_with_covariance` optionally returns selected covariance before expiry,
+including cross-covariance with retiring variables; its dense SVD cost is explicit.
+[Invalid covariance keys or options](benchmarks/COVARIANCE_PREFLIGHT.md) are rejected before any factor callback runs,
+including newly proposed factors; a valid retry preserves the prior expiry schedule.
+Inherited robust losses require explicit Frozen-IRLS covariance with the same
+loss kind and scale as the window optimizer.
+
+The [adaptive SE(3) example](docs/fixed-lag-output.md#adaptive-window-example)
+changes the lag from 2 to 4 to 1 second while preserving covariance through
+simultaneous retirement. This figure shows a synthetic functional example.
+
+![Adaptive fixed-lag window sizes and local body-tangent standard deviations](docs/assets/adaptive-fixed-lag.png)
 
 ```rust
 use ropt::{DMatrix, DVector, factor::{VariableKind, FactorOptions}, fixed_lag::*};
@@ -410,13 +505,23 @@ cached sparse upper-triangular factor using Givens rotations. Ordinary updates
 linearize only new factors and solve that cached model. A tangent displacement
 threshold, update interval or explicit refresh runs batch LM, relinearizes all
 factors and reconstructs the undamped QR model. This initial iSAM-style engine
-has no Bayes tree, selective clique relinearization, reordering or row deletion.
+offers optional Gaussian Bayes-tree updates; selective nonlinear clique
+relinearization, dynamic reordering and row deletion remain missing.
 It supports analytic/AD manifold factors and requires an observable Gaussian
 model. Cached estimates are approximate between full nonlinear refreshes.
 Forced and interval refreshes start from current estimates and new seeds,
 without solving first at old anchors. Threshold refreshes start from the cached
 solution. Reports expose `relinearization_reason` (Forced/Interval/Threshold);
 failures preserve owned smoother state and never silently switch backends.
+
+`IsamSmoother::with_bayes_tree()` opts into fixed-order Gaussian partial
+re-elimination. The new rows' touched cliques and ancestor paths are rebuilt;
+unaffected conditional branches and symbolic separators stay shared. Reports
+expose `bayes_tree_update` with scalar clique counts. Nonlinear refreshes still
+rebuild the full model, and back-substitution still visits all columns. See
+[Gaussian Bayes-tree validation and measurements](benchmarks/BAYES_TREE.md).
+Both Gaussian tree types also support [frozen-factor gradient solves](docs/bayes-tree-gradient.md)
+without explicitly forming a normal matrix.
 
 Ordinary updates reuse the new-factor graph's full variable layout and defer
 new-recipe commit until success, avoiding old-factor copies/registration.
@@ -599,7 +704,7 @@ eleven of twelve pairs). Every prefix passes the unchanged original-energy,
 stationarity, fixed-root and native-pose gates. Complete means and LM sequences
 match the predecessor exactly; QR cost differs only by rounding. This meets the
 measured goal on these synthetic SE2 streams, not a general SLAM superiority or
-default-policy claim. Bayes-tree selective updates remain open.
+default-policy claim. The subsequent editable mode is described below.
 
 The latest [recorded Intel replay](benchmarks/REAL_ISAM2.md) preserves all 943
 poses and 1,837 measured constraints, using an inferred pose-ID arrival order.
@@ -609,10 +714,243 @@ gives **15.122 / 16.553 s** (1.09x). ropt wins all **12/12 pairs** and every arr
 passes independent original-energy, stationarity, fixed-root and pose-agreement
 checks. These are forced full-refresh accuracy-target policies, not default cached
 updates. The separately selected 1,228-pose Intel version fails in ropt at arrival
-166; native completes but fails the strict reported-cost gate. No speed ratio
-is claimed for that version. The raw
-records and reproduction instructions include this failure. This is evidence on
-one recorded SE2 artifact, not general SLAM dominance.
+166 under the earlier LDL/LM policy. The new [sparse QR/GN path](benchmarks/SPARSE_QR.md)
+completes all 1,227 arrivals and matches native poses. Subsequent
+[compensated information whitening](benchmarks/INFORMATION_PRECISION.md) passes
+every ropt quality gate; the old native reference still fails reported-cost verification.
+The latest [Cartesian SE2 comparison](benchmarks/PRECISE_REAL_ISAM2.md) additionally
+corrects native measurement precision and exact root conditioning. Both outputs
+pass every original gate: ropt takes **7.947 / 11.032 s** (1.39x), with independent
+confirmation **8.488 / 11.284 s** (1.33x), winning **12/12 pairs**. This uses explicit
+Cartesian right retraction and ambient analytic evaluation; the default Lie
+exponential chart remains available. It is a common-accuracy full-refresh result
+against the disclosed corrected reference, not default iSAM2 latency. Historical
+failures remain archived. Both Intel variants derive from one recorded SE2 route;
+these results do not establish general SLAM dominance.
+The additional [CSAIL recording](benchmarks/CSAIL_REAL_ISAM2.md) passes all 1,044
+arrivals under the same solver policies and quality gates: **3.388 / 7.755 s**
+(2.29x) in primary measurement and **3.385 / 7.730 s** (2.28x) in confirmation,
+with **12/12 faster pairs**. CSAIL has no supplied vertices; both solvers use
+identical original-odometry seeds, with all original constraints retained.
+
+An optional [threshold-selected factor mode](benchmarks/SELECTIVE_RELINEARIZATION.md)
+now moves only selected variable anchors and reevaluates their incident factors.
+Enable `.with_selective_relinearization(4)?` before the first update.
+`report.selective_update` records retained factors and remaining threshold excess;
+Gaussian QR rebuilding is global and a cleared threshold does not certify
+nonlinear convergence. Run `cargo run -p ropt --example selective_isam --locked`.
+The real-data speed results above retain their measured full-refresh policies.
+The additional [editable Bayes-tree mode](benchmarks/EDITABLE_BAYES_TREE.md),
+`.with_selective_bayes_tree(4)?`, replaces those selected Gaussian factors through
+cached boundary messages. A nonlinear 1,025-variable example re-eliminates two
+scalar cliques and retains 1,023, while matching the global-QR selected model.
+Symbolic topology is reused for same-support replacements and additions;
+metadata bookkeeping and back-substitution remain global. Recorded latency and
+accuracy comparisons follow below.
+Run `cargo run -p ropt --example selective_bayes_tree --locked`.
+
+The later [recorded stationarity-controlled comparison](benchmarks/STATIONARITY_CONTROL.md)
+checks actual nonlinear cost/gradient and explicitly requests selected anchors.
+On complete CSAIL, the selected **global-QR** policy takes **3.436 / 3.861 s**
+against current forced-full ropt, and **3.491 / 3.883 s** in confirmation:
+**1.12x / 1.11x faster, 12/12 pairs**. All original-information gates pass;
+full recoveries are counted and timed. The editable-tree policy is slower here.
+GTSAM poses/costs are an archived correctness reference; no new native timers
+are compared. `nonlinear_summary(norm)` and `relinearize_selected(keys)` expose
+the explicit probe/request operations without changing default update policy.
+
+The next [local-clique CSR improvement](benchmarks/LOCAL_CLIQUE_CSR.md) reduces
+editable-tree time by **16.0% / 11.2%** on complete CSAIL, winning **12/12
+before/after pairs**. All accuracy gates pass; complete means and non-timing
+work records remain identical. The improved editable policy still takes
+**4.459 / 4.496 s**, versus **3.908 / 3.970 s** for current full refresh.
+Rust 313/Python 23 checks pass. This compares ropt kernels; the published native
+timings and figures retain their original measured kernels.
+
+The subsequent [metadata-sharing change](benchmarks/EDITABLE_METADATA_SHARING.md)
+shares editable factor/ownership maps across snapshots and copies changed maps
+before mutation. In a separate 2,048-variable, 64-clone diagnostic, allocation
+calls fall **99.1%** and requested bytes **56.4%**, with identical repeated
+counts. Complete CSAIL latency varies (**1.021x / 0.991x**, 4/6 / 2/6 faster
+pairs); a repeatable stream speedup is not established. All accuracy gates and
+exact before/after means/work checks pass. Rust 314/Python 23 checks pass.
+
+The next [incidence-cache improvement](benchmarks/INCIDENCE_CACHE.md) reuses
+sorted child/factor-owner lists and patches changed membership. Complete CSAIL
+editable time falls **1.9% / 4.5%**, winning **10/12 before/after pairs**, with
+identical means and non-timing work. Its **4.281 / 4.296 s** streams still trail
+current full refresh at **4.009 / 4.023 s**. Rust 315/Python 23 checks pass.
+The modest gain is specific to these ropt policies; native figures remain frozen.
+
+The later [direct analytic-probe improvement](benchmarks/DIRECT_NONLINEAR_PROBE.md)
+evaluates all-analytic current-estimate queries without temporary graph/CSR
+construction. Complete CSAIL editable time falls **8.6% / 8.9%**, winning
+**11/12 before/after pairs**, with identical costs, gradients, poses and work.
+At that measured stage, mixed/AD recipes keep the original graph path. Editable streams take
+**4.096 / 4.128 s**, versus current full refresh at **3.879 / 3.857 s**; both
+current policies use direct probes. Rust 318/Python 23 checks pass. No new
+native/GTSAM timing is collected.
+
+The latest [mixed/AD probe extension](benchmarks/MIXED_AUTODIFF_PROBE.md) also
+avoids temporary graph/CSR assembly for runtime AD recipes, sharing their tangent
+AD evaluator with factor graphs. Across 16 synthetic query conditions, time falls
+**11.1–25.8% / 9.6–26.3%** in two campaigns, with matching cost/gradient bits,
+estimate/variable digests and callback counts. This measures query latency only.
+Complete analytic CSAIL/MIT functional replays retain exact poses/work and pass
+all existing gates. Rust **320**/Python **23** checks pass. At that measured stage,
+complete AD-stream and new native/GTSAM performance were unmeasured.
+
+The subsequent [complete mixed-AD CSAIL comparison](benchmarks/REAL_AD_PROBE.md)
+checks 586 AD / 586 analytic factors through every update and recovery. Median
+stream time falls **3.0% / 1.6%**, winning **6/6 / 4/6** pairs. Confirmation misses
+the speed criterion, so a repeatable complete-stream speedup is not established.
+All **25,056 timed arrivals** pass original-information accuracy and native pose/
+cost agreement, with identical before/after complete poses and non-timing work.
+Complete mixed-AD MIT regression also passes, including its ill-conditioned edge.
+Rust 320 + 2 benchmark tests/Python 23 pass; native timings remain unchanged.
+
+The preceding [owned Jet-buffer optimization](benchmarks/JET_BUFFER_REUSE.md)
+reuses consumed derivative vectors without changing Jet's representation.
+Complete mixed-AD CSAIL streams improve **1.2% / 4.6%**, winning **5/6 pairs in
+both campaigns**, with exact before/after poses, gradients and non-timing work.
+Separate AD width diagnostics reduce allocation calls **30.8–43.8%** and requested
+bytes **8.7–42.9%**; the 65-wide latency case is **5.5% slower** and remains visible.
+All 25,056 timed arrivals and complete MIT functional regression pass unchanged
+original-information/native agreement gates. Rust 322 + 2 benchmark tests/Python
+23 pass. No fresh native/GTSAM, peak-memory or general speed conclusion is drawn.
+
+The preceding [width-aware owned Jet loops](benchmarks/JET_LOOP_SPLIT.md) retain
+indexed arithmetic up to width 16 and split broadcast/equal-length loops above
+it. Width-65 AD evaluation time falls **24.5% / 24.6%**, with **6/6 faster pairs
+in both diagnostic campaigns**; width 32 falls **16.3% / 18.6%**. Allocation
+traffic and all result bits remain unchanged. Small widths have mixed results.
+Complete mixed-AD CSAIL primary time falls 1.7% (4/6 pairs), but confirmation
+is **2.9% slower (1/6)**: a repeatable complete-stream gain is not established.
+All 25,056 timed arrivals and complete MIT functional regression retain exact
+before/after poses/work and unchanged original-information/native agreement
+gates. Rust 322 + 2 benchmark tests/Python 23 and 40 source-only rollback
+fingerprints pass. The unconditional split-loop trial and its negative stream
+results remain archived. No fresh native timing or general speed claim is made.
+
+The preceding [validity-preserving Jet negation](benchmarks/JET_NEGATION.md) removes
+redundant finite scans specifically for validated sign changes. Isolated width-6
+owned negation is **1.51x / 1.59x** as fast, borrowed negation **1.19x / 1.17x**,
+with **6/6 faster pairs in both campaigns** for either ownership form and unchanged
+bits/allocation work. Complete mixed-AD CSAIL primary improves **5.1% (6/6)**, but
+confirmation is **2.0% slower (3/6)**: repeatable complete-stream speedup remains
+unestablished. All 25,056 timed arrivals and complete MIT functional regression
+retain exact poses/work and unchanged quality gates. Rust 323 + 2 benchmark
+tests/Python 23 and 41 source-only rollback stages pass. Three broader validation
+proposals were rejected and preserved. Constructors and binary loops retain the
+preceding implementation; the gain is specific to negation. Native timings and
+the informal 75/100 maturity estimate stay unchanged.
+
+The preceding [streaming compensated probe cost](benchmarks/PROBE_COST.md) removes
+the full residual and zero vectors from current-estimate probes while preserving
+row-order compensation and callback/error precedence. Successful nonempty probes
+remove **two allocation requests and 16 bytes per residual**; 512 three-residual
+factors remove **24,576 requested bytes per query**. All analytic/mixed/AD allocation
+diagnostics retain exact result bits/work. Complete CSAIL update medians are
+**1.4% / 0.6% slower (2/6 and 4/6 faster pairs)**; this is an allocation/workspace
+improvement, with no complete-stream speed gain established. All 25,056 timed
+arrivals and complete MIT functional regression pass unchanged gates, with exact
+before/after poses/work. Rust 325 + 2 benchmark tests/Python 23 and 42 source-only
+rollback stages pass. Native figures retain their measured kernels.
+
+The preceding [dense probe indexing](benchmarks/DENSE_PROBE.md) uses one offset-indexed
+vector for contiguous variable keys, retaining tree lookup for gapped/partial key
+spaces. A successful 512-factor query saves **83 allocation requests / 22,944
+requested bytes**, with exact result bits/work across analytic/mixed/AD diagnostics.
+Complete CSAIL medians decrease **1.5% / 5.3%**, but only **4/6 pairs** improve in
+either campaign: repeatable whole-update speedup remains unestablished. All 25,056
+timed arrivals and the complete MIT functional regression retain exact poses/work
+and pass unchanged quality gates. Rust 327 + 2 benchmark tests/Python 23 and 43
+source-only rollback stages pass. Native timing and the informal 75/100 maturity
+estimate stay unchanged.
+
+The preceding [direct AD block Jacobians](benchmarks/BLOCK_JACOBIAN.md) remove the
+flat tangent Jacobian and zero input vector before block splitting. A successful
+512-factor all-AD query saves **1,024 allocation requests / 53,248 requested bytes**;
+analytic-only allocation totals are unchanged. Complete CSAIL primary is **2.3%
+slower (3/6 faster pairs)** and confirmation **1.8% faster (4/6)**: repeatable
+whole-update speedup remains unestablished. All 25,056 timed arrivals and complete
+MIT regression retain exact poses/work and pass unchanged gates. Rust 329 + 2
+benchmark tests/Python 23 and 44 source-only rollback stages pass. Native figures
+and the informal 75/100 maturity estimate remain unchanged.
+
+The latest [stack AD input wrappers](benchmarks/INLINE_AD_INPUTS.md) remove two
+temporary vectors for one-/two-block callbacks while retaining the generic path
+for larger factors. A 512-factor all-AD, chunk-8 probe saves **1,024 allocation
+requests / 65,536 requested bytes**. **12/16 synthetic probe cases** meet the speed
+criterion in both campaigns; ColumnNormalized 2,048-factor all-AD/chunk-1 queries
+take **16.8% / 16.3% less time (6/6 faster pairs each)**. Complete CSAIL medians are
+1.1% faster / 0.04% slower, with **2/6 faster pairs each**: whole-update speedup
+remains unestablished. All 25,056 timed arrivals and complete MIT regression retain
+exact poses/work and unchanged gates. Rust 331 + 2 benchmark tests/Python 23 and 45
+source-only rollback stages pass. A rejected strided-write candidate is preserved.
+Native figures and the informal 75/100 maturity estimate remain unchanged.
+
+The [factor-cache append-reservation candidate](benchmarks/CACHE_RESERVE.md)
+saves **one reallocation request / 8,184 requested bytes** when adding one factor
+to a 512-factor graph. However, [complete CSAIL timing](benchmarks/CACHE_RESERVE_TIMING.md)
+shows **2.0% / 2.0% higher observed stream medians (2/6 / 3/6 faster pairs)**.
+Its adoption is withdrawn and the exact preceding production implementation is
+restored. All 25,056 timed arrivals retain exact poses/work and unchanged gates;
+candidate source, allocation data and both timing campaigns remain available.
+Allocation savings do not establish runtime or peak-memory improvement.
+
+[Editable-tree recovery](benchmarks/TREE_REFINEMENT.md) now reuses its triangular
+factor for frozen-model refinement, avoiding a separate global QR rebuild.
+Complete CSAIL stream medians are **4.0% / 4.2% lower** in two six-pair campaigns
+(**5/6 and 6/6** faster pairs). All **25,056 timed arrivals** meet the unchanged
+original-information and archived native agreement gates. Complete MIT also
+passes the same accuracy gates. Arithmetic order changes trajectories slightly;
+this compares preceding ropt kernels, with no fresh GTSAM timing claim.
+Arrival latency is mixed: the confirmation maximum rises **73.607 → 81.491 ms**.
+
+[Scheduled factor-cache refresh](benchmarks/CACHE_REFRESH.md) now avoids copying
+rows that a forced/interval rebuild immediately discards. A 512-factor forced
+refresh saves one more allocation request and **4,096 requested bytes**. Failed
+refreshes preserve cached rows and the update schedule in both selective
+backends. Complete MIT retains exact poses/work and original gates. Rust **334 +
+2 benchmark tests**, Python **23** and **47** source-only rollback stages pass.
+The [complete CSAIL timing follow-up](benchmarks/CACHE_REFRESH_TIMING.md) finds
+**0.9% less / 0.5% more median stream time (2/6 faster pairs each)**: no speedup is
+established. All 25,056 timed arrivals retain exact poses/work and unchanged
+gates. Arrival-latency changes are mixed; primary maximum rises **76.144 →
+100.977 ms**. This remains an allocation-traffic improvement; native claims stay
+unchanged.
+
+[Gaussian factor capture](benchmarks/FACTOR_CAPTURE.md) now copies each factor's
+consecutive canonical CSR rows at their required lengths. A 512-factor, 3-row
+steady Gaussian refresh saves **2,560 allocation requests / 159,744 requested
+bytes**; counts measure traffic rather than peak memory. Complete CSAIL at the
+same requested cap 0 has **2.5% / 4.6% lower stream medians (4/6 / 5/6 faster
+pairs)**, so repeatable whole-update speedup remains unestablished. Pooled arrival
+medians rise slightly; P99 decreases, while maximum latency is mixed. All 25,056
+timed arrivals and complete MIT regression retain exact poses/work and unchanged
+gates. Rust **333 + 2 benchmark tests**, Python **23**, and **46** source-only
+rollback stages pass. Native figures and the informal 75/100 estimate stay frozen.
+
+[Complete-stream phase diagnosis](benchmarks/STREAM_PHASES.md) identifies full
+recovery as **38–46%** of the update budget and direct probes as **20–22%** in
+CSAIL/MIT. A [same-binary recovery-policy comparison](benchmarks/RECOVERY_CAPS.md)
+then tests explicit requested cap 1 versus 0, keeping automatic threshold passes
+and the nonlinear quality target. The additional isolated CSAIL campaign takes
+**7.2% less total update time (5/6 faster pairs)**. Earlier campaigns take 4.2% /
+9.4% less time, with concurrent archival work disclosed. All 37,584 timed arrivals
+pass common original-information and archived-native gates. A subsequent
+[complete MIT comparison](benchmarks/MIT_RECOVERY_CAPS.md) takes **12.4% / 10.7%
+less total update time (6/6 faster pairs each)**; all 29,448 timed arrivals pass
+the same gates. MIT pooled median arrival latency rises approximately **1%**,
+while P99 falls **68.951 → 57.623 ms / 67.323 → 56.710 ms**. Maximum latency
+improves in the primary campaign but rises **123.898 → 131.090 ms** in
+confirmation. This is a caller-policy result; library defaults, historical native
+timings and informal maturity stay unchanged.
+
+In the isolated policy comparison, pooled median arrival latency rises
+**2.061 → 2.193 ms**, while P99 falls **58.311 → 53.513 ms**. The total-stream
+improvement therefore has a per-arrival tradeoff; see the retained distributions.
 
 ```rust
 use ropt::{DMatrix, DVector, factor::{VariableKind, FactorOptions}, fixed_lag::*, isam::*};
@@ -858,6 +1196,9 @@ couplings remain in the full matrix-free operator. With block sizes `b_i`, store
 factor entries total `sum(b_i²)`, plus layout/scratch storage. A user-specified large
 Euclidean block can still require a large dense factor; this is not linear storage
 independently of block size.
+Unrepresentable mapping or dense-block layouts return `InvalidDimensions`
+before allocation; see the [layout checks](benchmarks/BLOCK_JACOBI_LAYOUT.md).
+These checks do not impose an available-memory budget.
 
 `sparse::conjugate_gradient_preconditioned` accepts any implementation of the
 `Preconditioner` trait. Its `apply` returns `M^-1*r`; the implementation must
@@ -1335,9 +1676,14 @@ slice-based graph retraction, in-place QR row updates, whitening buffer reuse,
 compact ordering adjacency, normal-graph rebinding, aligned QR row reuse and
 sorted symbolic fill/CSR-row planning, bounded QR normalization and Schur-update
 destination cursors.
-These improve existing
-contracts and performance; selective Bayes-tree updates and field evidence are
-still missing.
+These improve existing contracts and performance. Recorded selected-update
+latency now has a common-accuracy comparison; field evidence remains missing.
+The complete CSAIL recording strengthens independent real-data validation;
+the informal maturity estimate remains **75/100**.
+Threshold-selected nonlinear factor evaluation now has an optional editable
+Gaussian Bayes tree with cached separator messages and affected clique
+replacement. Dynamic reordering, wildfire back-substitution and incremental
+fixed-lag removal remain open.
 Earlier improvements include stable true-loss reductions, 3,000-pose accuracy
 validation, reusable sparse LDL, bounded
 plans, block ordering and checked analytic SE2 derivatives. These measurements

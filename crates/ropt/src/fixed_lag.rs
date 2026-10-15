@@ -36,11 +36,25 @@ enum Evaluation {
 #[derive(Clone)]
 pub struct SmootherFactor {
     pub(crate) keys: Vec<Key>,
-    residuals: usize,
+    pub(crate) residuals: usize,
     pub(crate) options: FactorOptions,
     evaluation: Evaluation,
 }
 impl SmootherFactor {
+    pub(crate) fn evaluate(
+        &self,
+        values: &[DVector<f64>],
+        kinds: impl Iterator<Item = VariableKind>,
+    ) -> Result<(DVector<f64>, Vec<DMatrix<f64>>), Error> {
+        match &self.evaluation {
+            Evaluation::Analytic(function) => function(values),
+            Evaluation::AutoDiff {
+                chunk_size,
+                function,
+            } => crate::factor::AutoDiffLayout::new(kinds.collect(), self.residuals, *chunk_size)?
+                .evaluate(values, function.as_ref()),
+        }
+    }
     pub fn analytic<F>(keys: &[Key], residuals: usize, options: FactorOptions, function: F) -> Self
     where
         F: Fn(&[DVector<f64>]) -> Result<(DVector<f64>, Vec<DMatrix<f64>>), Error> + 'static,
@@ -147,6 +161,13 @@ pub struct FixedLagReport {
     /// Live estimates after marginalization. Expired keys are absent.
     pub estimates: BTreeMap<Key, DVector<f64>>,
     pub marginalized: Vec<Key>,
+    /// Last optimized ambient values of the variables removed by this update.
+    /// Keys match `marginalized`; later updates do not revise this owned snapshot.
+    pub marginalized_estimates: BTreeMap<Key, DVector<f64>>,
+    /// Last assigned timestamp of each retired variable, including earlier
+    /// refreshes. Keys match `marginalized`; persistent variables never expire.
+    /// This is the variable's timestamp, not the update's `now` or expiry cutoff.
+    pub marginalized_timestamps: BTreeMap<Key, f64>,
     /// Costs of the optimized window before expiry, including carried constants.
     /// After nonlinear marginalization this is a surrogate, not all-history cost.
     pub initial_cost: f64,
@@ -176,6 +197,24 @@ impl FixedLagSmoother {
             constant_cost: 0.0,
         })
     }
+    /// Current configured window duration, in the timestamp units.
+    pub fn lag(&self) -> f64 {
+        self.options.lag
+    }
+    /// Change the duration used by subsequent updates, without optimizing now.
+    ///
+    /// Only positive finite durations are accepted. Shortening the duration
+    /// removes older variables on the next successful update; increasing it does
+    /// not restore retired variables or replace carried marginal priors.
+    /// Estimates, factors and time are unchanged by this setter. If a later
+    /// update fails, its state rolls back but this configured duration remains.
+    pub fn set_lag(&mut self, lag: f64) -> Result<(), Error> {
+        if !lag.is_finite() || lag <= 0. {
+            return Err(Error::InvalidOptions);
+        }
+        self.options.lag = lag;
+        Ok(())
+    }
     pub fn estimate(&self, key: Key) -> Option<&DVector<f64>> {
         self.variables.get(&key).map(|v| &v.value)
     }
@@ -188,13 +227,46 @@ impl FixedLagSmoother {
     pub fn last_time(&self) -> Option<f64> {
         self.last_time
     }
+    fn validate_covariance_model(
+        &self,
+        factors: &[SmootherFactor],
+        options: &crate::covariance::CovarianceOptions,
+    ) -> Result<(), Error> {
+        match options.model {
+            crate::covariance::CovarianceModel::Gaussian => {
+                if factors.iter().any(|factor| {
+                    !matches!(
+                        factor.options.loss.unwrap_or(self.options.solver.loss),
+                        Loss::Squared
+                    )
+                }) {
+                    return Err(Error::Evaluation(
+                        "robust factors require explicit FrozenIrls covariance model".into(),
+                    ));
+                }
+            }
+            crate::covariance::CovarianceModel::FrozenIrls { fallback_loss } => {
+                let same_fallback = match (fallback_loss, self.options.solver.loss) {
+                    (Loss::Squared, Loss::Squared) => true,
+                    (Loss::Huber(a), Loss::Huber(b)) | (Loss::Cauchy(a), Loss::Cauchy(b)) => a == b,
+                    _ => false,
+                };
+                if !same_fallback && factors.iter().any(|factor| factor.options.loss.is_none()) {
+                    return Err(Error::InvalidOptions);
+                }
+            }
+        }
+        Ok(())
+    }
     /// Selected right-tangent covariance of the live window and its frozen prior.
     /// This is the current surrogate model, not exact nonlinear all-history covariance.
+    /// Inherited robust losses require matching explicit `FrozenIrls` options.
     pub fn marginal_covariance(
         &self,
         keys: &[Key],
         options: &crate::covariance::CovarianceOptions,
     ) -> Result<crate::covariance::TangentCovariance, Error> {
+        self.validate_covariance_model(&self.factors, options)?;
         let order = self.variables.keys().copied().collect::<Vec<_>>();
         let (graph, ids) = build_graph(&self.variables, &self.factors, &order)?;
         let query = keys
@@ -206,7 +278,71 @@ impl FixedLagSmoother {
     /// Optimize with new observations, then marginalize timestamps strictly older
     /// than now-lag. On any error, owned estimates, factors and time are unchanged.
     /// All factors must reference live or newly supplied keys, never expired keys.
+    /// An empty window with no factors accepts time-only updates without running
+    /// the solver, retaining carried constant cost and returning `Gradient` with
+    /// no iterations. Solver settings are checked when optimization is requested.
     pub fn update(&mut self, now: f64, update: SmootherUpdate) -> Result<FixedLagReport, Error> {
+        self.update_impl(now, update, None)
+            .map(|(report, _)| report)
+    }
+    /// Optimize and query covariance before removing expired variables.
+    ///
+    /// Keys may include variables that expire in this update. Matrix blocks follow
+    /// the requested key order in right-tangent coordinates; `indices` refer to
+    /// the pre-marginalization graph layout. Fixed, missing, duplicate or empty
+    /// queries are errors, checked before optimization calls factor callbacks.
+    /// Invalid covariance options are also rejected before factor evaluation.
+    /// The full window Jacobian must be observable.
+    ///
+    /// This explicitly opts into the covariance backend's dense SVD and cost.
+    /// Covariance or marginalization failure leaves all owned state unchanged.
+    /// The result describes the optimized window and its frozen priors, not an
+    /// exact nonlinear all-history posterior.
+    /// Inherited robust losses require `FrozenIrls` with a fallback loss matching
+    /// the solver, including its scale. Explicit per-factor overrides are honored.
+    ///
+    /// ```
+    /// use ropt::{DMatrix, DVector, factor::VariableKind, fixed_lag::*};
+    /// let mut smoother = FixedLagSmoother::new(FixedLagOptions {
+    ///     lag: 1., ..Default::default()
+    /// })?;
+    /// smoother.update(0., SmootherUpdate {
+    ///     variables: vec![WindowVariable {
+    ///         key: 0, kind: VariableKind::Euclidean(1),
+    ///         value: DVector::from_element(1, 2.),
+    ///         timestamp: Some(0.), fixed: false,
+    ///     }],
+    ///     factors: vec![SmootherFactor::analytic(&[0], 1, Default::default(), |v| {
+    ///         Ok((DVector::from_element(1, v[0][0] - 2.),
+    ///             vec![DMatrix::identity(1, 1)]))
+    ///     })],
+    ///     ..Default::default()
+    /// })?;
+    /// let (report, covariance) = smoother.update_with_covariance(
+    ///     2., Default::default(), &[0], &Default::default(),
+    /// )?;
+    /// assert_eq!(report.marginalized_estimates[&0][0], 2.);
+    /// assert_eq!(report.marginalized_timestamps[&0], 0.);
+    /// assert!((covariance.matrix[(0, 0)] - 1.).abs() < 1e-12);
+    /// assert!(smoother.estimate(0).is_none());
+    /// # Ok::<(), ropt::Error>(())
+    /// ```
+    pub fn update_with_covariance(
+        &mut self,
+        now: f64,
+        update: SmootherUpdate,
+        keys: &[Key],
+        options: &crate::covariance::CovarianceOptions,
+    ) -> Result<(FixedLagReport, crate::covariance::TangentCovariance), Error> {
+        self.update_impl(now, update, Some((keys, options)))
+            .map(|(report, covariance)| (report, covariance.unwrap()))
+    }
+    fn update_impl(
+        &mut self,
+        now: f64,
+        update: SmootherUpdate,
+        covariance_query: Option<(&[Key], &crate::covariance::CovarianceOptions)>,
+    ) -> Result<(FixedLagReport, Option<crate::covariance::TangentCovariance>), Error> {
         if !now.is_finite() || self.last_time.is_some_and(|t| now < t) {
             return Err(Error::InvalidOptions);
         }
@@ -244,8 +380,41 @@ impl FixedLagSmoother {
         }
         let mut factors = self.factors.clone();
         factors.extend(update.factors);
+        if let Some((_, options)) = covariance_query {
+            options.validate()?;
+            self.validate_covariance_model(&factors, options)?;
+        }
+        if variables.is_empty() && factors.is_empty() && covariance_query.is_none() {
+            if !self.constant_cost.is_finite() {
+                return Err(Error::NonFinite);
+            }
+            self.last_time = Some(now);
+            return Ok((
+                FixedLagReport {
+                    estimates: BTreeMap::new(),
+                    marginalized: Vec::new(),
+                    marginalized_estimates: BTreeMap::new(),
+                    marginalized_timestamps: BTreeMap::new(),
+                    initial_cost: self.constant_cost,
+                    final_cost: self.constant_cost,
+                    termination: Termination::Gradient,
+                    iterations: Vec::new(),
+                    marginalization: MarginalizationSummary::default(),
+                },
+                None,
+            ));
+        }
         let order = variables.keys().copied().collect::<Vec<_>>();
         let (graph, ids) = build_graph(&variables, &factors, &order)?;
+        let covariance_indices = covariance_query
+            .map(|(keys, _)| {
+                let query = keys
+                    .iter()
+                    .map(|key| ids.get(key).copied().ok_or(Error::InvalidDimensions))
+                    .collect::<Result<Vec<_>, _>>()?;
+                graph.covariance_indices(&query)
+            })
+            .transpose()?;
         let (_, n, m) = graph.dimensions();
         // Bound dense window/augmented-QR matrices too, before evaluating callbacks.
         self.options
@@ -261,6 +430,16 @@ impl FixedLagSmoother {
                 solved.termination
             )));
         }
+        let covariance = covariance_query
+            .map(|(_, options)| {
+                crate::covariance::marginal_covariance(
+                    &graph,
+                    &solved.x,
+                    covariance_indices.as_ref().unwrap(),
+                    options,
+                )
+            })
+            .transpose()?;
         for (&key, &id) in &ids {
             variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
         }
@@ -268,6 +447,14 @@ impl FixedLagSmoother {
             .iter()
             .filter_map(|(&key, v)| v.timestamp.filter(|&t| t < cutoff).map(|_| key))
             .collect::<BTreeSet<_>>();
+        let marginalized_estimates = expired
+            .iter()
+            .map(|&key| (key, variables[&key].value.clone()))
+            .collect();
+        let marginalized_timestamps = expired
+            .iter()
+            .map(|&key| (key, variables[&key].timestamp.unwrap()))
+            .collect();
         let mut constant_cost = self.constant_cost;
         let summary = marginalize(
             &mut variables,
@@ -289,15 +476,20 @@ impl FixedLagSmoother {
         self.factors = factors;
         self.last_time = Some(now);
         self.constant_cost = constant_cost;
-        Ok(FixedLagReport {
-            estimates,
-            marginalized: expired.into_iter().collect(),
-            initial_cost,
-            final_cost,
-            termination: solved.termination,
-            iterations: solved.iterations,
-            marginalization: summary,
-        })
+        Ok((
+            FixedLagReport {
+                estimates,
+                marginalized: expired.into_iter().collect(),
+                marginalized_estimates,
+                marginalized_timestamps,
+                initial_cost,
+                final_cost,
+                termination: solved.termination,
+                iterations: solved.iterations,
+                marginalization: summary,
+            },
+            covariance,
+        ))
     }
 }
 pub(crate) fn build_graph(
@@ -322,6 +514,13 @@ pub(crate) fn build_graph(
         f.register(&mut graph, &connected)?;
     }
     Ok((graph, ids))
+}
+fn quadratic_cost(residual: &DVector<f64>) -> Result<f64, Error> {
+    // Sum half-squares directly: the squared norm may overflow even when the
+    // cost is representable. Reuse compensated accumulation without allocating.
+    let mut cost = crate::solver::GaussianCostAccumulator::default();
+    cost.add(residual);
+    cost.finish()
 }
 fn marginalize(
     variables: &mut BTreeMap<Key, WindowVariable>,
@@ -389,7 +588,7 @@ fn marginalize(
                     j.row_mut(row).scale_mut(weights[row]);
                 }
                 // Keep the robust objective offset at this linearization point.
-                *constant_cost += cost - 0.5 * residual.norm_squared();
+                *constant_cost += cost - quadratic_cost(&residual)?;
             }
         }
         let ne = eliminated
@@ -400,7 +599,7 @@ fn marginalize(
         summary.separator_tangent = n - ne;
         let prior = marginalize_linearized(&j, &residual, ne, &options.marginalization)?;
         if separator.is_empty() {
-            *constant_cost += 0.5 * prior.residual.norm_squared();
+            *constant_cost += quadratic_cost(&prior.residual)?;
         } else {
             let kinds = separator
                 .iter()

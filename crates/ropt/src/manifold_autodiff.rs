@@ -61,6 +61,11 @@ pub(crate) fn retract(kind: VariableKind, x: &DVector<f64>, d: &[J]) -> Result<V
     let out = match kind {
         VariableKind::Euclidean(_) => x.iter().zip(d).map(|(x, d)| *x + d).collect(),
         VariableKind::SO2 => vec![angle(x[0], &d[0])],
+        VariableKind::SE2Cartesian => vec![
+            x[0] + x[2].cos() * &d[0] - x[2].sin() * &d[1],
+            x[1] + x[2].sin() * &d[0] + x[2].cos() * &d[1],
+            angle(x[2], &d[2]),
+        ],
         VariableKind::SE2 => {
             let w = &d[2];
             let (a, b) = if w.value().abs() < 1e-6 {
@@ -196,6 +201,17 @@ pub(crate) fn local(
         VariableKind::SO2 => {
             let w = &value[0] - anchor[0];
             vec![w.sin().atan2(&w.cos())]
+        }
+        VariableKind::SE2Cartesian => {
+            let dx = &value[0] - anchor[0];
+            let dy = &value[1] - anchor[1];
+            let (c, s) = (anchor[2].cos(), anchor[2].sin());
+            let (cv, sv) = (value[2].cos(), value[2].sin());
+            vec![
+                c * &dx + s * &dy,
+                -s * dx + c * dy,
+                (c * &sv - s * &cv).atan2(&(c * cv + s * sv)),
+            ]
         }
         VariableKind::SE2 => {
             let dx = &value[0] - anchor[0];

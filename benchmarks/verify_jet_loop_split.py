@@ -1,0 +1,195 @@
+"""Audit retained mixed-AD stream timings, quality, work and artifact hashes."""
+import argparse
+import csv
+import gzip
+import hashlib
+import json
+import math
+from pathlib import Path
+import re
+
+from paired_pcg import source_fingerprint
+from pose_graph import ROOT, require, timing_summary
+
+
+def rows(path):
+    with path.open() as handle:
+        return list(csv.DictReader(handle))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--results", type=Path, default=ROOT / "benchmarks/results/jet_loop_split")
+    parser.add_argument("--current-source", action="store_true")
+    args = parser.parse_args()
+    root = args.results.resolve()
+    manifest = json.loads((root / "artifacts_sha256.json").read_text())
+    require(set(manifest) == {str(p.relative_to(root)) for p in root.rglob("*")
+                             if p.is_file() and p.name != "artifacts_sha256.json"}, "file layout differs")
+    for name, expected in manifest.items():
+        require(hashlib.sha256((root / name).read_bytes()).hexdigest() == expected, "artifact changed: " + name)
+    timed_updates = 0
+    for campaign in ("primary", "confirmation"):
+        directory = root / campaign
+        metadata = json.loads((directory / "metadata.json").read_text())
+        report = json.loads((directory / "report.json").read_text())
+        require(report["eligible"] and report["before_after_means_byte_identical"] and
+                report["before_after_non_timing_fields_identical"], "ineligible accuracy")
+        require(metadata["rounds"] == 6 and metadata["variants"] == ["before", "after"] and
+                metadata["ad_chunk_size"] == 6 and metadata["ad_edge_stride"] == 2 and
+                metadata["factors"] == 1172 and metadata["ad_factors"] == 586, "workload differs")
+        require(metadata["before_source_sha256"] == "0c171c75e64947bb8995b1b77be8d16fb7b9fb1eca3938c5c19f67906dc0c469"
+                and metadata["source_sha256"] == "5e03888fc601316ba2c877e98b0544c6e5daab767dad1b9540d93e29d4760b8c",
+                "kernel fingerprints differ")
+        require(metadata["before_executable_sha256"] != metadata["executable_sha256"], "identical binaries")
+        require(not metadata["native_timing_measured"] and not metadata["allocator_counting"], "scope differs")
+        require(hashlib.sha256((directory / "input.stream").read_bytes()).hexdigest() ==
+                metadata["dataset"]["stream_sha256"], "input changed")
+        if args.current_source:
+            require(source_fingerprint(ROOT) == metadata["source_sha256"], "current kernel differs")
+            for name, value in metadata["files_sha256"].items():
+                require(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == value, "driver changed: " + name)
+            for name, value in metadata["native_reference_sha256"].items():
+                require(hashlib.sha256((ROOT / metadata["native_reference_directory"] / name).read_bytes()).hexdigest()
+                        == value, "native reference changed")
+        samples, updates, quality = (rows(directory / name) for name in ("samples.csv", "updates.csv", "quality.csv"))
+        require(len(samples) == 12 and len(updates) == len(quality) == 12528, "incomplete stream records")
+        timed_updates += len(updates)
+        for index in range(6):
+            work = {}
+            for variant in metadata["variants"]:
+                sample = [r for r in samples if r["variant"] == variant and int(r["round"]) == index]
+                raw = [r for r in updates if r["variant"] == variant and int(r["round"]) == index]
+                q = [r for r in quality if r["variant"] == variant and int(r["round"]) == index]
+                require(len(sample) == 1 and len(raw) == len(q) == 1044, "missing paired round")
+                require([int(r["frame"]) for r in raw] == [int(r["frame"]) for r in q] == list(range(1, 1045)),
+                        "arrival layout differs")
+                require(int(sample[0]["position"]) == ((variant == "after") ^ (index % 2)), "order unbalanced")
+                require(int(sample[0]["elapsed_ns"]) == sum(int(r["elapsed_ns"]) for r in raw), "timers differ")
+                for r, checked in zip(raw, q):
+                    require(int(r["elapsed_ns"]) > 0 and 1 <= int(r["iterations"]) <= 200 and
+                            int(r["requested_calls"]) <= 1, "work bounds differ")
+                    require(int(r["allocations"]) == int(r["requested_bytes"]) == 0 and
+                            r["initial_damping"] == r["final_damping"] == "", "measurement mode differs")
+                    cost, actual, gradient = float(checked["cost"]), float(r["cost"]), float(checked["gradient_inf"])
+                    require(all(map(math.isfinite, (cost, actual, gradient))) and gradient <= 1e-7 and
+                            float(r["gradient_norm"]) <= 8e-8 and abs(cost-actual) <= 1e-10*max(1., cost),
+                            "original-information quality failed")
+                work[variant] = [{k: v for k, v in r.items() if k not in ("variant", "round", "elapsed_ns")}
+                                 for r in raw]
+            require(work["before"] == work["after"], "non-timing work differs")
+        for variant in metadata["variants"]:
+            case = report["cases"][variant]
+            raw = [r for r in updates if r["variant"] == variant]
+            require(case["timing"] == timing_summary([r for r in samples if r["variant"] == variant]), "timing summary differs")
+            for key, field in (("forced_recoveries", "forced_recovery"), ("requested_calls", "requested_calls"),
+                               ("queries", "queries"), ("gaussian_reeliminated", "gaussian_reeliminated")):
+                require(case[key] == sum(int(r[field]) for r in raw), "work summary differs")
+        before, after = (report["cases"][v]["timing"]["median_ms"] for v in ("before", "after"))
+        pairs = {v: {int(r["round"]): int(r["elapsed_ns"]) for r in samples if r["variant"] == v}
+                 for v in metadata["variants"]}
+        faster = sum(pairs["after"][i] < pairs["before"][i] for i in range(6))
+        case = report["cases"]["after"]
+        require(case["speedup_over_before"] == before/after and case["faster_pairs_over_before"] == faster and
+                case["beats_before_in_this_case"] == (before > after and faster*4 >= 6*3), "speed criterion differs")
+        require(gzip.decompress((directory / "before-poses.csv.gz").read_bytes()) ==
+                gzip.decompress((directory / "after-poses.csv.gz").read_bytes()), "complete pose bytes differ")
+        frame, key, count = 1, 0, 0
+        with gzip.open(directory / "after-poses.csv.gz", "rt") as handle:
+            for row in csv.DictReader(handle):
+                require((int(row["frame"]), int(row["key"])) == (frame, key), "pose layout differs")
+                value = tuple(float(row[k]) for k in ("x", "y", "angle"))
+                require(all(map(math.isfinite, value)) and (key != 0 or value == (0., 0., 0.)), "pose/root invalid")
+                count += 1
+                key += 1
+                if key > frame:
+                    frame, key = frame+1, 0
+        require((frame, key, count) == (1045, 0, 546534), "incomplete pose archive")
+    require(timed_updates == 25056, "timed arrival total differs")
+    functional = root / "mit_functional"
+    r = json.loads((functional / "report.json").read_text())
+    m = json.loads((functional / "metadata.json").read_text())
+    require(r["candidate"]["eligible_quality"] and r["reference"]["eligible_quality"] and
+            r["candidate"]["arrivals"] == 1227 and r["agreement"]["max_world_pose_norm"] == 0 and
+            r["agreement"]["max_original_cost_difference"] == 0 and m["ill_conditioned_edge_160_161_uses_ad"],
+            "MIT regression failed")
+    require(gzip.decompress((functional / "before/poses.csv.gz").read_bytes()) ==
+            gzip.decompress((functional / "after/poses.csv.gz").read_bytes()), "MIT pose bytes differ")
+    counts = re.findall(r"test result: ok\. (\d+) passed; 0 failed;", (root / "rust_tests.log").read_text())
+    require(sum(map(int, counts)) == 322 and "test result: ok. 2 passed; 0 failed;" in
+            (root / "example_tests.log").read_text() and "Ran 23 tests" in
+            (root / "python_tests.log").read_text(), "test counts differ")
+    for width_campaign in ("widths", "widths_confirmation"):
+        widths = root / width_campaign
+        wm = json.loads((widths/"metadata.json").read_text())
+        ws = json.loads((widths/"summary.json").read_text())
+        require(ws["eligible"] and [r["dimension"] for r in ws["dimensions"]] == [1,2,6,7,12,13,16,17,32,65], "width coverage differs")
+        require(wm["source_sha256"] == metadata["source_sha256"] and
+                wm["before_source_sha256"] == metadata["before_source_sha256"], "width kernel differs")
+        if args.current_source:
+            for name, value in wm["files_sha256"].items():
+                require(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == value, "width driver changed")
+        wr = rows(widths/"samples.csv")
+        require(len(wr) == 10*(6+2)*2, "missing width samples")
+        for entry in ws["dimensions"]:
+            dimension=entry["dimension"]
+            values={v:[] for v in ("before","after")}
+            allocations={v:[] for v in values}
+            reference=None
+            for mode, rounds in (("timing",6),("allocations",2)):
+                for index in range(rounds):
+                    for variant in values:
+                        text=(widths/f"width{dimension}-{mode}-{index}-{variant}.txt").read_text().splitlines()
+                        require(len(text)==4, "width output incomplete")
+                        if reference is None:reference=text[2:]
+                        require(text[2:]==reference, "width result bits changed")
+                        import io
+                        row=list(csv.DictReader(io.StringIO("\n".join(text[:2]))))[0]
+                        require(int(row["jet_bytes"])==40, "Jet layout changed")
+                        expected_iterations = wm["iterations"] * max(1, 32 // dimension) if mode == "timing" else 1
+                        require(int(row["iterations"]) == expected_iterations and int(row["dimension"]) == dimension,
+                                "width work differs")
+                        if mode=="timing":
+                            require(int(row["allocations"])==int(row["requested_bytes"])==0, "instrumented latency")
+                            values[variant].append(float(row["seconds"]))
+                        else:allocations[variant].append((int(row["allocations"]),int(row["requested_bytes"])))
+            import statistics
+            before,after=(statistics.median(values[v]) for v in values)
+            require(entry["before_seconds"]==before and entry["after_seconds"]==after and entry["median_speedup"]==before/after, "width timing summary differs")
+            for variant in values:
+                require(len(set(allocations[variant]))==1 and list(allocations[variant][0])==entry["allocations_per_call"][variant], "allocation totals differ")
+            require(entry["faster_pairs"]==sum(a<b for b,a in zip(values["before"],values["after"])), "width paired wins differ")
+    trial = root / "split_trial"
+    require(source_fingerprint(trial / "source") == "91e09bb217049c2145716355e474703f331b5316c49b5655947d90a20a352945", "trial source differs")
+    for campaign in ("primary", "confirmation"):
+        directory = trial / campaign
+        m = json.loads((directory / "metadata.json").read_text())
+        r = json.loads((directory / "report.json").read_text())
+        require(m["source_sha256"] == source_fingerprint(trial / "source") and not m["native_timing_measured"] and
+                r["eligible"] and not r["cases"]["after"]["beats_before_in_this_case"], "trial status differs")
+        require(hashlib.sha256((trial / "benchmark_ad_selective_se2_isam").read_bytes()).hexdigest() == m["executable_sha256"], "trial executable differs")
+        for name, value in m["files_sha256"].items():
+            path = trial / Path(name).name if name in ("benchmarks/paired_jet_loop_stream.py", "benchmarks/paired_jet_loop_widths.py") else trial / "source" / name if name.startswith("crates/") else ROOT / name
+            require(hashlib.sha256(path.read_bytes()).hexdigest() == value, "trial driver differs")
+        samples, updates, quality = (rows(directory / name) for name in ("samples.csv", "updates.csv", "quality.csv"))
+        require(len(samples) == 12 and len(updates) == len(quality) == 12528, "trial incomplete")
+        for index in range(6):
+            work = {v: [{k: value for k, value in row.items() if k not in ("variant", "round", "elapsed_ns")}
+                        for row in updates if row["variant"] == v and int(row["round"]) == index]
+                    for v in ("before", "after")}
+            require(work["before"] == work["after"], "trial work differs")
+        for v in ("before", "after"):
+            require(r["cases"][v]["timing"] == timing_summary([row for row in samples if row["variant"] == v]), "trial timing differs")
+        before, after = (r["cases"][v]["timing"]["median_ms"] for v in ("before", "after"))
+        require(r["cases"]["after"]["speedup_over_before"] == before / after, "trial speed ratio differs")
+        require(all(float(q["gradient_inf"]) <= 1e-7 and math.isfinite(float(q["cost"])) for q in quality), "trial accuracy failed")
+        require(gzip.decompress((directory / "before-poses.csv.gz").read_bytes()) ==
+                gzip.decompress((directory / "after-poses.csv.gz").read_bytes()), "trial poses differ")
+    rollback=json.loads((root/"rollback_stages.json").read_text())
+    require(len(rollback["stages"])==40 and rollback["source_only"] and rollback["older_builds_skipped"] and all(s["matches_archived_kernel"] for s in rollback["stages"]), "rollback records differ")
+    print(f"Verified {len(manifest)} artifact hashes, {timed_updates} timed arrivals, "
+          "exact poses/work and reported case-specific speed criteria")
+
+
+if __name__ == "__main__":
+    main()

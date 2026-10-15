@@ -1,0 +1,386 @@
+--- a/crates/ropt/src/bayes_tree/editable.rs
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -84,6 +84,73 @@
+     usize,
+ );
+ 
++#[derive(Debug, Clone)]
++struct Incidence {
++    // Sorted lists preserve the original child/factor row-gathering order.
++    children: Vec<Arc<[usize]>>,
++    factors: Vec<Arc<[GaussianFactorId]>>,
++}
++impl Incidence {
++    fn new(columns: usize) -> Self {
++        Self {
++            children: vec![Arc::from([]); columns],
++            factors: vec![Arc::from([]); columns],
++        }
++    }
++    fn extend(&mut self, columns: usize) {
++        self.children.resize(columns, Arc::from([]));
++        self.factors.resize(columns, Arc::from([]));
++    }
++}
++#[derive(Default)]
++struct IncidenceDelta<T> {
++    removed: Vec<T>,
++    added: Vec<T>,
++}
++fn update_incidence_row<T: Copy + Ord>(
++    old: &[T],
++    delta: IncidenceDelta<T>,
++) -> Result<Arc<[T]>, Error> {
++    // Deltas arrive in ascending unique child/ID order. Merge once per changed
++    // row, including high-degree roots, without repeated insertion or sorting.
++    if delta.removed.windows(2).any(|p| p[0] >= p[1])
++        || delta.added.windows(2).any(|p| p[0] >= p[1])
++    {
++        return Err(Error::InvalidDimensions);
++    }
++    let capacity = old
++        .len()
++        .checked_sub(delta.removed.len())
++        .and_then(|n| n.checked_add(delta.added.len()))
++        .ok_or(Error::InvalidDimensions)?;
++    let mut row = Vec::with_capacity(capacity);
++    let (mut removed, mut added) = (0, 0);
++    for &entry in old {
++        if let Some(&next) = delta.removed.get(removed) {
++            if next < entry {
++                return Err(Error::InvalidDimensions);
++            }
++            if next == entry {
++                removed += 1;
++                continue;
++            }
++        }
++        while delta.added.get(added).is_some_and(|&next| next < entry) {
++            row.push(delta.added[added]);
++            added += 1;
++        }
++        if delta.added.get(added) == Some(&entry) {
++            return Err(Error::InvalidDimensions);
++        }
++        row.push(entry);
++    }
++    if removed != delta.removed.len() {
++        return Err(Error::InvalidDimensions);
++    }
++    row.extend_from_slice(&delta.added[added..]);
++    Ok(Arc::from(row))
++}
++
+ /// Fixed-order scalar Gaussian Bayes forest with original factor ownership and
+ /// cached square-root separator messages. Factor replacement/deletion replays
+ /// only affected original factors and child messages; unchanged cliques share
+@@ -102,6 +169,7 @@
+     // replacement keeps ownership shared. Detaching a changed map is still O(n).
+     factors: Arc<BTreeMap<GaussianFactorId, Arc<GaussianFactor>>>,
+     owners: Arc<BTreeMap<GaussianFactorId, Option<usize>>>,
++    incidence: Arc<Incidence>,
+     factor_entries: usize,
+     message_entries: usize,
+     last_update: EditableBayesTreeUpdate,
+@@ -129,6 +197,7 @@
+             messages: vec![empty_message; n],
+             factors: Arc::new(BTreeMap::new()),
+             owners: Arc::new(BTreeMap::new()),
++            incidence: Arc::new(Incidence::new(n)),
+             factor_entries: 0,
+             message_entries: 0,
+             last_update: EditableBayesTreeUpdate {
+@@ -183,6 +252,9 @@
+         candidate
+             .messages
+             .resize_with(columns, || Arc::new(Message::empty()));
++        if candidate.incidence.children.len() != columns {
++            Arc::make_mut(&mut candidate.incidence).extend(columns);
++        }
+         *self = candidate;
+         Ok(())
+     }
+@@ -332,6 +404,103 @@
+             separators[k] = Arc::from(filled.into_iter().collect::<Vec<_>>());
+         }
+         Ok(Some((separators, parents, owners, count)))
++    }
++    fn updated_incidence(
++        &self,
++        parents: &[Option<usize>],
++        owners: &BTreeMap<GaussianFactorId, Option<usize>>,
++        changed: &BTreeSet<GaussianFactorId>,
++    ) -> Result<Arc<Incidence>, Error> {
++        let n = self.dimension();
++        if parents.len() != n
++            || self.incidence.children.len() != n
++            || self.incidence.factors.len() != n
++        {
++            return Err(Error::InvalidDimensions);
++        }
++        // Fresh full-model construction has no previous ownership to patch.
++        // Enumerate once rather than creating a delta-map entry for each row.
++        if self.owners.is_empty() && owners.values().any(Option::is_some) {
++            let mut children = vec![Vec::new(); n];
++            let mut factors = vec![Vec::new(); n];
++            for (child, &parent) in parents.iter().enumerate() {
++                if let Some(parent) = parent {
++                    children[parent].push(child);
++                }
++            }
++            for (&id, &owner) in owners {
++                if let Some(owner) = owner {
++                    factors[owner].push(id);
++                }
++            }
++            return Ok(Arc::new(Incidence {
++                children: children
++                    .into_iter()
++                    .enumerate()
++                    .map(|(k, row)| {
++                        if row.is_empty() {
++                            self.incidence.children[k].clone()
++                        } else {
++                            Arc::from(row)
++                        }
++                    })
++                    .collect(),
++                factors: factors
++                    .into_iter()
++                    .enumerate()
++                    .map(|(k, row)| {
++                        if row.is_empty() {
++                            self.incidence.factors[k].clone()
++                        } else {
++                            Arc::from(row)
++                        }
++                    })
++                    .collect(),
++            }));
++        }
++        let mut children = BTreeMap::<usize, IncidenceDelta<usize>>::new();
++        let mut factors = BTreeMap::<usize, IncidenceDelta<GaussianFactorId>>::new();
++        for (child, (&old, &new)) in self.tree.parents.iter().zip(parents).enumerate() {
++            if old != new {
++                if let Some(parent) = old {
++                    children.entry(parent).or_default().removed.push(child);
++                }
++                if let Some(parent) = new {
++                    children.entry(parent).or_default().added.push(child);
++                }
++            }
++        }
++        for &id in changed {
++            let old = self.owners.get(&id).copied().flatten();
++            let new = owners.get(&id).copied().flatten();
++            if old != new {
++                if let Some(owner) = old {
++                    factors.entry(owner).or_default().removed.push(id);
++                }
++                if let Some(owner) = new {
++                    factors.entry(owner).or_default().added.push(id);
++                }
++            }
++        }
++        let mut incidence = self.incidence.clone();
++        if !children.is_empty() || !factors.is_empty() {
++            let index = Arc::make_mut(&mut incidence);
++            for (parent, delta) in children {
++                let row = index
++                    .children
++                    .get_mut(parent)
++                    .ok_or(Error::InvalidDimensions)?;
++                *row = update_incidence_row(row, delta)?;
++            }
++            for (owner, delta) in factors {
++                let row = index
++                    .factors
++                    .get_mut(owner)
++                    .ok_or(Error::InvalidDimensions)?;
++                *row = update_incidence_row(row, delta)?;
++            }
++        }
++        Ok(incidence)
+     }
+     fn gather_clique(
+         &self,
+@@ -472,18 +641,9 @@
+                 pending.extend(parents[k]);
+             }
+         }
+-        let mut children = vec![Vec::new(); n];
+-        let mut buckets = vec![Vec::new(); n];
+-        for (child, parent) in parents.iter().enumerate() {
+-            if let Some(parent) = parent {
+-                children[*parent].push(child);
+-            }
+-        }
+-        for (&id, &owner) in owners.iter() {
+-            if let Some(owner) = owner {
+-                buckets[owner].push(id);
+-            }
+-        }
++        let incidence = self.updated_incidence(&parents, &owners, &changed)?;
++        let children = &incidence.children;
++        let buckets = &incidence.factors;
+         let mut report = EditableBayesTreeUpdate {
+             reeliminated_cliques: affected.len(),
+             reused_cliques: n - affected.len(),
+@@ -495,7 +655,7 @@
+             columns.extend(separators[k].iter().copied());
+             let mut rows = 0usize;
+             let mut workspace_entries = 0usize;
+-            for &id in &buckets[k] {
++            for &id in buckets[k].iter() {
+                 let factor = &self.factors[&id];
+                 rows = rows
+                     .checked_add(factor.residual.len())
+@@ -508,7 +668,7 @@
+                     .checked_add(factor.residual.len())
+                     .ok_or(Error::InvalidDimensions)?;
+             }
+-            for &child in &children[k] {
++            for &child in children[k].iter() {
+                 let message = &self.messages[child];
+                 rows = rows
+                     .checked_add(message.rows.len())
+@@ -600,6 +760,7 @@
+         self.tree.parents = parents;
+         self.tree.symbolic_entries = symbolic_entries;
+         self.owners = owners;
++        self.incidence = incidence;
+         self.factor_entries = entries;
+         self.last_update = report;
+         Ok(())
+@@ -609,6 +770,123 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    #[test]
++    fn incidence_deltas_match_complete_sorted_enumeration_and_share_unchanged_rows() {
++        let mut tree =
++            EditableBayesTree::new_ordered(vec![4, 0, 3, 1, 5, 2], Default::default()).unwrap();
++        let permutation = tree.column_permutation().to_vec();
++        let block = |support: &[usize], scale: f64| {
++            GaussianFactor::new(
++                CsrMatrix::from_triplets(
++                    1,
++                    6,
++                    support
++                        .iter()
++                        .map(|&k| (0, permutation[k], scale))
++                        .collect(),
++                )
++                .unwrap(),
++                DVector::from_element(1, -0.5),
++            )
++            .unwrap()
++        };
++        let check = |tree: &EditableBayesTree| {
++            let mut children = vec![Vec::new(); tree.dimension()];
++            let mut factors = vec![Vec::new(); tree.dimension()];
++            for (child, parent) in tree.tree.parents.iter().enumerate() {
++                if let Some(parent) = parent {
++                    children[*parent].push(child);
++                }
++            }
++            for (&id, &owner) in tree.owners.iter() {
++                if let Some(owner) = owner {
++                    factors[owner].push(id);
++                }
++            }
++            for k in 0..tree.dimension() {
++                assert_eq!(tree.incidence.children[k].as_ref(), children[k]);
++                assert_eq!(tree.incidence.factors[k].as_ref(), factors[k]);
++            }
++        };
++        tree.update(
++            &[],
++            (0..6).rev().map(|k| (k as u64, block(&[k], 1.))).collect(),
++        )
++        .unwrap();
++        tree.update(&[], vec![(42, block(&[0, 3, 5], 1.))]).unwrap();
++        check(&tree);
++        let old = tree.incidence.clone();
++        tree.update(&[], vec![(42, block(&[0, 3, 5], 2.))]).unwrap();
++        check(&tree);
++        assert!(Arc::ptr_eq(&old, &tree.incidence));
++        tree.update(&[], vec![(u64::MAX, block(&[], 1.))]).unwrap();
++        check(&tree);
++        assert!(Arc::ptr_eq(&old, &tree.incidence));
++        tree.update(&[], vec![(9, block(&[0, 1], 1.))]).unwrap();
++        check(&tree);
++        assert_eq!(tree.parent(0).unwrap(), Some(1));
++        assert!(!Arc::ptr_eq(&old, &tree.incidence));
++        for k in 0..6 {
++            if old.children[k].as_ref() == tree.incidence.children[k].as_ref() {
++                assert!(Arc::ptr_eq(&old.children[k], &tree.incidence.children[k]));
++            }
++            if old.factors[k].as_ref() == tree.incidence.factors[k].as_ref() {
++                assert!(Arc::ptr_eq(&old.factors[k], &tree.incidence.factors[k]));
++            }
++        }
++        for i in 0..12 {
++            tree.update(
++                &[],
++                vec![(100 + i, block(&[(i as usize) % 5, 5], 1. + i as f64 * 0.1))],
++            )
++            .unwrap();
++            check(&tree);
++        }
++        tree.update(&[], vec![(42, block(&[2, 4], 3.))]).unwrap();
++        check(&tree);
++        tree.update(&[9, 103, u64::MAX], vec![]).unwrap();
++        check(&tree);
++        let snapshot = tree.clone();
++        let overflow = GaussianFactor::new(
++            CsrMatrix::from_triplets(1, 6, vec![]).unwrap(),
++            DVector::from_element(1, 1e308),
++        )
++        .unwrap();
++        assert!(matches!(
++            tree.update(&[], vec![(42, overflow)]),
++            Err(Error::NonFinite)
++        ));
++        assert!(Arc::ptr_eq(&snapshot.incidence, &tree.incidence));
++        assert_eq!(tree.solve().unwrap(), snapshot.solve().unwrap());
++        check(&tree);
++        tree.extend_columns(7).unwrap();
++        check(&tree);
++        for k in 0..6 {
++            assert!(Arc::ptr_eq(
++                &snapshot.incidence.children[k],
++                &tree.incidence.children[k]
++            ));
++            assert!(Arc::ptr_eq(
++                &snapshot.incidence.factors[k],
++                &tree.incidence.factors[k]
++            ));
++        }
++        tree.update(
++            &[],
++            vec![(
++                200,
++                GaussianFactor::new(
++                    CsrMatrix::from_triplets(1, 7, vec![(0, 6, 1.)]).unwrap(),
++                    DVector::from_element(1, -4.),
++                )
++                .unwrap(),
++            )],
++        )
++        .unwrap();
++        check(&tree);
++        assert_eq!(tree.solve().unwrap()[6], 4.);
++        assert_eq!(snapshot.dimension(), 6);
++    }
+     #[test]
+     fn shared_metadata_detaches_only_on_change_and_failed_updates_preserve_snapshots() {
+         let prior = |n: usize, column: usize, target: f64| {
+@@ -667,6 +945,7 @@
+         ));
+         assert!(Arc::ptr_eq(&tree.factors, &retained.factors));
+         assert!(Arc::ptr_eq(&tree.owners, &retained.owners));
++        assert!(Arc::ptr_eq(&tree.incidence, &retained.incidence));
+         assert_eq!(tree.solve().unwrap(), retained.solve().unwrap());
+         assert_eq!(tree.last_update(), retained.last_update());
+         let old_owners = tree.owners.clone();

@@ -1,0 +1,187 @@
+--- a/crates/ropt/src/isam/selective.rs
++++ b/crates/ropt/src/isam/selective.rs
+@@ -72,22 +72,28 @@
+     }
+     let mut start = 0;
+     let mut blocks = Vec::with_capacity(factors.len());
++    let (row_offsets, columns) = j.pattern();
+     for factor in factors {
+-        let mut offsets = vec![0];
+-        let mut columns = Vec::new();
+-        let mut values = Vec::new();
+-        for row in start..start + factor.residuals {
+-            for (column, value) in j.row(row)? {
+-                columns.push(column);
+-                values.push(value);
+-            }
+-            offsets.push(values.len());
+-        }
++        // Each factor owns consecutive canonical rows. Copy its contiguous
++        // coefficients once, with exact lengths, retaining global column IDs.
++        let end = start + factor.residuals;
++        let base = row_offsets[start];
++        let stop = row_offsets[end];
++        let offsets = row_offsets[start..=end]
++            .iter()
++            .map(|&offset| offset - base)
++            .collect();
+         blocks.push(Arc::new(GaussianFactor::new(
+-            CsrMatrix::from_canonical(factor.residuals, j.shape().1, offsets, columns, values)?,
++            CsrMatrix::from_canonical(
++                factor.residuals,
++                j.shape().1,
++                offsets,
++                columns[base..stop].to_vec(),
++                j.values()[base..stop].to_vec(),
++            )?,
+             r.rows(start, factor.residuals).into_owned(),
+         )?));
+-        start += factor.residuals;
++        start = end;
+     }
+     Ok(blocks)
+ }
+@@ -312,3 +318,143 @@
+     }
+     Ok(keys)
+ }
++
++#[cfg(test)]
++mod capture_tests {
++    use super::*;
++
++    fn recipes(rows: &[usize]) -> Vec<SmootherFactor> {
++        rows.iter()
++            .map(|&n| SmootherFactor::analytic(&[], n, Default::default(), |_| unreachable!()))
++            .collect()
++    }
++
++    // Preserve the preceding row-iterator assembly as an independent reference.
++    fn reference(j: &CsrMatrix, r: &DVector<f64>, rows: &[usize]) -> Vec<GaussianFactor> {
++        let mut start = 0;
++        rows.iter()
++            .map(|&n| {
++                let mut offsets = vec![0];
++                let (mut columns, mut values) = (Vec::new(), Vec::new());
++                for row in start..start + n {
++                    for (column, value) in j.row(row).unwrap() {
++                        columns.push(column);
++                        values.push(value);
++                    }
++                    offsets.push(values.len());
++                }
++                let block = GaussianFactor::new(
++                    CsrMatrix::from_canonical(n, j.shape().1, offsets, columns, values).unwrap(),
++                    r.rows(start, n).into_owned(),
++                )
++                .unwrap();
++                start += n;
++                block
++            })
++            .collect()
++    }
++
++    #[test]
++    fn consecutive_capture_preserves_empty_rows_global_columns_and_coefficient_bits() {
++        for columns in [7, 100_000] {
++            let j = CsrMatrix::from_triplets(
++                6,
++                columns,
++                vec![
++                    (0, 0, 1e-200),
++                    (0, columns - 1, -2.),
++                    (2, 3, 1e200),
++                    (4, 1, -1e-100),
++                    (4, 3, 3.),
++                    (4, columns - 1, 5.),
++                ],
++            )
++            .unwrap();
++            let r = DVector::from_vec(vec![-0., 1., -2., 0., 1e-200, -1e200]);
++            for rows in [&[1, 3, 2][..], &[2, 1, 1, 2], &[6], &[1, 1, 1, 1, 1, 1]] {
++                let factors = recipes(rows);
++                let actual = capture(&j, &r, &factors, r.len() + j.nnz()).unwrap();
++                let expected = reference(&j, &r, rows);
++                for (a, b) in actual.iter().zip(&expected) {
++                    assert_eq!(a.jacobian().shape(), b.jacobian().shape());
++                    assert_eq!(a.jacobian().pattern(), b.jacobian().pattern());
++                    assert_eq!(
++                        a.jacobian()
++                            .values()
++                            .iter()
++                            .map(|v| v.to_bits())
++                            .collect::<Vec<_>>(),
++                        b.jacobian()
++                            .values()
++                            .iter()
++                            .map(|v| v.to_bits())
++                            .collect::<Vec<_>>()
++                    );
++                    assert_eq!(
++                        a.residual().iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
++                        b.residual().iter().map(|v| v.to_bits()).collect::<Vec<_>>()
++                    );
++                }
++                let mut cache = FactorCache::new(1);
++                cache.reset(&j, &r, &factors, r.len() + j.nnz()).unwrap();
++                let (assembled_r, assembled_j) = cache.assemble(columns).unwrap();
++                assert_eq!(assembled_j.pattern(), j.pattern());
++                assert_eq!(assembled_j.values(), j.values());
++                assert_eq!(
++                    assembled_r.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
++                    r.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
++                );
++            }
++        }
++        // Constant-only observations, including factors with no active columns.
++        let j = CsrMatrix::from_triplets(3, 0, vec![]).unwrap();
++        let r = DVector::from_vec(vec![1., -0., 2.]);
++        let blocks = capture(&j, &r, &recipes(&[1, 2]), 3).unwrap();
++        assert_eq!(blocks.iter().map(|b| b.jacobian().nnz()).sum::<usize>(), 0);
++        assert_eq!(blocks[1].residual()[0].to_bits(), (-0_f64).to_bits());
++    }
++
++    #[test]
++    fn capture_checks_dimensions_fill_and_finiteness_before_committing_cache() {
++        let j = CsrMatrix::from_triplets(2, 2, vec![(0, 0, 1.), (1, 1, 2.)]).unwrap();
++        let r = DVector::from_vec(vec![1., 2.]);
++        let good = recipes(&[1, 1]);
++        let mut cache = FactorCache::new(1);
++        cache.reset(&j, &r, &good, 4).unwrap();
++        let saved = cache.blocks.clone();
++        let bad_residual = DVector::from_vec(vec![1., f64::NAN]);
++        assert!(matches!(
++            cache.reset(&j, &r, &recipes(&[3]), 4),
++            Err(Error::InvalidDimensions)
++        ));
++        assert!(matches!(
++            cache.reset(&j, &r, &recipes(&[0, 2]), 4),
++            Err(Error::InvalidDimensions)
++        ));
++        assert!(matches!(
++            cache.reset(&j, &r, &recipes(&[usize::MAX, 1]), 4),
++            Err(Error::InvalidDimensions)
++        ));
++        assert!(matches!(
++            cache.reset(&j, &bad_residual, &good, 3),
++            Err(Error::SparseFillLimit { limit: 3 })
++        ));
++        assert!(matches!(
++            cache.reset(&j, &bad_residual, &good, 4),
++            Err(Error::NonFinite)
++        ));
++        assert!(matches!(
++            cache.append(&j, &r, &good, 7),
++            Err(Error::SparseFillLimit { limit: 7 })
++        ));
++        assert_eq!(cache.entries, 4);
++        assert_eq!(cache.blocks.len(), saved.len());
++        assert!(
++            cache
++                .blocks
++                .iter()
++                .zip(&saved)
++                .all(|(a, b)| Arc::ptr_eq(a, b))
++        );
++    }
++}

@@ -97,8 +97,10 @@ pub fn marginalize_linearized(
                 parameters: eliminated,
             });
         }
-        e.qr().q_tr_mul(&mut augmented);
-        augmented = augmented.rows(eliminated, m - eliminated).into_owned();
+        augmented = project_retained(&e.qr(), augmented, eliminated);
+        if !augmented.iter().all(|value| value.is_finite()) {
+            return Err(Error::NonFinite);
+        }
     }
     // QR of the augmented matrix compresses both retained information and the
     // constant residual component, even when the retained Jacobian is singular.
@@ -106,11 +108,35 @@ pub fn marginalize_linearized(
         DMatrix::zeros(1, retained + 1)
     } else {
         let scale = augmented.amax();
-        if scale > 0.0 {
+        // A shared scale can erase a small column, either in division itself
+        // or in the squared norms used by QR. Column scaling commutes with the
+        // orthogonal transformation; restore it on the compressed columns.
+        let separate = scale > 0.0
+            && augmented.column_iter().any(|column| {
+                let largest = column.amax();
+                largest > 0.0 && !(largest / scale).powi(2).is_normal()
+            });
+        let column_scales = separate.then(|| {
+            augmented
+                .column_iter()
+                .map(|column| column.amax())
+                .collect::<Vec<_>>()
+        });
+        if let Some(scales) = &column_scales {
+            for (mut column, &scale) in augmented.column_iter_mut().zip(scales) {
+                if scale > 0.0 {
+                    column.iter_mut().for_each(|value| *value /= scale);
+                }
+            }
+        } else if scale > 0.0 {
             augmented.iter_mut().for_each(|v| *v /= scale);
         }
         let mut r = augmented.qr().r();
-        if scale > 0.0 {
+        if let Some(scales) = &column_scales {
+            for (mut column, &scale) in r.column_iter_mut().zip(scales) {
+                column.scale_mut(scale);
+            }
+        } else if scale > 0.0 {
             r *= scale;
         }
         r
@@ -122,4 +148,58 @@ pub fn marginalize_linearized(
         jacobian: compressed.columns(0, retained).into_owned(),
         residual: compressed.column(retained).into_owned(),
     })
+}
+
+fn project_retained(
+    qr: &nalgebra::linalg::QR<f64, nalgebra::Dyn, nalgebra::Dyn>,
+    mut augmented: DMatrix<f64>,
+    eliminated: usize,
+) -> DMatrix<f64> {
+    let rows = augmented.nrows();
+    let kept = rows - eliminated;
+    // A power-of-two divisor leaves headroom for dot products, doubling and
+    // updates throughout the reflection sequence. Normal scaling is exact.
+    let exponent = (usize::BITS - (rows - 1).leading_zeros()) as i32 + 3;
+    let divisor = 2.0_f64.powi(exponent);
+    let limit = f64::MAX / divisor;
+    let mut scaled = Vec::new();
+    if augmented.amax() > limit {
+        for column in 0..augmented.ncols() {
+            if augmented.column(column).amax() <= limit {
+                continue;
+            }
+            let mut tail: Option<DMatrix<f64>> = None;
+            for row in 0..rows {
+                let value = augmented[(row, column)];
+                let smaller = value / divisor;
+                if value != 0.0 && !smaller.is_normal() {
+                    // Preserve components that would lose precision or vanish
+                    // under scaling. Their independently normalized projection
+                    // is recombined only after discarding eliminated rows.
+                    tail.get_or_insert_with(|| DMatrix::zeros(rows, 1))[(row, 0)] = value;
+                    augmented[(row, column)] = 0.0;
+                } else {
+                    augmented[(row, column)] = smaller;
+                }
+            }
+            let tail = tail.map(|mut tail| {
+                let scale = tail.amax();
+                tail.iter_mut().for_each(|value| *value /= scale);
+                qr.q_tr_mul(&mut tail);
+                (tail.rows(eliminated, kept).into_owned(), scale)
+            });
+            scaled.push((column, tail));
+        }
+    }
+    qr.q_tr_mul(&mut augmented);
+    let mut retained = augmented.rows(eliminated, kept).into_owned();
+    for (column, tail) in scaled {
+        retained.column_mut(column).scale_mut(divisor);
+        if let Some((tail, scale)) = tail {
+            for row in 0..kept {
+                retained[(row, column)] += tail[(row, 0)] * scale;
+            }
+        }
+    }
+    retained
 }

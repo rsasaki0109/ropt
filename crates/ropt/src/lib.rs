@@ -2,6 +2,7 @@
 //! Dense nonlinear least squares with explicit Jacobians and forward differentiation.
 //! Experimental dense/sparse LM, factor graphs and block Schur Bundle Adjustment.
 pub mod autodiff;
+pub mod bayes_tree;
 pub mod camera;
 pub mod covariance;
 pub mod dense;
@@ -22,5 +23,6 @@ pub mod schur;
 pub mod solver;
 pub mod sparse;
 pub mod sparse_direct;
+pub mod sparse_qr;
 pub use nalgebra::{DMatrix, DVector};
 pub use solver::*;

@@ -314,43 +314,104 @@ pub struct SparseLdlSymbolic {
     update_targets: Option<Vec<usize>>,
     assembly_targets: Option<Vec<usize>>,
 }
-impl SparseLdlSymbolic {
-    pub fn analyze(j: &CsrMatrix, options: &SparseLdlOptions) -> Result<Self, Error> {
-        options.validate()?;
-        let (columns, normal_entries) = assemble_pattern(j, options.max_entries)?;
-        let n = columns.len();
-        let permutation = match options.ordering {
-            SparseOrdering::Natural => (0..n).collect(),
-            SparseOrdering::MinimumDegree => {
-                minimum_degree(&columns, normal_entries, options.max_entries)?
-            }
-            SparseOrdering::BlockMinimumDegree { block_size } => {
-                if !n.is_multiple_of(block_size) {
-                    return Err(Error::InvalidDimensions);
-                }
+pub(crate) fn column_ordering(
+    j: &CsrMatrix,
+    options: &SparseLdlOptions,
+) -> Result<Vec<usize>, Error> {
+    options.validate()?;
+    if let SparseOrdering::BlockMinimumDegree { block_size } = options.ordering {
+        let (m, n) = j.shape();
+        if n != 0 && n <= options.max_entries && n.is_multiple_of(block_size) {
+            let (offsets, indices) = j.pattern();
+            // Prove the scalar assembly budget without constructing its graph.
+            // Count all row pairs conservatively, including duplicate supports.
+            let upper = (0..m).try_fold(n, |sum, r| {
+                let width = offsets[r + 1] - offsets[r];
+                sum.checked_add(width.checked_mul(width.saturating_sub(1))? / 2)
+            });
+            if upper.is_some_and(|count| count <= options.max_entries) {
                 let blocks = n / block_size;
                 let mut coarse = (0..blocks)
                     .map(PatternColumn::diagonal)
                     .collect::<Columns>();
                 let mut entries = blocks;
-                for (col, values) in columns.iter().enumerate() {
-                    for &row in values.iter() {
-                        add_pattern_entry(
-                            &mut coarse[col / block_size],
-                            row / block_size,
-                            &mut entries,
-                            options.max_entries,
-                        )?;
+                let mut support = Vec::new();
+                for r in 0..m {
+                    support.clear();
+                    for &column in &indices[offsets[r]..offsets[r + 1]] {
+                        let block = column / block_size;
+                        if support.last() != Some(&block) {
+                            support.push(block);
+                        }
+                    }
+                    for (k, &a) in support.iter().enumerate() {
+                        for &b in &support[k + 1..] {
+                            add_pattern_entry(
+                                &mut coarse[a],
+                                b,
+                                &mut entries,
+                                options.max_entries,
+                            )?;
+                        }
                     }
                 }
-                minimum_degree(&coarse, entries, options.max_entries)?
+                return Ok(minimum_degree(&coarse, entries, options.max_entries)?
                     .into_iter()
                     .flat_map(|block| {
                         (0..block_size).map(move |offset| block * block_size + offset)
                     })
-                    .collect()
+                    .collect());
             }
-        };
+        }
+    }
+    // A loose/overflowed bound does not reject otherwise eligible sparse input:
+    // retain exact scalar counting and all its original budget/error behavior.
+    let (columns, entries) = assemble_pattern(j, options.max_entries)?;
+    choose_ordering(&columns, entries, options)
+}
+fn choose_ordering(
+    columns: &Columns,
+    normal_entries: usize,
+    options: &SparseLdlOptions,
+) -> Result<Vec<usize>, Error> {
+    let n = columns.len();
+    Ok(match options.ordering {
+        SparseOrdering::Natural => (0..n).collect(),
+        SparseOrdering::MinimumDegree => {
+            minimum_degree(columns, normal_entries, options.max_entries)?
+        }
+        SparseOrdering::BlockMinimumDegree { block_size } => {
+            if !n.is_multiple_of(block_size) {
+                return Err(Error::InvalidDimensions);
+            }
+            let blocks = n / block_size;
+            let mut coarse = (0..blocks)
+                .map(PatternColumn::diagonal)
+                .collect::<Columns>();
+            let mut entries = blocks;
+            for (col, values) in columns.iter().enumerate() {
+                for &row in values.iter() {
+                    add_pattern_entry(
+                        &mut coarse[col / block_size],
+                        row / block_size,
+                        &mut entries,
+                        options.max_entries,
+                    )?;
+                }
+            }
+            minimum_degree(&coarse, entries, options.max_entries)?
+                .into_iter()
+                .flat_map(|block| (0..block_size).map(move |offset| block * block_size + offset))
+                .collect()
+        }
+    })
+}
+impl SparseLdlSymbolic {
+    pub fn analyze(j: &CsrMatrix, options: &SparseLdlOptions) -> Result<Self, Error> {
+        options.validate()?;
+        let (columns, normal_entries) = assemble_pattern(j, options.max_entries)?;
+        let n = columns.len();
+        let permutation = choose_ordering(&columns, normal_entries, options)?;
         // Exact original-coordinate normal graph, independent of residual row
         // layout and numerical values. Keep equality checks collision-free.
         let mut normal_offsets = Vec::with_capacity(n + 1);
@@ -1270,5 +1331,42 @@ mod update_cursor_tests {
         let s = SparseLdlSymbolic::analyze(&j, &Default::default()).unwrap();
         assert!(s.has_update_plan());
         assert_eq!(s.update_entries(), 0);
+    }
+}
+
+#[cfg(test)]
+mod coarse_ordering_tests {
+    use super::*;
+    #[test]
+    fn direct_coarse_graph_matches_scalar_projection_orders_and_budget_failures() {
+        for n in [1, 6, 15, 30] {
+            let j = CsrMatrix::from_triplets(
+                3 * n,
+                n,
+                (0..3 * n)
+                    .flat_map(|r| {
+                        (0..n).filter_map(move |c| {
+                            (r % 7 != 0 && ((r + 2 * c) % 5 == 0 || r % n == c))
+                                .then_some((r, c, 1.))
+                        })
+                    })
+                    .collect(),
+            )
+            .unwrap();
+            for block_size in [1, 2, 3, 5] {
+                for max_entries in [n, n + 3, n * (n + 1) / 2, 10_000] {
+                    let options = SparseLdlOptions {
+                        ordering: SparseOrdering::BlockMinimumDegree { block_size },
+                        max_entries,
+                        ..Default::default()
+                    };
+                    let expected =
+                        assemble_pattern(&j, max_entries).and_then(|(columns, entries)| {
+                            choose_ordering(&columns, entries, &options)
+                        });
+                    assert_eq!(column_ordering(&j, &options), expected);
+                }
+            }
+        }
     }
 }

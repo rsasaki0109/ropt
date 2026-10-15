@@ -1,5 +1,6 @@
 """Shared nonlinear input and independent original-energy/gradient oracle."""
 import math
+from information_precision import energy_weighted_residual
 from pathlib import Path
 
 
@@ -60,8 +61,8 @@ def energy_gradient(poses, edges):
         c,s,cz,sz = math.cos(t),math.sin(t),math.cos(zt),math.sin(zt)
         qx,qy = c*(bx-x)+s*(by-y), -s*(bx-x)+c*(by-y)
         r = (cz*(qx-zx)+sz*(qy-zy), -sz*(qx-zx)+cz*(qy-zy), wrap(bt-t-zt))
-        w = (i11*r[0]+i12*r[1]+i13*r[2], i12*r[0]+i22*r[1]+i23*r[2], i13*r[0]+i23*r[1]+i33*r[2])
-        cost += .5*sum(v*u for v,u in zip(r,w))
+        energy, w = energy_weighted_residual(r,(i11,i12,i13,i22,i23,i33))
+        cost += energy
         # Differentiate in world translation, then rotate into each body's tangent.
         d = t+zt; cd,sd = math.cos(d),math.sin(d)
         gx,gy = cd*w[0]-sd*w[1],sd*w[0]+cd*w[1]

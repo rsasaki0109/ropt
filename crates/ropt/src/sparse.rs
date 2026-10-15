@@ -12,11 +12,15 @@ pub struct CsrMatrix {
 }
 impl CsrMatrix {
     /// Sort entries and sum duplicates. Exact zero entries are removed.
+    /// Returns `InvalidDimensions` if the row-offset array cannot be represented.
+    /// This checks allocation layout limits, not available memory.
     pub fn from_triplets(
         rows: usize,
         columns: usize,
         mut entries: Vec<(usize, usize, f64)>,
     ) -> Result<Self, Error> {
+        let offset_count = rows.checked_add(1).ok_or(Error::InvalidDimensions)?;
+        std::alloc::Layout::array::<usize>(offset_count).map_err(|_| Error::InvalidDimensions)?;
         if entries.iter().any(|&(r, c, _)| r >= rows || c >= columns) {
             return Err(Error::InvalidDimensions);
         }
@@ -36,7 +40,7 @@ impl CsrMatrix {
                 _ => combined.push((r, c, v)),
             }
         }
-        let mut offsets = vec![0; rows + 1];
+        let mut offsets = vec![0; offset_count];
         let mut indices = Vec::new();
         let mut values = Vec::new();
         for (r, c, v) in combined {
@@ -288,8 +292,25 @@ pub struct CgReport {
     pub iterations: usize,
     pub residual_norm: f64,
 }
+// Preserve the usual dot/sqrt path, but avoid squaring away tiny residuals or
+// overflowing on large vectors whose Euclidean norm is still representable.
+fn cg_norm(vector: &DVector<f64>) -> Result<f64, Error> {
+    let squared = vector.norm_squared();
+    let norm = if squared.is_normal() {
+        squared.sqrt()
+    } else {
+        vector.iter().fold(0_f64, |norm, value| norm.hypot(*value))
+    };
+    if norm.is_finite() {
+        Ok(norm)
+    } else {
+        Err(Error::NonFinite)
+    }
+}
 /// Zero-initialized PCG with a Jacobi preconditioner. A recursive residual alone
 /// never establishes convergence: the true b-Ax residual is verified before return.
+/// Extreme residual norms use scaled arithmetic; recurrence dot products can
+/// still break down, in which case an error is returned rather than convergence.
 pub fn conjugate_gradient(
     operator: &impl LinearOperator,
     b: &DVector<f64>,
@@ -314,6 +335,10 @@ pub fn conjugate_gradient(
 }
 /// Zero-initialized PCG with an explicit SPD preconditioner and checked true residual.
 /// Does not certify global SPD; both operator and preconditioner must satisfy their contracts.
+/// The final allowed step always checks `b - A*x` before reporting the iteration
+/// limit. No preconditioner application is performed to prepare a further step.
+/// Recurrence breakdown and nonfinite search directions are rejected before
+/// evaluating the operator on the affected direction.
 pub fn conjugate_gradient_preconditioned(
     operator: &impl LinearOperator,
     preconditioner: &impl crate::preconditioner::Preconditioner,
@@ -333,10 +358,7 @@ pub fn conjugate_gradient_preconditioned(
         }
         finite_vector(z)
     };
-    let norm = b.norm();
-    if !norm.is_finite() {
-        return Err(Error::NonFinite);
-    }
+    let norm = cg_norm(b)?;
     let threshold = options
         .absolute_tolerance
         .max(options.relative_tolerance * norm);
@@ -354,11 +376,12 @@ pub fn conjugate_gradient_preconditioned(
     let mut ap = DVector::zeros(n);
     apply(&x, &mut ap)?;
     let mut r = b - &ap;
-    if r.norm() <= threshold {
+    let residual_norm = cg_norm(&r)?;
+    if residual_norm <= threshold {
         return Ok(CgReport {
             x,
             iterations: 0,
-            residual_norm: r.norm(),
+            residual_norm,
         });
     }
     let mut z = DVector::zeros(n);
@@ -367,12 +390,18 @@ pub fn conjugate_gradient_preconditioned(
     let mut true_r = DVector::zeros(n);
     let mut rz = r.dot(&z);
     for iteration in 1..=options.max_iterations {
-        apply(&p, &mut ap)?;
-        let curvature = p.dot(&ap);
-        if !curvature.is_finite() || !rz.is_finite() {
+        if !rz.is_finite() {
             return Err(Error::NonFinite);
         }
-        if curvature <= 0.0 || rz <= 0.0 {
+        if rz <= 0.0 {
+            return Err(Error::LinearSolve);
+        }
+        apply(&p, &mut ap)?;
+        let curvature = p.dot(&ap);
+        if !curvature.is_finite() {
+            return Err(Error::NonFinite);
+        }
+        if curvature <= 0.0 {
             return Err(Error::LinearSolve);
         }
         let alpha = rz / curvature;
@@ -380,18 +409,21 @@ pub fn conjugate_gradient_preconditioned(
         r.axpy(-alpha, &ap, 1.0);
         finite_vector(&x)?;
         finite_vector(&r)?;
-        if r.norm() <= threshold {
+        if iteration == options.max_iterations || cg_norm(&r)? <= threshold {
             apply(&x, &mut true_r)?;
             for k in 0..n {
                 true_r[k] = b[k] - true_r[k];
             }
-            let residual_norm = true_r.norm();
+            let residual_norm = cg_norm(&true_r)?;
             if residual_norm <= threshold {
                 return Ok(CgReport {
                     x,
                     iterations: iteration,
                     residual_norm,
                 });
+            }
+            if iteration == options.max_iterations {
+                break;
             }
             // Restart if rounding made the recursive residual too optimistic.
             r.copy_from(&true_r);
@@ -410,6 +442,7 @@ pub fn conjugate_gradient_preconditioned(
         }
         let beta = next / rz;
         p.axpy(1.0, &z, beta);
+        finite_vector(&p)?;
         rz = next;
     }
     Err(Error::LinearIterationLimit {

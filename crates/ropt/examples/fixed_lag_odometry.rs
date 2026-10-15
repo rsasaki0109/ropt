@@ -46,6 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut max_error = 0.0_f64;
     let mut max_variables = 0;
     let mut max_factors = 0;
+    let mut finalized = Vec::new();
     println!("frame,live_variables,live_factors,expired,position_error,window_surrogate_cost");
     for frame in 1..=80_u64 {
         truth = truth.compose(increment);
@@ -102,10 +103,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 report.final_cost
             );
         }
+        // Applications can retain final poses while the smoother stays bounded.
+        // These snapshots are never revised by later window optimizations.
+        finalized.extend(report.marginalized_estimates);
         if max_variables > 6 || max_factors > 12 || error > 0.3 {
             return Err("window/error regression failed".into());
         }
     }
+    if finalized.len() + smoother.variable_count() != 81 {
+        return Err("missing trajectory snapshots".into());
+    }
+    for (_, value) in &finalized {
+        read_se2(value)?;
+    }
+    eprintln!(
+        "retained {} finalized poses outside the live window",
+        finalized.len()
+    );
     let covariance = smoother.marginal_covariance(&[80], &Default::default())?;
     eprintln!(
         "80 frames; maximum live variables={max_variables}, factors={max_factors}, position error={max_error:.8} m; latest right-tangent stddev={:?}",

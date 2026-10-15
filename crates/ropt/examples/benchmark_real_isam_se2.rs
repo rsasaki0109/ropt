@@ -17,5 +17,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .zip(report.batch_final_damping)
                 .map(|(a, b)| (report.batch_trials, a, b))
         },
+        None,
     )
 }

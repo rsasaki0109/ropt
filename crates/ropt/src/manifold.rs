@@ -53,6 +53,23 @@ pub struct SE2 {
     pub translation: Vector2<f64>,
 }
 impl SE2 {
+    /// Right/body Cartesian chart: compose a translation and an SO2 increment.
+    /// Distinct from the group exponential; its differential at zero is identity.
+    pub fn retract_cartesian(self, d: Vector3<f64>) -> Self {
+        self.compose(Self {
+            translation: Vector2::new(d[0], d[1]),
+            rotation: SO2::exp(d[2]),
+        })
+    }
+    /// Inverse Cartesian chart, with principal relative rotation.
+    pub fn local_cartesian(self, b: Self) -> Vector3<f64> {
+        let translation = self.rotation.inverse().0 * (b.translation - self.translation);
+        Vector3::new(
+            translation[0],
+            translation[1],
+            self.rotation.local(b.rotation),
+        )
+    }
     pub fn exp(v: Vector3<f64>) -> Self {
         let w = v[2];
         let (a, b) = if w.abs() < 1e-6 {

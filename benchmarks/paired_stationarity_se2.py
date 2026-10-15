@@ -1,0 +1,131 @@
+"""Compare current ropt policies at unchanged original-information accuracy.
+
+Native poses/costs are a hashed archived reference, not fresh native timings.
+"""
+import argparse
+import csv
+import gzip
+import hashlib
+import itertools
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+
+from paired_pcg import source_fingerprint
+from paired_isam2 import agreement, validate
+from pose_graph import ROOT, environment, require, timing_summary
+from real_se2_stream import column_normalized_gradient, load, write
+
+
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def reference(archive, dataset, frames):
+    manifest=json.loads((archive/'artifacts_sha256.json').read_text())
+    for name in ('metadata.json','report.json','quality.csv','native-poses.csv.gz'):
+        require(digest(archive/name)==manifest[name],'archived reference changed: '+name)
+    metadata=json.loads((archive/'metadata.json').read_text())
+    require(metadata['dataset']['source_sha256']==dataset['source_sha256'],'different archived dataset')
+    require(metadata['dataset']['stream_sha256']==dataset['stream_sha256'],'different archived stream')
+    require(json.loads((archive/'report.json').read_text())['eligible'],'ineligible reference')
+    poses=[[] for _ in range(frames)]
+    with gzip.open(archive/'native-poses.csv.gz','rt') as f:
+        for row in csv.DictReader(f):
+            frame,key=int(row['frame']),int(row['key'])
+            require(1<=frame<=frames and key==len(poses[frame-1]),'invalid archived poses')
+            poses[frame-1].append(tuple(float(row[k]) for k in ('x','y','angle')))
+    with (archive/'quality.csv').open() as f:
+        quality=[{k:float(row[k]) for k in ('cost','gradient_inf')} for row in csv.DictReader(f)
+                 if row['variant']=='native' and row['round']=='0']
+    require(len(quality)==frames and all(len(values)==k+1 for k,values in enumerate(poses,1)), 'incomplete native reference')
+    require(max(row['gradient_inf'] for row in quality)<=1e-7,'archived native gradient fails')
+    return poses,quality,{name:manifest[name] for name in ('metadata.json','report.json','quality.csv','native-poses.csv.gz')}
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    for name in ('binary','input','reference','output'):
+        p.add_argument('--'+name,type=Path,required=True)
+    p.add_argument('--rounds',type=int,default=6)
+    p.add_argument('--cpu',type=int,default=0)
+    p.add_argument('--selected-cap',type=int,default=1)
+    args=p.parse_args()
+    require(args.rounds>0 and args.rounds%6==0,'need six-order balanced campaigns')
+    require(0<=args.selected_cap<=198,'invalid selected cap')
+    out=args.output.resolve();require(not out.is_relative_to(ROOT),'output outside checkout required');out.mkdir()
+    dataset=write(args.input,out/'input.stream');require(dataset['complete_dataset'],'partial stream is ineligible')
+    problem=load(args.input);frames=len(problem[1])
+    native_poses,native_quality,reference_hashes=reference(args.reference,dataset,frames)
+    files=('crates/ropt/examples/benchmark_selective_se2_isam.rs','crates/ropt/examples/support/real_selective_se2.rs',
+           'crates/ropt/examples/support/real_se2_benchmark.rs','crates/ropt/examples/support/allocation_counter.rs',
+           'benchmarks/paired_stationarity_se2.py','benchmarks/paired_isam2.py','benchmarks/real_se2_stream.py',
+           'benchmarks/se2_stream.py','benchmarks/information_precision.py')
+    metadata={'dataset':dataset,'source_sha256':source_fingerprint(ROOT),'executable_sha256':digest(args.binary),
+              'files_sha256':{name:digest(ROOT/name) for name in files},'environment':environment(),
+              'variants':['full','global','editable'],'rounds':args.rounds,'cpu_affinity':[args.cpu],
+              'selected_cap':args.selected_cap,'native_timing_measured':False,
+              'native_reference_directory':str(args.reference.resolve().relative_to(ROOT)),
+              'native_reference_sha256':reference_hashes,
+              'gates':{'original_column_normalized_gradient_inf':1e-7,'world_pose_norm_difference':2e-6,
+                       'relative_cost_difference':1e-9,'relative_reported_cost_difference':1e-10,'fixed_root':'exact'},
+              'warmup_streams_per_process':1,'timed_streams_per_process':1,
+              'policy':'full: forced QR/GN refresh; global/editable: new-factor update then at most selected_cap requested passes, explicit full recovery if target unmet; all use current nonlinear normalized gradient target 8e-8, keys above target/2; periodic refresh disabled',
+              'timed':'updates, explicit nonlinear probes, requested relinearization, failed attempts, full recovery and owned reports; parsing/factor recipes, external checking and serialization excluded',
+              'allocator_counting':False,'memory_measured':False,
+              'scope':'current ropt policy comparison; archived precision-corrected GTSAM poses/costs check agreement only; no fresh native speed claim'}
+    (out/'metadata.json').write_text(json.dumps(metadata,indent=2)+'\n')
+    orders=list(itertools.permutations(metadata['variants']))
+    env={**os.environ,'OMP_NUM_THREADS':'1','OPENBLAS_NUM_THREADS':'1','MKL_NUM_THREADS':'1'}
+    samples=[];updates=[];quality=[];comparisons=[]
+    for index in range(args.rounds):
+        measured={}
+        for position,variant in enumerate(orders[index%6]):
+            directory=out/f'{index}-{variant}'
+            with (out/f'{index}-{variant}.log').open('w') as log:
+                subprocess.run(['taskset','-c',str(args.cpu),str(args.binary.resolve()),str(out/'input.stream'),
+                                str(directory),'1','1',variant,str(args.selected_cap)],env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
+            poses,checks,raw,sample=validate(directory,frames,problem,column_normalized_gradient,1e-7)
+            require(all(row['initial_damping']==row['final_damping']=='' for row in raw),'unexpected damping')
+            require(all(float(row['gradient_norm'])<=8e-8 for row in raw),'internal target missed')
+            if variant=='full':require(all(int(row['requested_calls'])==int(row['forced_recovery'])==0 for row in raw),'baseline policy changed')
+            else:require(all(int(row['requested_calls'])<=args.selected_cap for row in raw),'selected cap changed')
+            compared=agreement(poses,native_poses,checks,native_quality)
+            comparisons.append({'round':index,'variant':variant,'reference':'archived native',**compared})
+            measured[variant]=poses,checks
+            samples.append({'variant':variant,'round':index,'position':position,**sample})
+            updates.extend({'variant':variant,'round':index,**row} for row in raw)
+            quality.extend({'variant':variant,'round':index,**row} for row in checks)
+            if index==0:
+                with (out/f'{variant}-poses.csv.gz').open('wb') as dest:
+                    with gzip.GzipFile(fileobj=dest,mode='wb',filename='',mtime=0) as f:f.write((directory/'poses.csv').read_bytes())
+                (out/f'{variant}-options.txt').write_bytes((directory/'options.txt').read_bytes())
+            print(f'round {index} {variant}: {int(sample["elapsed_ns"])/1e9:.6f}s; all {frames} original-information prefixes and archived native agreement pass',flush=True)
+        for variant in ('global','editable'):
+            comparisons.append({'round':index,'variant':variant,'reference':'current full',**agreement(
+                measured[variant][0],measured['full'][0],measured[variant][1],measured['full'][1])})
+        for variant in metadata['variants']:shutil.rmtree(out/f'{index}-{variant}')
+    require(source_fingerprint(ROOT)==metadata['source_sha256'],'solver changed during campaign')
+    require(digest(args.binary)==metadata['executable_sha256'],'binary changed during campaign')
+    require(all(digest(ROOT/name)==value for name,value in metadata['files_sha256'].items()),'runner changed during campaign')
+    report={'eligible':True,'timed_updates':args.rounds*3*frames,'comparisons':comparisons,'native_timing_measured':False,'cases':{}}
+    for variant in metadata['variants']:
+        raw=[row for row in updates if row['variant']==variant]
+        report['cases'][variant]={'timing':timing_summary([row for row in samples if row['variant']==variant]),
+            'max_normalized_gradient':max(row['gradient_inf'] for row in quality if row['variant']==variant),
+            'forced_recoveries':sum(int(row['forced_recovery']) for row in raw),'requested_calls':sum(int(row['requested_calls']) for row in raw),
+            'queries':sum(int(row['queries']) for row in raw),'gaussian_reeliminated':sum(int(row['gaussian_reeliminated']) for row in raw)}
+    by_round={variant:{int(row['round']):int(row['elapsed_ns']) for row in samples if row['variant']==variant} for variant in metadata['variants']}
+    for variant in ('global','editable'):
+        case=report['cases'][variant];case['speedup_over_current_full']=report['cases']['full']['timing']['median_ms']/case['timing']['median_ms']
+        case['faster_pairs_over_full']=sum(by_round[variant][index]<by_round['full'][index] for index in range(args.rounds))
+        case['beats_full_in_this_case']=case['speedup_over_current_full']>1 and case['faster_pairs_over_full']*4>=args.rounds*3
+    for name,rows in [('samples.csv',samples),('updates.csv',updates),('quality.csv',quality)]:
+        with (out/name).open('w') as f:
+            fields=list(dict.fromkeys(key for row in rows for key in row));writer=csv.DictWriter(f,fieldnames=fields);writer.writeheader();writer.writerows(rows)
+    (out/'report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({k:v for k,v in report.items() if k!='comparisons'},indent=2),flush=True)
+
+
+if __name__=='__main__':main()

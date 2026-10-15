@@ -1,0 +1,17 @@
+{
+  "scope": "synthetic functional demonstration; no timing, coverage or native comparison",
+  "command": "cargo run --locked --offline --example fixed_lag_covariance -- --adaptive",
+  "updates": 12,
+  "retired_snapshots": 10,
+  "max_live_variables_including_fixed_root": 6,
+  "final_live_variables_including_fixed_root": 3,
+  "simultaneous_retirements_at_update_9": 4,
+  "default_csv_byte_identical": true,
+  "pre_post_latest_covariance_checks": "all 12 pass, enforced by the executable",
+  "files_sha256": {
+    "crates/ropt/examples/fixed_lag_covariance.rs": "bb9f4df4fbdd470f5ba5a5945b48610195596e1b3942b6a47036c16921a5db94",
+    "benchmarks/plot_fixed_lag_covariance.py": "bc3d4ae8fd89bdf2cfadc07848bd295e8c943ecc8858a4e8ba8be99760d9111d",
+    "docs/assets/adaptive-fixed-lag.csv": "fc16caefedec76657391c97d350957eb6668fa72489ead61c5d21bab8b9df812",
+    "docs/assets/adaptive-fixed-lag.png": "44d0ba35b994b582fe96c71334141b3e5e287812c1bbb10274b45c578b9f23cc"
+  }
+}

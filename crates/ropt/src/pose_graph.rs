@@ -11,15 +11,22 @@ pub type Pose2Linearization = (Vector3<f64>, Matrix3<f64>, Matrix3<f64>);
 #[derive(Debug, Clone, Copy)]
 pub struct RelativePose2 {
     measurement: SE2,
+    measurement_angle: f64,
+    measurement_cosine: f64,
+    measurement_sine: f64,
 }
 impl RelativePose2 {
     pub fn new(measurement: SE2) -> Result<Self, Error> {
-        if !measurement.translation.iter().all(|x| x.is_finite())
-            || !measurement.rotation.log().is_finite()
-        {
+        let angle = measurement.rotation.log();
+        if !measurement.translation.iter().all(|x| x.is_finite()) || !angle.is_finite() {
             return Err(Error::NonFinite);
         }
-        Ok(Self { measurement })
+        Ok(Self {
+            measurement,
+            measurement_angle: angle,
+            measurement_cosine: angle.cos(),
+            measurement_sine: angle.sin(),
+        })
     }
     pub fn residual(self, a: SE2, b: SE2) -> Result<Vector3<f64>, Error> {
         let delta = self.measurement.inverse().compose(a.inverse().compose(b));
@@ -36,13 +43,52 @@ impl RelativePose2 {
     /// Exact analytic right-tangent Jacobians in g2o measurement coordinates.
     /// The principal angle is differentiable away from its pi branch cut.
     pub fn linearize(self, a: SE2, b: SE2) -> Result<Pose2Linearization, Error> {
-        let (ta, tb, z) = (
+        self.linearize_parameters(
+            a.translation,
+            b.translation,
             a.rotation.log(),
             b.rotation.log(),
-            self.measurement.rotation.log(),
+        )
+    }
+    /// Analytic right-tangent Jacobians directly from ambient [x, y, angle].
+    /// Principal input angles avoid a sin/cos -> group -> atan2 round trip.
+    /// Other finite angles use the group chart's range reduction before subtraction.
+    pub fn linearize_ambient(self, a: &[f64], b: &[f64]) -> Result<Pose2Linearization, Error> {
+        if a.len() != 3 || b.len() != 3 {
+            return Err(Error::InvalidDimensions);
+        }
+        if !a.iter().chain(b).all(|value| value.is_finite()) {
+            return Err(Error::NonFinite);
+        }
+        let principal = |angle: f64| {
+            if (-std::f64::consts::PI..=std::f64::consts::PI).contains(&angle) {
+                angle
+            } else {
+                crate::manifold::SO2::exp(angle).log()
+            }
+        };
+        self.linearize_parameters(
+            nalgebra::Vector2::new(a[0], a[1]),
+            nalgebra::Vector2::new(b[0], b[1]),
+            principal(a[2]),
+            principal(b[2]),
+        )
+    }
+    fn linearize_parameters(
+        self,
+        a: nalgebra::Vector2<f64>,
+        b: nalgebra::Vector2<f64>,
+        ta: f64,
+        tb: f64,
+    ) -> Result<Pose2Linearization, Error> {
+        let z = self.measurement_angle;
+        let (ca, sa, cz, sz) = (
+            ta.cos(),
+            ta.sin(),
+            self.measurement_cosine,
+            self.measurement_sine,
         );
-        let (ca, sa, cz, sz) = (ta.cos(), ta.sin(), z.cos(), z.sin());
-        let difference = b.translation - a.translation;
+        let difference = b - a;
         let qx = ca * difference.x + sa * difference.y;
         let qy = -sa * difference.x + ca * difference.y;
         let x = qx - self.measurement.translation.x;
@@ -100,11 +146,11 @@ impl RelativePose2 {
         let s = a[2].sin();
         let x = &c * &dx + &s * &dy - self.measurement.translation.x;
         let y = -&s * dx + c * dy - self.measurement.translation.y;
-        let z = self.measurement.rotation.log();
+        let z = self.measurement_angle;
         let angle = &b[2] - &a[2] - z;
         let r = vec![
-            z.cos() * &x + z.sin() * &y,
-            -z.sin() * x + z.cos() * y,
+            self.measurement_cosine * &x + self.measurement_sine * &y,
+            -self.measurement_sine * x + self.measurement_cosine * y,
             angle.sin().atan2(&angle.cos()),
         ];
         for x in &r {
@@ -121,9 +167,13 @@ pub fn add_relative_pose2_factor(
     measurement: SE2,
     options: FactorOptions,
 ) -> Result<(), Error> {
-    if !matches!(graph.variable_kind(a)?, VariableKind::SE2)
-        || !matches!(graph.variable_kind(b)?, VariableKind::SE2)
-    {
+    if !matches!(
+        graph.variable_kind(a)?,
+        VariableKind::SE2 | VariableKind::SE2Cartesian
+    ) || !matches!(
+        graph.variable_kind(b)?,
+        VariableKind::SE2 | VariableKind::SE2Cartesian
+    ) {
         return Err(Error::InvalidDimensions);
     }
     let cost = RelativePose2::new(measurement)?;
@@ -140,9 +190,13 @@ pub fn add_relative_pose2_factor_analytic(
     measurement: SE2,
     options: FactorOptions,
 ) -> Result<(), Error> {
-    if !matches!(graph.variable_kind(a)?, VariableKind::SE2)
-        || !matches!(graph.variable_kind(b)?, VariableKind::SE2)
-    {
+    if !matches!(
+        graph.variable_kind(a)?,
+        VariableKind::SE2 | VariableKind::SE2Cartesian
+    ) || !matches!(
+        graph.variable_kind(b)?,
+        VariableKind::SE2 | VariableKind::SE2Cartesian
+    ) {
         return Err(Error::InvalidDimensions);
     }
     let cost = RelativePose2::new(measurement)?;

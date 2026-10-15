@@ -1,0 +1,247 @@
+--- a/crates/ropt/src/noise.rs
++++ b/crates/ropt/src/noise.rs
+@@ -1,12 +1,14 @@
+ //! Measurement whitening. A transform W maps raw residuals and Jacobians into
+ //! normalized units. For covariance Sigma, W Sigma Wᵀ = I and WᵀW = Sigma^-1.
+ use crate::{DMatrix, DVector, Error};
++mod precision;
+ #[derive(Debug, Clone)]
+ enum Whitening {
+     Unit,
+     Scalar(f64),
+     Diagonal(DVector<f64>),
+     Matrix(DMatrix<f64>),
++    PreciseInformation(precision::PreciseMatrix),
+ }
+ 
+ #[cfg(test)]
+@@ -15,6 +17,32 @@
+ 
+     fn bits(values: impl Iterator<Item = f64>) -> Vec<u64> {
+         values.map(f64::to_bits).collect()
++    }
++
++    #[test]
++    fn compensated_whitening_reuses_scratch_after_residual_and_jacobian_overflow() {
++        let a = 2_f64.powi(53) + 4.;
++        let b = 2_f64.powi(53);
++        let noise =
++            NoiseModel::from_information(DMatrix::from_row_slice(2, 2, &[a, b, b, a])).unwrap();
++        let mut workspace = WhiteningWorkspace::default();
++        for (value, derivative) in [(f64::MAX, 0.), (0., f64::MAX)] {
++            let mut r = DVector::from_element(2, value);
++            let mut blocks = vec![DMatrix::from_element(2, 1, derivative)];
++            assert_eq!(
++                noise.whiten(&mut r, &mut blocks, &mut workspace),
++                Err(Error::NonFinite)
++            );
++            let mut r = DVector::from_vec(vec![1., -1.]);
++            let mut blocks = vec![
++                DMatrix::from_column_slice(2, 1, &[1., -1.]),
++                DMatrix::zeros(2, 0),
++            ];
++            noise.whiten(&mut r, &mut blocks, &mut workspace).unwrap();
++            assert!((0.5 * r.norm_squared() - 4.).abs() < 2e-14);
++            assert_eq!(bits(r.iter().copied()), bits(blocks[0].iter().copied()));
++            assert_eq!(blocks[1].shape(), (2, 0));
++        }
+     }
+ 
+     #[test]
+@@ -188,6 +216,9 @@
+     }
+     /// Factor SPD information as Omega=L*Lᵀ and whiten with W=Lᵀ.
+     /// The transpose matters: Wᵀ*W must equal Omega, including correlations.
++    /// Small relative Cholesky pivots use compensated coefficients and products
++    /// to preserve weak directions. Information is never regularized; returned
++    /// weighted residuals and Jacobians still use `f64`.
+     pub fn from_information(information: DMatrix<f64>) -> Result<Self, Error> {
+         let n = information.nrows();
+         if n == 0 || information.ncols() != n {
+@@ -199,13 +230,27 @@
+         if (&information - information.transpose()).amax() > 1e-12 * information.amax() {
+             return Err(Error::InvalidOptions);
+         }
+-        let lower = information.cholesky().ok_or(Error::InvalidOptions)?.l();
+-        Self::sqrt_information(lower.transpose())
++        let lower = information.clone().cholesky().map(|factor| factor.l());
++        // A small Schur pivot loses significant bits under ordinary subtraction.
++        // Only such information matrices pay for compensated factorization and
++        // coefficient products; ordinary whitening keeps its existing arithmetic.
++        const ROOT_PIVOT_RATIO: f64 = 1. / 8192.;
++        if lower.as_ref().is_none_or(|l| {
++            (0..n).any(|i| l[(i, i)] / information[(i, i)].sqrt() < ROOT_PIVOT_RATIO)
++        }) {
++            return Ok(Self {
++                whitening: Whitening::PreciseInformation(
++                    precision::PreciseMatrix::from_information(&information)?,
++                ),
++            });
++        }
++        Self::sqrt_information(lower.unwrap().transpose())
+     }
+     pub(crate) fn validate_dimension(&self, rows: usize) -> Result<(), Error> {
+         let dimension = match &self.whitening {
+             Whitening::Matrix(w) => Some(w.nrows()),
+             Whitening::Diagonal(w) => Some(w.len()),
++            Whitening::PreciseInformation(w) => Some(w.dimension()),
+             _ => None,
+         };
+         if dimension.is_some_and(|n| n != rows) {
+@@ -252,6 +297,16 @@
+                     std::mem::swap(block, &mut workspace.block);
+                 }
+             }
++            Whitening::PreciseInformation(w) => {
++                workspace.residual.resize_vertically_mut(residual.len(), 0.);
++                w.multiply_vector(residual, &mut workspace.residual)?;
++                std::mem::swap(residual, &mut workspace.residual);
++                for block in &mut *blocks {
++                    workspace.block.resize_mut(block.nrows(), block.ncols(), 0.);
++                    w.multiply_block(block, &mut workspace.block)?;
++                    std::mem::swap(block, &mut workspace.block);
++                }
++            }
+         }
+         if !residual
+             .iter()
+--- /dev/null
++++ b/crates/ropt/src/noise/precision.rs
+@@ -0,0 +1,137 @@
++//! Compensated arithmetic for ill-conditioned information whitening only.
++use crate::{DMatrix, DVector, Error};
++
++#[derive(Clone, Copy, Default, Debug)]
++struct Wide {
++    hi: f64,
++    lo: f64,
++}
++impl Wide {
++    fn new(value: f64) -> Self {
++        Self { hi: value, lo: 0. }
++    }
++    fn sum(a: f64, b: f64) -> Self {
++        let hi = a + b;
++        let tail = hi - a;
++        Self {
++            hi,
++            lo: (a - (hi - tail)) + (b - tail),
++        }
++    }
++    fn add(self, other: Self) -> Self {
++        let s = Self::sum(self.hi, other.hi);
++        Self::sum(s.hi, s.lo + self.lo + other.lo)
++    }
++    fn neg(self) -> Self {
++        Self {
++            hi: -self.hi,
++            lo: -self.lo,
++        }
++    }
++    fn sub(self, other: Self) -> Self {
++        self.add(other.neg())
++    }
++    fn mul(self, other: Self) -> Self {
++        let hi = self.hi * other.hi;
++        let lo = self.hi.mul_add(other.hi, -hi)
++            + self.hi * other.lo
++            + self.lo * other.hi
++            + self.lo * other.lo;
++        Self::sum(hi, lo)
++    }
++    fn div(self, other: Self) -> Self {
++        let first = Self::new(self.hi / other.hi);
++        let second = Self::new(self.sub(other.mul(first)).hi / other.hi);
++        let result = first.add(second);
++        result.add(Self::new(self.sub(other.mul(result)).hi / other.hi))
++    }
++    fn sqrt(self) -> Self {
++        let first = Self::new(self.hi.sqrt());
++        first.add(self.sub(first.mul(first)).div(Self::new(2. * first.hi)))
++    }
++    fn finite(self) -> bool {
++        self.hi.is_finite() && self.lo.is_finite()
++    }
++}
++
++#[derive(Debug, Clone)]
++pub(super) struct PreciseMatrix {
++    n: usize,
++    // Row-major upper square-root factor. Both coefficient components are kept.
++    values: Vec<Wide>,
++}
++impl PreciseMatrix {
++    pub(super) fn from_information(information: &DMatrix<f64>) -> Result<Self, Error> {
++        let n = information.nrows();
++        let mut lower = vec![Wide::default(); n.checked_mul(n).ok_or(Error::InvalidDimensions)?];
++        for row in 0..n {
++            for col in 0..=row {
++                let mut value = Wide::new(information[(row, col)]);
++                for k in 0..col {
++                    value = value.sub(lower[row * n + k].mul(lower[col * n + k]));
++                }
++                if !value.finite() {
++                    return Err(Error::NonFinite);
++                }
++                let entry = if row == col {
++                    if value.hi <= 0. {
++                        return Err(Error::InvalidOptions);
++                    }
++                    value.sqrt()
++                } else {
++                    value.div(lower[col * n + col])
++                };
++                if !entry.finite() {
++                    return Err(Error::NonFinite);
++                }
++                lower[row * n + col] = entry;
++            }
++        }
++        let mut values = vec![Wide::default(); n * n];
++        for row in 0..n {
++            for col in row..n {
++                values[row * n + col] = lower[col * n + row];
++            }
++        }
++        Ok(Self { n, values })
++    }
++    pub(super) fn dimension(&self) -> usize {
++        self.n
++    }
++    pub(super) fn multiply_vector(
++        &self,
++        x: &DVector<f64>,
++        out: &mut DVector<f64>,
++    ) -> Result<(), Error> {
++        for row in 0..self.n {
++            let mut value = Wide::default();
++            for col in row..self.n {
++                value = value.add(self.values[row * self.n + col].mul(Wide::new(x[col])));
++            }
++            if !value.finite() {
++                return Err(Error::NonFinite);
++            }
++            out[row] = value.hi + value.lo;
++        }
++        Ok(())
++    }
++    pub(super) fn multiply_block(
++        &self,
++        x: &DMatrix<f64>,
++        out: &mut DMatrix<f64>,
++    ) -> Result<(), Error> {
++        for c in 0..x.ncols() {
++            for row in 0..self.n {
++                let mut value = Wide::default();
++                for k in row..self.n {
++                    value = value.add(self.values[row * self.n + k].mul(Wide::new(x[(k, c)])));
++                }
++                if !value.finite() {
++                    return Err(Error::NonFinite);
++                }
++                out[(row, c)] = value.hi + value.lo;
++            }
++        }
++        Ok(())
++    }
++}

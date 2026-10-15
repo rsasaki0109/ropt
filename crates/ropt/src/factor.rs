@@ -7,6 +7,9 @@ use crate::{DMatrix, DVector, Error, LocalProblem, Loss, LossBlock};
 use nalgebra::{Quaternion, UnitQuaternion, Vector2, Vector3};
 use std::ops::Range;
 use std::sync::atomic::{AtomicU64, Ordering};
+mod autodiff;
+pub(crate) use autodiff::AutoDiffLayout;
+
 static NEXT_GRAPH_ID: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -22,6 +25,8 @@ pub enum VariableKind {
     SO2,
     SO3,
     SE2,
+    /// SE2 with a Cartesian right chart; Exp/Log on SE2 remain unchanged.
+    SE2Cartesian,
     SE3,
 }
 impl VariableKind {
@@ -30,7 +35,7 @@ impl VariableKind {
             Self::Euclidean(n) => (n, n),
             Self::SO2 => (1, 1),
             Self::SO3 => (4, 3),
-            Self::SE2 => (3, 3),
+            Self::SE2 | Self::SE2Cartesian => (3, 3),
             Self::SE3 => (7, 6),
         }
     }
@@ -82,6 +87,9 @@ impl VariableKind {
                 so3_values(decode_so3(x.as_slice(), 0).retract(Vector3::new(d[0], d[1], d[2])))
             }
             Self::SE2 => se2_values(read_se2(x)?.retract(Vector3::new(d[0], d[1], d[2]))),
+            Self::SE2Cartesian => {
+                se2_values(read_se2(x)?.retract_cartesian(Vector3::new(d[0], d[1], d[2])))
+            }
             Self::SE3 => {
                 se3_values(read_se3(x)?.retract(Tangent6::from_column_slice(d.as_slice())))
             }
@@ -107,12 +115,17 @@ impl VariableKind {
                 let q = rotation.0.quaternion();
                 out.copy_from_slice(&[q.w, q.i, q.j, q.k]);
             }
-            Self::SE2 => {
+            Self::SE2 | Self::SE2Cartesian => {
                 let pose = SE2 {
                     translation: Vector2::new(x[0], x[1]),
                     rotation: SO2::exp(x[2]),
-                }
-                .retract(Vector3::new(d[0], d[1], d[2]));
+                };
+                let step = Vector3::new(d[0], d[1], d[2]);
+                let pose = if matches!(self, Self::SE2Cartesian) {
+                    pose.retract_cartesian(step)
+                } else {
+                    pose.retract(step)
+                };
                 out.copy_from_slice(&[
                     pose.translation[0],
                     pose.translation[1],
@@ -139,7 +152,8 @@ impl VariableKind {
         }
         self.validate_slice(out)
     }
-    /// Principal right-local coordinates Log(anchor^-1 * value).
+    /// Principal right-local coordinates in the selected chart. SE2Cartesian
+    /// uses relative translation and angle; other Lie kinds use group Log.
     pub fn local(self, anchor: &DVector<f64>, value: &DVector<f64>) -> Result<DVector<f64>, Error> {
         self.validate(anchor)?;
         self.validate(value)?;
@@ -152,6 +166,11 @@ impl VariableKind {
             Self::SE2 => {
                 DVector::from_column_slice(read_se2(anchor)?.local(read_se2(value)?).as_slice())
             }
+            Self::SE2Cartesian => DVector::from_column_slice(
+                read_se2(anchor)?
+                    .local_cartesian(read_se2(value)?)
+                    .as_slice(),
+            ),
             Self::SE3 => {
                 DVector::from_column_slice(read_se3(anchor)?.local(read_se3(value)?).as_slice())
             }
@@ -252,6 +271,7 @@ struct Factor {
     evaluation: Evaluation,
 }
 /// Dense and CSR assembly. Factors own callbacks; registration validates connectivity.
+/// Residual-count overflow is rejected before changing the graph.
 pub struct FactorGraph {
     identity: u64,
     variables: Vec<Variable>,
@@ -326,6 +346,13 @@ impl FactorGraph {
     fn check_factor(&self, ids: &[VariableId], m: usize) -> Result<(), Error> {
         if ids.is_empty()
             || m == 0
+            // CSR also needs a terminal row offset. Validate before registering
+            // callbacks or modifying the factor list and residual count.
+            || self
+                .residual_size
+                .checked_add(m)
+                .and_then(|rows| rows.checked_add(1))
+                .is_none()
             || ids
                 .iter()
                 .any(|id| id.graph != self.identity || id.index >= self.variables.len())
@@ -389,6 +416,11 @@ impl FactorGraph {
         self.add_numeric_factor_with_options(ids, m, step, FactorOptions::default(), function)
     }
     /// Central differences stay explicit; whitening is applied after differentiating.
+    /// Each perturbation output and derivative column is validated before the next
+    /// callback, preserving the first detected dimension or numerical error.
+    /// `step` and `2*step` must be finite and positive. Active perturbations must
+    /// be distinct from the base storage and from each other; otherwise evaluation
+    /// returns `InvalidOptions` before perturbation callbacks. Fixed blocks are skipped.
     pub fn add_numeric_factor_with_options<F>(
         &mut self,
         ids: &[VariableId],
@@ -402,7 +434,7 @@ impl FactorGraph {
     {
         self.check_factor(ids, m)?;
         options.validate(m)?;
-        if !step.is_finite() || step <= 0.0 {
+        if !step.is_finite() || step <= 0.0 || !(2.0 * step).is_finite() {
             return Err(Error::InvalidOptions);
         }
         self.factors.push(Factor {
@@ -444,8 +476,6 @@ impl FactorGraph {
         F: Fn(&[&[crate::autodiff::DynamicJet]]) -> Result<Vec<crate::autodiff::DynamicJet>, Error>
             + 'static,
     {
-        use crate::Residual;
-        use crate::autodiff::DynamicAutoDiff;
         self.check_factor(ids, m)?;
         if chunk_size == 0 {
             return Err(Error::InvalidOptions);
@@ -454,39 +484,12 @@ impl FactorGraph {
             .iter()
             .map(|id| self.variable_kind(*id))
             .collect::<Result<Vec<_>, Error>>()?;
-        let dimensions: Vec<_> = kinds.iter().map(|kind| kind.dimensions().1).collect();
-        let parameters = dimensions.iter().sum();
+        let layout = AutoDiffLayout::new(kinds, m, chunk_size)?;
         self.add_analytic_factor_with_options(ids, m, options, move |values| {
-            let residual = DynamicAutoDiff::new(parameters, m, |inputs| {
-                let mut start = 0;
-                let blocks = kinds
-                    .iter()
-                    .zip(values)
-                    .map(|(&kind, value)| {
-                        let n = kind.dimensions().1;
-                        let block = kind.retract_autodiff(value, &inputs[start..start + n]);
-                        start += n;
-                        block
-                    })
-                    .collect::<Result<Vec<_>, Error>>()?;
-                function(&blocks.iter().map(Vec::as_slice).collect::<Vec<_>>())
-            })?
-            .with_chunk_size(chunk_size)?;
-            let mut r = DVector::zeros(m);
-            let mut j = DMatrix::zeros(m, parameters);
-            residual.evaluate(&DVector::zeros(parameters), &mut r, &mut j)?;
-            let mut start = 0;
-            let blocks = dimensions
-                .iter()
-                .map(|&n| {
-                    let block = j.columns(start, n).into_owned();
-                    start += n;
-                    block
-                })
-                .collect();
-            Ok((r, blocks))
+            layout.evaluate(values, &function)
         })
     }
+
     pub fn variable_kind(&self, id: VariableId) -> Result<VariableKind, Error> {
         if id.graph != self.identity {
             return Err(Error::InvalidDimensions);
@@ -512,17 +515,26 @@ impl FactorGraph {
         ids: &[VariableId],
         options: &crate::covariance::CovarianceOptions,
     ) -> Result<crate::covariance::TangentCovariance, Error> {
+        let indices = self.covariance_indices(ids)?;
+        crate::covariance::marginal_covariance(self, x, &indices, options)
+    }
+    /// Validate query blocks without evaluating any factor callbacks.
+    pub(crate) fn covariance_indices(&self, ids: &[VariableId]) -> Result<Vec<usize>, Error> {
         if ids.is_empty() {
             return Err(Error::InvalidDimensions);
         }
         let mut indices = Vec::new();
+        let mut seen = std::collections::BTreeSet::new();
         for &id in ids {
+            if !seen.insert(id.index) {
+                return Err(Error::InvalidDimensions);
+            }
             let range = self.tangent_range(id)?.ok_or_else(|| {
                 Error::Evaluation("fixed variables have no estimated covariance".into())
             })?;
             indices.extend(range);
         }
-        crate::covariance::marginal_covariance(self, x, &indices, options)
+        Ok(indices)
     }
     /// Validate an independent eliminated suffix and return (retained columns, block size).
     /// Fixed IDs are excluded; active eliminated blocks must have equal tangent sizes.
@@ -594,6 +606,26 @@ fn check_residual(r: &DVector<f64>, m: usize) -> Result<(), Error> {
     }
     if !r.iter().all(|v| v.is_finite()) {
         return Err(Error::NonFinite);
+    }
+    Ok(())
+}
+pub(crate) fn check_factor_output(
+    residual: &DVector<f64>,
+    blocks: &[DMatrix<f64>],
+    residuals: usize,
+    dimensions: impl ExactSizeIterator<Item = usize>,
+) -> Result<(), Error> {
+    check_residual(residual, residuals)?;
+    if blocks.len() != dimensions.len() {
+        return Err(Error::InvalidDimensions);
+    }
+    for (dimension, block) in dimensions.zip(blocks) {
+        if block.shape() != (residuals, dimension) {
+            return Err(Error::InvalidDimensions);
+        }
+        if !block.iter().all(|value| value.is_finite()) {
+            return Err(Error::NonFinite);
+        }
     }
     Ok(())
 }
@@ -767,30 +799,35 @@ impl FactorGraph {
                             let mut minus = values.to_vec();
                             plus[index] = kind.retract(&values[index], &d)?;
                             minus[index] = kind.retract(&values[index], &(-d))?;
+                            // Comparing both samples also catches a canonicalized
+                            // Lie-group storage value that differs from the base.
+                            if plus[index] == values[index]
+                                || minus[index] == values[index]
+                                || plus[index] == minus[index]
+                            {
+                                return Err(Error::InvalidOptions);
+                            }
                             let a = function(&plus)?;
-                            let b = function(&minus)?;
                             check_residual(&a, f.residuals)?;
+                            let b = function(&minus)?;
                             check_residual(&b, f.residuals)?;
-                            block.set_column(k, &((a - b) / (2.0 * step)));
+                            let column = (a - b) / (2.0 * step);
+                            crate::sparse::finite_vector(&column)?;
+                            block.set_column(k, &column);
                         }
                         blocks.push(block);
                     }
                     (residual, blocks)
                 }
             };
-            check_residual(&residual, f.residuals)?;
-            if blocks.len() != f.variables.len() {
-                return Err(Error::InvalidDimensions);
-            }
-            for (id, block) in f.variables.iter().zip(&blocks) {
-                let v = &self.variables[id.index];
-                if block.shape() != (f.residuals, v.kind.dimensions().1) {
-                    return Err(Error::InvalidDimensions);
-                }
-                if !block.iter().all(|v| v.is_finite()) {
-                    return Err(Error::NonFinite);
-                }
-            }
+            check_factor_output(
+                &residual,
+                &blocks,
+                f.residuals,
+                f.variables
+                    .iter()
+                    .map(|id| self.variables[id.index].kind.dimensions().1),
+            )?;
             f.options
                 .noise
                 .whiten(&mut residual, &mut blocks, &mut whitening)?;

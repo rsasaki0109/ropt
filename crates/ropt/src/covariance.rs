@@ -46,7 +46,7 @@ impl Default for CovarianceOptions {
     }
 }
 impl CovarianceOptions {
-    fn validate(&self) -> Result<(), Error> {
+    pub(crate) fn validate(&self) -> Result<(), Error> {
         if self.svd_max_iterations == 0
             || !self.relative_rank_tolerance.is_finite()
             || self.relative_rank_tolerance <= 0.0

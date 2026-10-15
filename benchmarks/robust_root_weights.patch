@@ -1,0 +1,47 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -226,6 +226,24 @@
+                 }
+             }
+         }
++    }
++    fn value_sqrt_weight(self, r: f64) -> (f64, f64) {
++        let (cost, weight) = self.value_weight(r);
++        let root = if weight.is_normal() {
++            weight.sqrt()
++        } else {
++            // The raw weight may underflow or lose precision while its square
++            // root and the weighted residual/Jacobian are still representable.
++            match self {
++                Self::Huber(a) if r.abs() > a => a.sqrt() / r.abs().sqrt(),
++                Self::Cauchy(a) if r.abs() > a => {
++                    let inverse = a / r.abs();
++                    inverse / (1.0 + inverse * inverse).sqrt()
++                }
++                _ => weight.sqrt(),
++            }
++        };
++        (cost, root)
+     }
+     // Difference of true losses for nonnegative scalar/block norms. Orient the
+     // Cauchy ratio positively so ln_1p cannot round its argument down to -1.
+@@ -719,6 +737,7 @@
+         jacobian,
+     })
+ }
++// Returns cost and square-root IRLS weights for residuals and Jacobian rows.
+ pub(crate) fn robust_weights(
+     residual: &DVector<f64>,
+     fallback: Loss,
+@@ -740,9 +759,9 @@
+         if !norm.is_finite() {
+             return Err(Error::NonFinite);
+         }
+-        let (c, w) = loss.value_weight(norm);
++        let (c, root) = loss.value_sqrt_weight(norm);
+         cost.add(c)?;
+-        weights.rows_mut(rows.start, rows.len()).fill(w.sqrt());
++        weights.rows_mut(rows.start, rows.len()).fill(root);
+         if let Some(norms) = &mut norms {
+             norms.push(norm);
+         }

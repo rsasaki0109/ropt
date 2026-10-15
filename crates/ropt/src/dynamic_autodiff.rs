@@ -3,10 +3,18 @@
 //! errors are carried to the adapter rather than panicking or truncating vectors.
 use crate::{DMatrix, DVector, Error, Residual};
 use std::ops::{Add, Div, Mul, Neg, Sub};
+const INDEXED_WIDTH_LIMIT: usize = 16;
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Failure {
     Dimension,
     NonFinite,
+}
+#[derive(Clone, Copy)]
+enum BinaryOperation {
+    Add,
+    Sub,
+    Mul,
+    Div,
 }
 #[derive(Debug, Clone, PartialEq)]
 pub struct DynamicJet {
@@ -83,6 +91,107 @@ impl DynamicJet {
             .collect();
         Self::from_parts(value, derivative)
     }
+    fn binary_terms(&self, b: &Self, operation: BinaryOperation) -> (f64, f64, f64) {
+        match operation {
+            BinaryOperation::Add => (self.value + b.value, 1., 1.),
+            BinaryOperation::Sub => (self.value - b.value, 1., -1.),
+            BinaryOperation::Mul => (self.value * b.value, b.value, self.value),
+            BinaryOperation::Div => (
+                self.value / b.value,
+                1. / b.value,
+                -(self.value / b.value) / b.value,
+            ),
+        }
+    }
+    fn binary_width(&self, b: &Self) -> Result<usize, Failure> {
+        if let Some(failure) = self.failure.or(b.failure) {
+            return Err(failure);
+        }
+        let a_len = self.derivative.len();
+        let b_len = b.derivative.len();
+        if a_len != 0 && b_len != 0 && a_len != b_len {
+            return Err(Failure::Dimension);
+        }
+        Ok(a_len.max(b_len))
+    }
+    fn binary_left_owned(mut self, b: &Self, operation: BinaryOperation) -> Self {
+        let (value, left, right) = self.binary_terms(b, operation);
+        let width = match self.binary_width(b) {
+            Ok(width) => width,
+            Err(failure) => return Self::invalid(failure),
+        };
+        self.derivative.resize(width, 0.);
+        // Short vectors keep the compact indexed loop; wide vectors avoid checks
+        // per element. Both paths reuse the same owned buffer at every width.
+        // Width validation guarantees either a broadcast constant or equal lengths.
+        // Keep zero products explicit: they still detect nonfinite slopes.
+        if width <= INDEXED_WIDTH_LIMIT {
+            for (i, d) in self.derivative.iter_mut().enumerate() {
+                *d = *d * left + b.derivative.get(i).copied().unwrap_or(0.) * right;
+            }
+        } else if b.derivative.is_empty() {
+            for d in &mut self.derivative {
+                *d = *d * left + 0. * right;
+            }
+        } else {
+            for (d, rhs) in self.derivative.iter_mut().zip(&b.derivative) {
+                *d = *d * left + rhs * right;
+            }
+        }
+        Self::from_parts(value, self.derivative)
+    }
+    fn binary_right_owned(&self, mut b: Self, operation: BinaryOperation) -> Self {
+        let (value, left, right) = self.binary_terms(&b, operation);
+        let width = match self.binary_width(&b) {
+            Ok(width) => width,
+            Err(failure) => return Self::invalid(failure),
+        };
+        b.derivative.resize(width, 0.);
+        if width <= INDEXED_WIDTH_LIMIT {
+            for (i, d) in b.derivative.iter_mut().enumerate() {
+                *d = self.derivative.get(i).copied().unwrap_or(0.) * left + *d * right;
+            }
+        } else if self.derivative.is_empty() {
+            for d in &mut b.derivative {
+                *d = 0. * left + *d * right;
+            }
+        } else {
+            for (lhs, d) in self.derivative.iter().zip(&mut b.derivative) {
+                *d = lhs * left + *d * right;
+            }
+        }
+        Self::from_parts(value, b.derivative)
+    }
+    fn binary_owned(self, b: Self, operation: BinaryOperation) -> Self {
+        // Prefer an already active buffer. Operand order and zero products stay exact.
+        if self.derivative.len() >= b.derivative.len() {
+            self.binary_left_owned(&b, operation)
+        } else {
+            self.binary_right_owned(b, operation)
+        }
+    }
+    fn neg_owned(mut self) -> Self {
+        if let Some(failure) = self.failure {
+            return Self::invalid(failure);
+        }
+        // Negating a validated finite jet cannot overflow. Keep the original
+        // multiplication so signed-zero and derivative bits remain unchanged.
+        self.value = -self.value;
+        for d in &mut self.derivative {
+            *d *= -1.;
+        }
+        self
+    }
+    fn neg_borrowed(&self) -> Self {
+        if let Some(failure) = self.failure {
+            return Self::invalid(failure);
+        }
+        Self {
+            value: -self.value,
+            derivative: self.derivative.iter().map(|d| d * -1.).collect(),
+            failure: None,
+        }
+    }
     fn add_jet(&self, b: &Self) -> Self {
         self.binary(b, self.value + b.value, 1.0, 1.0)
     }
@@ -139,19 +248,19 @@ macro_rules! jet_operator {
         impl $trait for DynamicJet {
             type Output = DynamicJet;
             fn $method(self, b: DynamicJet) -> DynamicJet {
-                self.$helper(&b)
+                self.binary_owned(b, BinaryOperation::$trait)
             }
         }
         impl $trait<&DynamicJet> for DynamicJet {
             type Output = DynamicJet;
             fn $method(self, b: &DynamicJet) -> DynamicJet {
-                self.$helper(b)
+                self.binary_left_owned(b, BinaryOperation::$trait)
             }
         }
         impl $trait<DynamicJet> for &DynamicJet {
             type Output = DynamicJet;
             fn $method(self, b: DynamicJet) -> DynamicJet {
-                self.$helper(&b)
+                self.binary_right_owned(b, BinaryOperation::$trait)
             }
         }
         impl $trait<&DynamicJet> for &DynamicJet {
@@ -163,7 +272,7 @@ macro_rules! jet_operator {
         impl $trait<f64> for DynamicJet {
             type Output = DynamicJet;
             fn $method(self, b: f64) -> DynamicJet {
-                self.$helper(&DynamicJet::constant(b))
+                self.binary_left_owned(&DynamicJet::constant(b), BinaryOperation::$trait)
             }
         }
         impl $trait<f64> for &DynamicJet {
@@ -175,7 +284,7 @@ macro_rules! jet_operator {
         impl $trait<DynamicJet> for f64 {
             type Output = DynamicJet;
             fn $method(self, b: DynamicJet) -> DynamicJet {
-                DynamicJet::constant(self).$helper(&b)
+                DynamicJet::constant(self).binary_right_owned(b, BinaryOperation::$trait)
             }
         }
         impl $trait<&DynamicJet> for f64 {
@@ -193,13 +302,13 @@ jet_operator!(Div, div, div_jet);
 impl Neg for DynamicJet {
     type Output = Self;
     fn neg(self) -> Self {
-        self.unary(-self.value, -1.0)
+        self.neg_owned()
     }
 }
 impl Neg for &DynamicJet {
     type Output = DynamicJet;
     fn neg(self) -> DynamicJet {
-        self.unary(-self.value, -1.0)
+        self.neg_borrowed()
     }
 }
 impl From<f64> for DynamicJet {
@@ -236,6 +345,85 @@ impl<F: Fn(&[DynamicJet]) -> Result<Vec<DynamicJet>, Error>> DynamicAutoDiff<F> 
         self.chunk_size = chunk_size;
         Ok(self)
     }
+
+    /// Tangent inputs are zero at the current estimate. Write the derivative
+    /// chunks directly into factor blocks without a flat Jacobian or seed vector.
+    pub(crate) fn evaluate_blocks_at_zero(
+        &self,
+        dimensions: &[usize],
+    ) -> Result<(DVector<f64>, Vec<DMatrix<f64>>), Error> {
+        let parameters = dimensions.iter().try_fold(0usize, |total, &n| {
+            total.checked_add(n).ok_or(Error::InvalidDimensions)
+        })?;
+        if parameters != self.parameters {
+            return Err(Error::InvalidDimensions);
+        }
+        let mut r = DVector::zeros(self.residuals);
+        let mut blocks: Vec<_> = dimensions
+            .iter()
+            .map(|&n| DMatrix::zeros(self.residuals, n))
+            .collect();
+        self.evaluate_chunks(
+            |_| 0.,
+            &mut r,
+            |row, start, width, partials| {
+                let end = start + width;
+                let mut offset = 0;
+                for block in &mut blocks {
+                    let next = offset + block.ncols();
+                    for column in start.max(offset)..end.min(next) {
+                        block[(row, column - offset)] =
+                            partials.get(column - start).copied().unwrap_or(0.);
+                    }
+                    offset = next;
+                    if offset >= end {
+                        break;
+                    }
+                }
+            },
+        )?;
+        Ok((r, blocks))
+    }
+
+    fn evaluate_chunks(
+        &self,
+        input_value: impl Fn(usize) -> f64,
+        r: &mut DVector<f64>,
+        mut write_row: impl FnMut(usize, usize, usize, &[f64]),
+    ) -> Result<(), Error> {
+        for start in (0..self.parameters).step_by(self.chunk_size) {
+            let width = (self.parameters - start).min(self.chunk_size);
+            let end = start + width;
+            let inputs = (0..self.parameters)
+                .map(|i| {
+                    if i >= start && i < end {
+                        DynamicJet::variable(input_value(i), i - start, width)
+                    } else {
+                        Ok(DynamicJet::constant(input_value(i)))
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let outputs = (self.function)(&inputs)?;
+            if outputs.len() != self.residuals {
+                return Err(Error::InvalidDimensions);
+            }
+            for (row, output) in outputs.iter().enumerate() {
+                let partials = output.partials()?;
+                if !partials.is_empty() && partials.len() != width {
+                    return Err(Error::InvalidDimensions);
+                }
+                if start == 0 {
+                    r[row] = output.value();
+                } else if r[row].to_bits() != output.value().to_bits() {
+                    return Err(Error::Evaluation(
+                        "autodiff residual values changed between derivative chunks".into(),
+                    ));
+                }
+                write_row(row, start, width, partials);
+            }
+        }
+        Ok(())
+    }
 }
 impl<F: Fn(&[DynamicJet]) -> Result<Vec<DynamicJet>, Error>> Residual for DynamicAutoDiff<F> {
     fn dimensions(&self) -> (usize, usize) {
@@ -256,41 +444,232 @@ impl<F: Fn(&[DynamicJet]) -> Result<Vec<DynamicJet>, Error>> Residual for Dynami
         if !x.iter().all(|v| v.is_finite()) {
             return Err(Error::NonFinite);
         }
-        for start in (0..self.parameters).step_by(self.chunk_size) {
-            let width = (self.parameters - start).min(self.chunk_size);
-            let end = start + width;
-            let inputs = x
-                .iter()
-                .enumerate()
-                .map(|(i, value)| {
-                    if i >= start && i < end {
-                        DynamicJet::variable(*value, i - start, width)
-                    } else {
-                        Ok(DynamicJet::constant(*value))
-                    }
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            let outputs = (self.function)(&inputs)?;
-            if outputs.len() != self.residuals {
-                return Err(Error::InvalidDimensions);
-            }
-            for (row, output) in outputs.iter().enumerate() {
-                let partials = output.partials()?;
-                if !partials.is_empty() && partials.len() != width {
-                    return Err(Error::InvalidDimensions);
-                }
-                if start == 0 {
-                    r[row] = output.value();
-                } else if r[row].to_bits() != output.value().to_bits() {
-                    return Err(Error::Evaluation(
-                        "autodiff residual values changed between derivative chunks".into(),
-                    ));
-                }
+        self.evaluate_chunks(
+            |i| x[i],
+            r,
+            |row, start, width, partials| {
                 for col in 0..width {
                     j[(row, start + col)] = partials.get(col).copied().unwrap_or(0.0);
                 }
+            },
+        )
+    }
+}
+
+#[cfg(test)]
+mod reuse_tests {
+    use super::*;
+    fn bits(jet: &DynamicJet) -> (u64, Result<Vec<u64>, Error>) {
+        (
+            jet.value().to_bits(),
+            jet.partials()
+                .map(|v| v.iter().map(|x| x.to_bits()).collect()),
+        )
+    }
+    fn reference(a: &DynamicJet, b: &DynamicJet, op: BinaryOperation) -> DynamicJet {
+        match op {
+            BinaryOperation::Add => a.add_jet(b),
+            BinaryOperation::Sub => a.sub_jet(b),
+            BinaryOperation::Mul => a.mul_jet(b),
+            BinaryOperation::Div => a.div_jet(b),
+        }
+    }
+
+    #[test]
+    fn owned_forms_match_allocating_reference_bits_errors_and_borrowed_inputs() {
+        for a_len in [0, 1, 2, 6, 7, 12, 13, 16, 17, 32, 65] {
+            for b_len in [0, a_len, 3, 7] {
+                for (a_value, b_value) in [
+                    (0.7, 1.2),
+                    (-0., 0.),
+                    (1e308, 1e308),
+                    (1e308, 1.),
+                    (1e-308, 1e-308),
+                    (f64::NAN, 1.),
+                ] {
+                    let a = DynamicJet::from_parts(
+                        a_value,
+                        (0..a_len)
+                            .map(|i| match i % 4 {
+                                0 => -0.,
+                                1 => 0.,
+                                2 => 1e-150,
+                                _ => -1e150,
+                            })
+                            .collect(),
+                    );
+                    let b = DynamicJet::from_parts(
+                        b_value,
+                        (0..b_len)
+                            .map(|i| if i % 2 == 0 { -0. } else { 0.75 })
+                            .collect(),
+                    );
+                    for op in [
+                        BinaryOperation::Add,
+                        BinaryOperation::Sub,
+                        BinaryOperation::Mul,
+                        BinaryOperation::Div,
+                    ] {
+                        let expected = bits(&reference(&a, &b, op));
+                        let original_a = bits(&a);
+                        let original_b = bits(&b);
+                        assert_eq!(bits(&a.clone().binary_owned(b.clone(), op)), expected);
+                        assert_eq!(bits(&a.clone().binary_left_owned(&b, op)), expected);
+                        assert_eq!(bits(&a.binary_right_owned(b.clone(), op)), expected);
+                        assert_eq!(bits(&a), original_a);
+                        assert_eq!(bits(&b), original_b);
+                    }
+                }
             }
         }
-        Ok(())
+    }
+
+    #[test]
+    fn negation_preserves_extreme_finite_bits_and_carried_failures() {
+        for width in [0, 1, 6, 16, 17, 32, 65] {
+            for value in [-f64::MAX, -0., 0., f64::MIN_POSITIVE, f64::MAX] {
+                let jet = DynamicJet::from_parts(
+                    value,
+                    (0..width)
+                        .map(|i| [-f64::MAX, -0., 0., f64::from_bits(1), f64::MAX][i % 5])
+                        .collect(),
+                );
+                let before = bits(&jet);
+                let expected = bits(&jet.unary(-value, -1.));
+                assert_eq!(bits(&(-jet.clone())), expected);
+                assert_eq!(bits(&(-&jet)), expected);
+                assert_eq!(bits(&jet), before);
+            }
+        }
+        for jet in [
+            DynamicJet::invalid(Failure::Dimension),
+            DynamicJet::from_parts(f64::NAN, vec![1.]),
+            DynamicJet::from_parts(0., vec![f64::INFINITY]),
+        ] {
+            let expected = bits(&jet.unary(-jet.value, -1.));
+            assert_eq!(bits(&(-jet.clone())), expected);
+            assert_eq!(bits(&(-&jet)), expected);
+        }
+    }
+
+    #[test]
+    fn consumed_active_buffer_is_reused_for_either_operand_and_negation() {
+        for width in [1, 2, 6, 7, 12, 16, 17, 32, 65] {
+            let a = DynamicJet::variable(2., width - 1, width).unwrap();
+            let pointer = a.derivative.as_ptr();
+            let result = a + 3.;
+            assert_eq!(result.derivative.as_ptr(), pointer);
+            let b = DynamicJet::variable(2., width - 1, width).unwrap();
+            let pointer = b.derivative.as_ptr();
+            let result = 3. - b;
+            assert_eq!(result.derivative.as_ptr(), pointer);
+            let a = DynamicJet::variable(2., width - 1, width).unwrap();
+            let pointer = a.derivative.as_ptr();
+            let result = -a;
+            assert_eq!(result.derivative.as_ptr(), pointer);
+            let b = DynamicJet::variable(2., width - 1, width).unwrap();
+            let pointer = b.derivative.as_ptr();
+            let result = DynamicJet::constant(3.) / b;
+            assert_eq!(result.derivative.as_ptr(), pointer);
+            let a = DynamicJet::variable(2., width - 1, width).unwrap();
+            let pointer = a.derivative.as_ptr();
+            let result = a * DynamicJet::constant(3.);
+            assert_eq!(result.derivative.as_ptr(), pointer);
+        }
+    }
+}
+
+#[cfg(test)]
+mod block_jacobian_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn block_chunks_match_flat_jacobian_bits_across_empty_and_crossed_blocks() {
+        let dimensions = [2, 0, 1, 3];
+        for chunk in [1, 2, 4, 6, 7, 32] {
+            let callback = |x: &[DynamicJet]| {
+                Ok(vec![
+                    &x[0] - 2. * &x[3],
+                    x[1].sin() + &x[5],
+                    DynamicJet::constant(-0.),
+                    DynamicJet::constant(7.),
+                ])
+            };
+            let adapter = DynamicAutoDiff::new(6, 4, callback)
+                .unwrap()
+                .with_chunk_size(chunk)
+                .unwrap();
+            // The flat API must overwrite even constant columns, independently
+            // of the block API's zero-initialized storage.
+            let mut flat_r = DVector::from_element(4, f64::NAN);
+            let mut flat_j = DMatrix::from_element(4, 6, 73.);
+            adapter
+                .evaluate(&DVector::zeros(6), &mut flat_r, &mut flat_j)
+                .unwrap();
+            let (r, blocks) = adapter.evaluate_blocks_at_zero(&dimensions).unwrap();
+            assert_eq!(r.map(f64::to_bits), flat_r.map(f64::to_bits));
+            let mut offset = 0;
+            for (block, n) in blocks.iter().zip(dimensions) {
+                assert_eq!(block.shape(), (4, n));
+                assert_eq!(
+                    block.map(f64::to_bits),
+                    flat_j.columns(offset, n).map(f64::to_bits)
+                );
+                offset += n;
+            }
+        }
+    }
+
+    #[test]
+    fn block_chunks_preserve_callback_errors_dimensions_and_primal_consistency() {
+        let run = |blocked: bool, case: usize| {
+            let calls = Cell::new(0);
+            let callback = |x: &[DynamicJet]| {
+                let call = calls.get();
+                calls.set(call + 1);
+                match case {
+                    0 => Ok(vec![]),
+                    1 => Ok(vec![DynamicJet::constant(f64::NAN)]),
+                    2 => Ok(vec![DynamicJet::variable(0., 0, 3)?]),
+                    3 => Ok(vec![DynamicJet::constant(if call == 0 { 0. } else { -0. })]),
+                    4 if call > 0 => Err(Error::Evaluation("later callback".into())),
+                    _ => Ok(vec![&x[0] + &x[2]]),
+                }
+            };
+            let adapter = DynamicAutoDiff::new(3, 1, callback)
+                .unwrap()
+                .with_chunk_size(2)
+                .unwrap();
+            let result = if blocked {
+                adapter.evaluate_blocks_at_zero(&[1, 2]).map(|_| ())
+            } else {
+                adapter.evaluate(
+                    &DVector::zeros(3),
+                    &mut DVector::zeros(1),
+                    &mut DMatrix::zeros(1, 3),
+                )
+            };
+            (result, calls.get())
+        };
+        for case in 0..5 {
+            let flat = run(false, case);
+            assert!(flat.0.is_err());
+            assert_eq!(run(true, case), flat);
+            assert_eq!(flat.1, if case < 3 { 1 } else { 2 });
+        }
+        let calls = Cell::new(0);
+        let adapter = DynamicAutoDiff::new(3, 1, |_| {
+            calls.set(calls.get() + 1);
+            Ok(vec![DynamicJet::constant(0.)])
+        })
+        .unwrap();
+        for dimensions in [vec![1, 1], vec![usize::MAX, 1]] {
+            assert_eq!(
+                adapter.evaluate_blocks_at_zero(&dimensions),
+                Err(Error::InvalidDimensions)
+            );
+        }
+        assert_eq!(calls.get(), 0);
     }
 }
