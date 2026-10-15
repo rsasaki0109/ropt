@@ -1,0 +1,157 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -727,6 +727,32 @@
+     }
+     sum.total()
+ }
++/// Ordered Gaussian cost without materializing a residual or zero vector.
++/// Errors are retained until finish so callers can preserve callback precedence.
++#[derive(Default)]
++pub(crate) struct GaussianCostAccumulator {
++    sum: CompensatedSum,
++    error: Option<Error>,
++}
++impl GaussianCostAccumulator {
++    pub(crate) fn add(&mut self, residuals: &DVector<f64>) {
++        if self.error.is_some() {
++            return;
++        }
++        for &value in residuals.iter() {
++            if let Err(error) = self.sum.add(Loss::Squared.reduction(0., value.abs())) {
++                self.error = Some(error);
++                break;
++            }
++        }
++    }
++    pub(crate) fn finish(self) -> Result<f64, Error> {
++        match self.error {
++            Some(error) => Err(error),
++            None => self.sum.total().map(|reduction| -reduction),
++        }
++    }
++}
+ pub(crate) fn gaussian_gradient_norm(
+     j: &CsrMatrix,
+     r: &DVector<f64>,
+@@ -1042,6 +1068,31 @@
+ mod stable_loss_tests {
+     use super::*;
+     #[test]
++    fn streamed_gaussian_cost_preserves_compensation_bits_and_errors_across_blocks() {
++        for values in [
++            vec![],
++            vec![0., -0.],
++            vec![1e150, 1e-150, 3., -4., 1e150],
++            vec![f64::from_bits(1), -f64::MIN_POSITIVE, 1.],
++            vec![1e154, -1e154, 1e-154],
++            vec![1e200, 3., 4.],
++            vec![f64::NAN, 1.],
++            vec![f64::INFINITY, 1.],
++        ] {
++            let residual = DVector::from_vec(values.clone());
++            let expected = gaussian_reduction(&DVector::zeros(values.len()), &residual)
++                .map(|value| (-value).to_bits());
++            for width in [1, 2, 3, 8] {
++                let mut cost = GaussianCostAccumulator::default();
++                cost.add(&DVector::zeros(0));
++                for block in values.chunks(width) {
++                    cost.add(&DVector::from_column_slice(block));
++                }
++                assert_eq!(cost.finish().map(f64::to_bits), expected);
++            }
++        }
++    }
++    #[test]
+     fn normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients() {
+         for coefficients in [
+             vec![3., 4.],
+--- a/crates/ropt/src/isam/probe.rs
++++ b/crates/ropt/src/isam/probe.rs
+@@ -34,17 +34,16 @@
+         };
+         layout.insert(*key, (variable, range));
+     }
+-    let rows = factors.iter().try_fold(0usize, |n, f| {
++    factors.iter().try_fold(0usize, |n, f| {
+         n.checked_add(f.residuals).ok_or(Error::InvalidDimensions)
+     })?;
+-    let mut residuals = DVector::zeros(rows);
++    let mut cost = crate::solver::GaussianCostAccumulator::default();
+     let mut gradient = DVector::<f64>::zeros(columns);
+     let mut scales = DVector::<f64>::zeros(columns);
+     let mut inputs = Vec::<DVector<f64>>::new();
+     let mut connections = Vec::new();
+     let mut slots = Vec::new();
+     let mut whitening = WhiteningWorkspace::default();
+-    let mut start = 0;
+     for factor in factors {
+         inputs.resize_with(inputs.len().max(factor.keys.len()), || DVector::zeros(0));
+         connections.clear();
+@@ -74,9 +73,7 @@
+             .options
+             .noise
+             .whiten(&mut residual, &mut blocks, &mut whitening)?;
+-        residuals
+-            .rows_mut(start, factor.residuals)
+-            .copy_from(&residual);
++        cost.add(&residual);
+         // Callbacks retain caller slot order. Reduction visits active blocks in
+         // tangent-column order, exactly as canonical CSR row assembly did.
+         slots.clear();
+@@ -103,11 +100,10 @@
+                 }
+             }
+         }
+-        start += factor.residuals;
+     }
+     // Keep the compensated Gaussian cost and final finite checks. No callback
+     // is skipped because a running reduction overflowed; CSR checked afterwards.
+-    let cost = -crate::solver::gaussian_reduction(&DVector::zeros(rows), &residuals)?;
++    let cost = cost.finish()?;
+     finite_vector(&gradient)?;
+     finite_vector(&scales)?;
+     for (component, &scale) in gradient.iter_mut().zip(&scales) {
+@@ -290,6 +286,43 @@
+             summary(&invalid, &factors, &order, GradientNorm::Absolute).unwrap_err(),
+             legacy(&invalid, &factors, &order, GradientNorm::Absolute).unwrap_err()
+         );
++    }
++
++    #[test]
++    fn overflowing_cost_does_not_skip_later_callbacks_or_replace_their_errors() {
++        let variables = [(1, variable(1, VariableKind::Euclidean(1), &[0.], false))]
++            .into_iter()
++            .collect();
++        for later_failure in [false, true] {
++            let calls = Rc::new(Cell::new(0));
++            let counter = calls.clone();
++            let factors = vec![
++                SmootherFactor::analytic(&[1], 1, Default::default(), |_| {
++                    Ok((DVector::from_element(1, 1e200), vec![DMatrix::zeros(1, 1)]))
++                }),
++                SmootherFactor::analytic(&[1], 1, Default::default(), move |_| {
++                    counter.set(counter.get() + 1);
++                    if later_failure {
++                        Err(Error::Evaluation("later callback".into()))
++                    } else {
++                        Ok((DVector::zeros(1), vec![DMatrix::identity(1, 1)]))
++                    }
++                }),
++            ];
++            let direct = summary(&variables, &factors, &[1], GradientNorm::Absolute).unwrap_err();
++            assert_eq!(calls.get(), 1);
++            let expected = if later_failure {
++                Error::Evaluation("later callback".into())
++            } else {
++                Error::NonFinite
++            };
++            assert_eq!(direct, expected);
++            assert_eq!(
++                legacy(&variables, &factors, &[1], GradientNorm::Absolute).unwrap_err(),
++                expected
++            );
++            assert_eq!(calls.get(), 2);
++        }
+     }
+ 
+     #[test]

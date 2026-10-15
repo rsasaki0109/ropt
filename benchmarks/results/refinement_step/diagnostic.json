@@ -1,0 +1,13 @@
+{
+  "scope": "requested allocation traffic for complete forced refresh only; no comparative timing or peak memory",
+  "executable_sha256": {
+    "before": "f51a15531652ab01d88b81b4a84c33207d9a2bbf8bb53fea76988635fb666021",
+    "after": "9aed5df1eb1d5b5bf1076cfbbc4f09f692cdbefab157b9568c7b7cac7c0af591"
+  },
+  "driver_sha256": "dca9c58500ddd045bfbe671db66fd83201e46ecc2793330ccb130d3baf208b38",
+  "before_source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+  "after_source_sha256": "ffdd6fd2033b67900137ccbca263df7749c4f6ecc681d98601821e8a8fc2fd74",
+  "cases": 18,
+  "total_refreshes": 180,
+  "identical_callbacks_steps_and_result_fingerprints": true
+}

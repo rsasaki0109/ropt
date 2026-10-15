@@ -1,0 +1,29 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.58s
+     Running tests/fixed_lag_covariance_snapshot.rs (target/debug/deps/fixed_lag_covariance_snapshot-8827d3b13f5bb2a2)
+
+running 5 tests
+test covariance_rejects_unobservable_unqueried_variables ... ok
+test invalid_queries_do_not_register_new_variables_or_refresh_existing_timestamps ... ok
+test covariance_uses_optimized_nonlinear_point_before_all_variables_expire ... ok
+test covariance_failures_roll_back_optimization_expiry_and_new_factors ... ok
+test pre_expiry_covariance_keeps_cross_blocks_query_order_and_variance_scale ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_duration.rs (target/debug/deps/fixed_lag_duration-ec808666f2b3f3f3)
+
+running 2 tests
+test invalid_duration_does_not_change_configuration_or_committed_state ... ok
+test shortening_defers_expiry_until_success_and_extension_preserves_prior_information ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_retired_times.rs (target/debug/deps/fixed_lag_retired_times-2dd9e3c8379a4f8d)
+
+running 2 tests
+test robust_retirement_keeps_timestamp_and_constant_cost_with_a_persistent_variable ... ok
+test retired_manifold_times_follow_refresh_and_survive_failed_updates_and_key_reuse ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

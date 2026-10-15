@@ -1,0 +1,94 @@
+{
+  "all_checks_pass": true,
+  "source_sha256": "cdc6d2113705f42d7cf26e2379b4913507b53e4d4b5e6fe62843c84312bdb2f3",
+  "native_timing_measured": false,
+  "repeatable_complete_stream_speedup_established": false,
+  "campaigns": {
+    "primary": {
+      "artifacts_verified": 30,
+      "all_source_binary_driver_data_reference_hashes_match": true,
+      "timed_updates": 18792,
+      "all_original_gradient_gates_pass": true,
+      "balanced_positions": true,
+      "means_byte_identical": true,
+      "all_non_timing_update_fields_identical": true,
+      "full_means_byte_identical_to_previous_kernel": true,
+      "faster_pairs_over_before": 4,
+      "speedup_over_before": 1.0212706667121298,
+      "beats_before_speed_gate": false,
+      "beats_current_full": false,
+      "negative_and_mixed_timing_results_preserved": true
+    },
+    "confirmation": {
+      "artifacts_verified": 30,
+      "all_source_binary_driver_data_reference_hashes_match": true,
+      "timed_updates": 18792,
+      "all_original_gradient_gates_pass": true,
+      "balanced_positions": true,
+      "means_byte_identical": true,
+      "all_non_timing_update_fields_identical": true,
+      "full_means_byte_identical_to_previous_kernel": true,
+      "faster_pairs_over_before": 2,
+      "speedup_over_before": 0.9911411097656608,
+      "beats_before_speed_gate": false,
+      "beats_current_full": false,
+      "negative_and_mixed_timing_results_preserved": true
+    }
+  },
+  "tests": {
+    "rust_unit_integration": 296,
+    "rust_doctests": 18,
+    "python": 23,
+    "clippy_warnings_denied": true,
+    "profiler_clippy_warnings_denied": true,
+    "rustdoc_warnings_denied": true,
+    "release_build_pass": true,
+    "formatting_check_pass": true,
+    "scoped_whitespace_check_pass": true
+  },
+  "rollback": {
+    "exact_archived_source_fingerprints": 35,
+    "source_only": true,
+    "older_builds_skipped": true
+  },
+  "mit_functional": {
+    "all_1227_original_information_gates_pass": true,
+    "means_and_non_timing_work_identical": true,
+    "cold_timing_excluded_from_speed_claims": true
+  },
+  "clone_only_allocation_traffic": {
+    "eligible": true,
+    "isolated_before_after_targets": true,
+    "distinct_executables": true,
+    "counts_repeat_exactly_twice_per_kernel": true,
+    "independent_prior_means_and_energy_pass": true,
+    "allocation_call_reduction_percent": 99.12536443148689,
+    "requested_byte_reduction_percent": 56.420895839982975,
+    "scope": "2048 variables/factors; 64 clones; allocation/reallocation request traffic only, no live/peak memory or latency claim"
+  },
+  "ineligible_diagnostics_excluded": [
+    "shared-target artifact reuse",
+    "missing embedded README build"
+  ],
+  "timed_updates": 37584,
+  "faster_pairs_over_before": 6,
+  "historical_images_preserved_sha256": {
+    "docs/assets/ba-convergence.gif": "e6b05f11db4be29ffcdc1ce2bc349d447342c4a030ef00b98c021d761aedb12b",
+    "docs/assets/intel943-trajectory.png": "8230cab8a5d970e5662ab13d0c1dec68021170d727d05be010bf4ec93bcdc28a",
+    "docs/assets/isam2-comparison.png": "b2896f82536882b491f0b62e461cb41cd78eb28c734391642c991fbfe70a8db1",
+    "docs/assets/ropt-hero.gif": "1c557d47471691f90722bcc75ad4675ad99b4549e7db07a1ace2003efde091eb",
+    "docs/assets/ropt-hero.png": "839804b582f7cefb89f1533c2020100d6c70c7de825a03d3f6ee15fcbd95b841",
+    "docs/assets/rosenbrock-convergence.gif": "02d7e1c06f379273936e4167747475a3c30258794c909a63f88c3938f7671e1b",
+    "docs/assets/rosenbrock-convergence.png": "4ab36aa910d413a592a65bccdf39e398901c241b547045fad32a0daf4413f409",
+    "docs/assets/csail-comparison.png": "060b83ad95bb42f83d88434444d01a0195048b35ac787d51b834b99d1b197265"
+  },
+  "final_files_sha256": {
+    "crates/ropt/src/bayes_tree/editable.rs": "904389117301fecb2af2c5eed6d19310b001765a125a727ef1d583edb8cda32f",
+    "benchmarks/paired_editable_cow.py": "4ad624455a51f357e798c805cbf00567611c5330b0a12c0d09d7458e184fd659",
+    "benchmarks/profile_editable_clone.rs": "1bacf945dd344182e8e16350414716fd3ce5c772b69eb001cbc357678b13b511",
+    "benchmarks/profile_editable_metadata.py": "1d21b167d89667f098b2c0d78beb082f4236bbe7a0968e828d77ec29b225f9b4",
+    "benchmarks/make_ldl_baseline.py": "ba5ce3aef383ec2e1a8a34ebffd012a2e36cc385b841c5de538972f7360ec79d",
+    "benchmarks/editable_cow.patch": "a1b71418a336f5cdf65e2c40c8ed87502eb645f2dfd008150dddc1a001d9fda1",
+    "benchmarks/EDITABLE_METADATA_SHARING.md": "7dccb7977e3ec28b95e2875e616dcf1ca156864f6021799f4d5d22eef674a869"
+  }
+}

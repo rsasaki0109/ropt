@@ -1,0 +1,16 @@
+{
+  "source_sha256": "53671e84cba965edd4c45dc87a63570f86e0acdaf3da06d29111884cb36ebdaa",
+  "instrumentation": "Instant clocks per update and scalar clique; successful paths only; diagnostic cold run, excluded from speed claims",
+  "dataset": "complete CSAIL1045",
+  "arrivals": 1044,
+  "policy": "editable cap1",
+  "stages_ns": {
+    "metadata": 346327829,
+    "projection_and_workspace_counts": 66830625,
+    "gather_and_csr": 488813284,
+    "qr": 397126044,
+    "conditionals_and_messages": 138506702,
+    "constants_and_commit": 27090197
+  },
+  "elapsed_ns": 5171507121
+}

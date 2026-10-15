@@ -1,0 +1,12 @@
+configure.log
+library-build.log
+install.log
+adapter-configure.log
+adapter-build.log
+precision-tests.log
+library-manifest.log
+native-manifest.log
+{
+  "binary": "/workspace/.ropt-native/reference-build-v2/adapter-build/gtsam_isam2",
+  "manifest": "/workspace/.ropt-native/reference-build-v2/native-manifest.json"
+}

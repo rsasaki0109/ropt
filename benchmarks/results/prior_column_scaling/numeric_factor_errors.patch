@@ -1,0 +1,26 @@
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -416,6 +416,8 @@
+         self.add_numeric_factor_with_options(ids, m, step, FactorOptions::default(), function)
+     }
+     /// Central differences stay explicit; whitening is applied after differentiating.
++    /// Each perturbation output and derivative column is validated before the next
++    /// callback, preserving the first detected dimension or numerical error.
+     pub fn add_numeric_factor_with_options<F>(
+         &mut self,
+         ids: &[VariableId],
+@@ -795,10 +797,12 @@
+                             plus[index] = kind.retract(&values[index], &d)?;
+                             minus[index] = kind.retract(&values[index], &(-d))?;
+                             let a = function(&plus)?;
++                            check_residual(&a, f.residuals)?;
+                             let b = function(&minus)?;
+-                            check_residual(&a, f.residuals)?;
+                             check_residual(&b, f.residuals)?;
+-                            block.set_column(k, &((a - b) / (2.0 * step)));
++                            let column = (a - b) / (2.0 * step);
++                            crate::sparse::finite_vector(&column)?;
++                            block.set_column(k, &column);
+                         }
+                         blocks.push(block);
+                     }

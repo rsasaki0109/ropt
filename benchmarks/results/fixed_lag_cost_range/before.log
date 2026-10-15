@@ -1,0 +1,53 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+warning: unused import: `covariance::*`
+ --> crates/ropt/tests/fixed_lag_cost_range.rs:1:12
+  |
+1 | use ropt::{covariance::*, factor::*, fixed_lag::*, *};
+  |            ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `ropt` (test "fixed_lag_cost_range") generated 1 warning (run `cargo fix --test "fixed_lag_cost_range" -p ropt` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running tests/fixed_lag_cost_range.rs (target/debug/deps/fixed_lag_cost_range-1b835a2e74479c6c)
+
+running 5 tests
+test frozen_robust_offsets_preserve_finite_costs_beyond_squared_norm_range ... FAILED
+test finite_large_gaussian_cost_survives_full_retirement_and_idle_updates ... FAILED
+test carried_cost_overflow_rolls_back_new_variables_and_allows_a_valid_retry ... FAILED
+test unrepresentable_objective_is_rejected_before_marginalization ... ok
+test carried_prior_keeps_updates_covariance_and_cost_through_repeated_retirement ... FAILED
+
+failures:
+
+---- frozen_robust_offsets_preserve_finite_costs_beyond_squared_norm_range stdout ----
+
+thread 'frozen_robust_offsets_preserve_finite_costs_beyond_squared_norm_range' (131471) panicked at crates/ropt/tests/fixed_lag_cost_range.rs:99:70:
+called `Result::unwrap()` on an `Err` value: NonFinite
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- finite_large_gaussian_cost_survives_full_retirement_and_idle_updates stdout ----
+
+thread 'finite_large_gaussian_cost_survives_full_retirement_and_idle_updates' (131470) panicked at crates/ropt/tests/fixed_lag_cost_range.rs:75:70:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- carried_cost_overflow_rolls_back_new_variables_and_allows_a_valid_retry stdout ----
+
+thread 'carried_cost_overflow_rolls_back_new_variables_and_allows_a_valid_retry' (131468) panicked at crates/ropt/tests/fixed_lag_cost_range.rs:195:45:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- carried_prior_keeps_updates_covariance_and_cost_through_repeated_retirement stdout ----
+
+thread 'carried_prior_keeps_updates_covariance_and_cost_through_repeated_retirement' (131469) panicked at crates/ropt/tests/fixed_lag_cost_range.rs:166:67:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+
+failures:
+    carried_cost_overflow_rolls_back_new_variables_and_allows_a_valid_retry
+    carried_prior_keeps_updates_covariance_and_cost_through_repeated_retirement
+    finite_large_gaussian_cost_survives_full_retirement_and_idle_updates
+    frozen_robust_offsets_preserve_finite_costs_beyond_squared_norm_range
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test fixed_lag_cost_range`

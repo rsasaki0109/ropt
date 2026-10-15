@@ -1,0 +1,36 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.68s
+     Running tests/fixed_lag_covariance_manifold.rs (target/debug/deps/fixed_lag_covariance_manifold-c5c2c5d84db353a8)
+
+running 1 test
+test retiring_se3_covariance_matches_independent_tangent_differences_after_compaction ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/fixed_lag_covariance_preflight.rs (target/debug/deps/fixed_lag_covariance_preflight-304678efe2e7fc9f)
+
+running 2 tests
+test invalid_covariance_keys_never_evaluate_old_or_proposed_factors ... ok
+test invalid_covariance_options_never_evaluate_and_retry_keeps_expiry_schedule ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_covariance_snapshot.rs (target/debug/deps/fixed_lag_covariance_snapshot-8827d3b13f5bb2a2)
+
+running 5 tests
+test covariance_uses_optimized_nonlinear_point_before_all_variables_expire ... ok
+test covariance_rejects_unobservable_unqueried_variables ... ok
+test covariance_failures_roll_back_optimization_expiry_and_new_factors ... ok
+test invalid_queries_do_not_register_new_variables_or_refresh_existing_timestamps ... ok
+test pre_expiry_covariance_keeps_cross_blocks_query_order_and_variance_scale ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/fixed_lag_robust_covariance.rs (target/debug/deps/fixed_lag_robust_covariance-55cb3adda4bd02cd)
+
+running 2 tests
+test successful_covariance_then_rejected_marginalization_rolls_back_everything ... ok
+test inherited_robust_loss_requires_matching_explicit_covariance_model ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -1,0 +1,547 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -81,6 +81,53 @@
+     pub options: IncrementalQrOptions,
+     pub permutation: Option<Vec<usize>>,
+ }
++/// Exact CSR pattern plus sorted internal columns and their original value slots.
++pub(crate) struct QrRowOrder {
++    shape: (usize, usize),
++    offsets: Vec<usize>,
++    original_indices: Vec<usize>,
++    columns: Vec<usize>,
++    positions: Vec<usize>,
++    permutation: Vec<usize>,
++}
++impl QrRowOrder {
++    pub(crate) fn new(j: &CsrMatrix, permutation: &[usize]) -> Result<Self, Error> {
++        let n = j.shape().1;
++        if permutation.len() != n {
++            return Err(Error::InvalidDimensions);
++        }
++        let mut inverse = vec![usize::MAX; n];
++        for (internal, &original) in permutation.iter().enumerate() {
++            if original >= n || inverse[original] != usize::MAX {
++                return Err(Error::InvalidDimensions);
++            }
++            inverse[original] = internal;
++        }
++        let (offsets, indices) = j.pattern();
++        let mut columns = Vec::with_capacity(indices.len());
++        let mut positions = Vec::with_capacity(indices.len());
++        let mut row = Vec::new();
++        for r in 0..j.shape().0 {
++            row.clear();
++            row.extend((offsets[r]..offsets[r + 1]).map(|p| (inverse[indices[p]], p)));
++            row.sort_unstable_by_key(|&(c, _)| c);
++            columns.extend(row.iter().map(|&(c, _)| c));
++            positions.extend(row.iter().map(|&(_, p)| p));
++        }
++        Ok(Self {
++            shape: j.shape(),
++            offsets: offsets.to_vec(),
++            original_indices: indices.to_vec(),
++            columns,
++            positions,
++            permutation: permutation.to_vec(),
++        })
++    }
++    pub(crate) fn matches(&self, j: &CsrMatrix) -> bool {
++        let (offsets, indices) = j.pattern();
++        self.shape == j.shape() && self.offsets == offsets && self.original_indices == indices
++    }
++}
+ impl IncrementalQr {
+     pub(crate) fn into_factor(self) -> QrFactor {
+         QrFactor {
+@@ -180,6 +227,25 @@
+         j: &CsrMatrix,
+         residual: &DVector<f64>,
+     ) -> Result<(), Error> {
++        self.rebuild_with_row_order(j, residual, None)
++    }
++    pub(crate) fn rebuild_cached_row_order(
++        &mut self,
++        j: &CsrMatrix,
++        residual: &DVector<f64>,
++        order: &QrRowOrder,
++    ) -> Result<(), Error> {
++        if !order.matches(j) || self.column_permutation() != Some(order.permutation.as_slice()) {
++            return Err(Error::InvalidDimensions);
++        }
++        self.rebuild_with_row_order(j, residual, Some(order))
++    }
++    fn rebuild_with_row_order(
++        &mut self,
++        j: &CsrMatrix,
++        residual: &DVector<f64>,
++        cached: Option<&QrRowOrder>,
++    ) -> Result<(), Error> {
+         // A complete new model can group rows by their first pivot, avoiding
+         // late rotations through already populated downstream rows. Preserve
+         // original order within each group. Incremental append stays in input
+@@ -200,6 +266,8 @@
+             .map(|r| {
+                 let key = if offsets[r] == offsets[r + 1] {
+                     n
++                } else if let Some(order) = cached {
++                    order.columns[offsets[r]]
+                 } else if let Some(order) = &self.column_order {
+                     indices[offsets[r]..offsets[r + 1]]
+                         .iter()
+@@ -221,7 +289,7 @@
+             rows[starts[key]] = r;
+             starts[key] += 1;
+         }
+-        self.append_rows_in_place(j, residual, rows.into_iter())
++        self.append_rows_with_order(j, residual, rows.into_iter(), cached)
+     }
+     /// Internal column ordering only. Input Jacobians, returned steps, supplied
+     /// cost vectors and future appended columns retain original coordinates.
+@@ -255,6 +323,15 @@
+         j: &CsrMatrix,
+         residual: &DVector<f64>,
+         rows: impl Iterator<Item = usize>,
++    ) -> Result<(), Error> {
++        self.append_rows_with_order(j, residual, rows, None)
++    }
++    fn append_rows_with_order(
++        &mut self,
++        j: &CsrMatrix,
++        residual: &DVector<f64>,
++        rows: impl Iterator<Item = usize>,
++        cached: Option<&QrRowOrder>,
+     ) -> Result<(), Error> {
+         let (m, n) = j.shape();
+         if n != self.dimension() || m != residual.len() {
+@@ -270,8 +347,17 @@
+         for r in rows {
+             let residual = residual[r];
+             row.clear();
+-            row.extend(j.row(r)?);
+-            if let Some(order) = &self.column_order {
++            if let Some(order) = cached {
++                row.extend(
++                    (order.offsets[r]..order.offsets[r + 1])
++                        .map(|p| (order.columns[p], j.values()[order.positions[p]])),
++                );
++            } else {
++                row.extend(j.row(r)?);
++            }
++            if cached.is_none()
++                && let Some(order) = &self.column_order
++            {
+                 for (column, _) in &mut row {
+                     *column = order.to_internal[*column];
+                 }
+@@ -291,6 +377,29 @@
+                     return Err(Error::NonFinite);
+                 }
+                 let (c, s) = (diagonal / norm, below / norm);
++                // An empty pivot with an exact unit sine absorbs this whole
++                // incoming suffix. Preserve the computed norm and RHS arithmetic;
++                // every eliminated lower coefficient is exactly zero.
++                if old.is_empty() && s.abs() == 1. {
++                    let suffix = &row[row_start + 1..];
++                    let added = 1 + suffix.iter().filter(|entry| entry.1 != 0.).count();
++                    if added > max_entries - self.entries {
++                        return Err(Error::SparseFillLimit { limit: max_entries });
++                    }
++                    old.reserve(added);
++                    old.push((k, norm));
++                    old.extend(suffix.iter().filter_map(|&(col, value)| {
++                        (value != 0.).then_some((col, c * 0. + s * value))
++                    }));
++                    self.entries += added;
++                    let previous = self.rhs[k];
++                    self.rhs[k] = c * previous + s * b;
++                    b = -s * previous + c * b;
++                    if !self.rhs[k].is_finite() || !b.is_finite() {
++                        return Err(Error::NonFinite);
++                    }
++                    break;
++                }
+                 upper_row.clear();
+                 lower_row.clear();
+                 let has_diagonal = !old.is_empty();
+@@ -1020,6 +1129,56 @@
+ mod rebuild_order_tests {
+     use super::*;
+     #[test]
++    fn cached_row_mapping_matches_uncached_factors_and_rejects_stale_patterns_and_orders() {
++        let n = 8;
++        let j = CsrMatrix::from_triplets(
++            18,
++            n,
++            (0..18)
++                .flat_map(|r| {
++                    (0..n).filter_map(move |c| {
++                        ((r < n && r == c) || (r >= n && r % 5 != 0 && (r + 2 * c) % 3 == 0))
++                            .then_some((r, c, ((r + c + 1) as f64).sin() + 2.))
++                    })
++                })
++                .collect(),
++        )
++        .unwrap();
++        let permutation = vec![7, 4, 1, 6, 3, 0, 5, 2];
++        let order = QrRowOrder::new(&j, &permutation).unwrap();
++        let residual = DVector::from_fn(18, |r, _| (r as f64).cos());
++        let mut reference = IncrementalQr::new(n, Default::default()).unwrap();
++        reference.set_column_order(permutation.clone()).unwrap();
++        let mut actual = reference.clone();
++        reference.rebuild_in_place(&j, &residual).unwrap();
++        actual
++            .rebuild_cached_row_order(&j, &residual, &order)
++            .unwrap();
++        assert_eq!(actual.rows, reference.rows);
++        assert_eq!(actual.rhs, reference.rhs);
++        assert_eq!(
++            actual.constant_cost.to_bits(),
++            reference.constant_cost.to_bits()
++        );
++        let wrong = CsrMatrix::from_triplets(18, n, vec![(0, 7, 1.)]).unwrap();
++        let mut blank = IncrementalQr::new(n, Default::default()).unwrap();
++        blank.set_column_order(permutation).unwrap();
++        assert_eq!(
++            blank.rebuild_cached_row_order(&wrong, &residual, &order),
++            Err(Error::InvalidDimensions)
++        );
++        blank.set_column_order((0..n).collect()).unwrap();
++        assert_eq!(
++            blank.rebuild_cached_row_order(&j, &residual, &order),
++            Err(Error::InvalidDimensions)
++        );
++        assert!(matches!(
++            QrRowOrder::new(&j, &[0, 0, 1, 2, 3, 4, 5, 6]),
++            Err(Error::InvalidDimensions)
++        ));
++        assert_eq!(blank.stored_entries(), 0);
++    }
++    #[test]
+     fn counted_groups_preserve_triangular_factor_bits_and_constant_energy() {
+         for n in [1, 7, 31] {
+             for scale in [1e-80, 1., 1e80] {
+--- a/crates/ropt/src/sparse_qr.rs
++++ b/crates/ropt/src/sparse_qr.rs
+@@ -1,7 +1,7 @@
+ //! Ordered sparse Givens least squares. No numeric normal matrix or fallback.
+ use crate::{
+     DVector, Error,
+-    incremental_qr::{IncrementalQr, IncrementalQrOptions},
++    incremental_qr::{IncrementalQr, IncrementalQrOptions, QrRowOrder},
+     sparse::{CsrMatrix, finite_vector},
+     sparse_direct::{SparseLdlOptions, SparseOrdering, column_ordering},
+ };
+@@ -43,14 +43,9 @@
+     }
+ }
+ 
+-struct Pattern {
+-    shape: (usize, usize),
+-    offsets: Vec<usize>,
+-    indices: Vec<usize>,
+-}
+ pub(crate) struct SparseQrWorkspace {
+     options: SparseQrOptions,
+-    pattern: Option<Pattern>,
++    pattern: Option<QrRowOrder>,
+     order: Vec<usize>,
+     factor: IncrementalQr,
+ }
+@@ -87,24 +82,15 @@
+         if !damping.is_finite() || damping < 0. {
+             return Err(Error::InvalidOptions);
+         }
+-        let (offsets, indices) = j.pattern();
+-        if self
+-            .pattern
+-            .as_ref()
+-            .is_none_or(|p| p.shape != j.shape() || p.offsets != offsets || p.indices != indices)
+-        {
++        if self.pattern.as_ref().is_none_or(|p| !p.matches(j)) {
+             let order = column_ordering(j, &self.options.symbolic_options())?;
+             self.order = order;
+-            self.pattern = Some(Pattern {
+-                shape: j.shape(),
+-                offsets: offsets.to_vec(),
+-                indices: indices.to_vec(),
+-            });
++            self.pattern = Some(QrRowOrder::new(j, &self.order)?);
+         }
+         self.factor.reset_for_rebuild(n, &self.order)?;
+         let qr = &mut self.factor;
+         if damping == 0. {
+-            qr.rebuild_in_place(j, r)?;
++            qr.rebuild_cached_row_order(j, r, self.pattern.as_ref().unwrap())?;
+         } else {
+             // Keep observation rows first and sort the complete augmented model
+             // during rebuilding; appending damping after R would cause extra fill.
+--- a/crates/ropt/src/pose_graph.rs
++++ b/crates/ropt/src/pose_graph.rs
+@@ -11,15 +11,22 @@
+ #[derive(Debug, Clone, Copy)]
+ pub struct RelativePose2 {
+     measurement: SE2,
++    measurement_angle: f64,
++    measurement_cosine: f64,
++    measurement_sine: f64,
+ }
+ impl RelativePose2 {
+     pub fn new(measurement: SE2) -> Result<Self, Error> {
+-        if !measurement.translation.iter().all(|x| x.is_finite())
+-            || !measurement.rotation.log().is_finite()
+-        {
+-            return Err(Error::NonFinite);
+-        }
+-        Ok(Self { measurement })
++        let angle = measurement.rotation.log();
++        if !measurement.translation.iter().all(|x| x.is_finite()) || !angle.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        Ok(Self {
++            measurement,
++            measurement_angle: angle,
++            measurement_cosine: angle.cos(),
++            measurement_sine: angle.sin(),
++        })
+     }
+     pub fn residual(self, a: SE2, b: SE2) -> Result<Vector3<f64>, Error> {
+         let delta = self.measurement.inverse().compose(a.inverse().compose(b));
+@@ -36,13 +43,52 @@
+     /// Exact analytic right-tangent Jacobians in g2o measurement coordinates.
+     /// The principal angle is differentiable away from its pi branch cut.
+     pub fn linearize(self, a: SE2, b: SE2) -> Result<Pose2Linearization, Error> {
+-        let (ta, tb, z) = (
++        self.linearize_parameters(
++            a.translation,
++            b.translation,
+             a.rotation.log(),
+             b.rotation.log(),
+-            self.measurement.rotation.log(),
+-        );
+-        let (ca, sa, cz, sz) = (ta.cos(), ta.sin(), z.cos(), z.sin());
+-        let difference = b.translation - a.translation;
++        )
++    }
++    /// Analytic right-tangent Jacobians directly from ambient [x, y, angle].
++    /// Principal input angles avoid a sin/cos -> group -> atan2 round trip.
++    /// Other finite angles use the group chart's range reduction before subtraction.
++    pub fn linearize_ambient(self, a: &[f64], b: &[f64]) -> Result<Pose2Linearization, Error> {
++        if a.len() != 3 || b.len() != 3 {
++            return Err(Error::InvalidDimensions);
++        }
++        if !a.iter().chain(b).all(|value| value.is_finite()) {
++            return Err(Error::NonFinite);
++        }
++        let principal = |angle: f64| {
++            if (-std::f64::consts::PI..=std::f64::consts::PI).contains(&angle) {
++                angle
++            } else {
++                crate::manifold::SO2::exp(angle).log()
++            }
++        };
++        self.linearize_parameters(
++            nalgebra::Vector2::new(a[0], a[1]),
++            nalgebra::Vector2::new(b[0], b[1]),
++            principal(a[2]),
++            principal(b[2]),
++        )
++    }
++    fn linearize_parameters(
++        self,
++        a: nalgebra::Vector2<f64>,
++        b: nalgebra::Vector2<f64>,
++        ta: f64,
++        tb: f64,
++    ) -> Result<Pose2Linearization, Error> {
++        let z = self.measurement_angle;
++        let (ca, sa, cz, sz) = (
++            ta.cos(),
++            ta.sin(),
++            self.measurement_cosine,
++            self.measurement_sine,
++        );
++        let difference = b - a;
+         let qx = ca * difference.x + sa * difference.y;
+         let qy = -sa * difference.x + ca * difference.y;
+         let x = qx - self.measurement.translation.x;
+@@ -100,11 +146,11 @@
+         let s = a[2].sin();
+         let x = &c * &dx + &s * &dy - self.measurement.translation.x;
+         let y = -&s * dx + c * dy - self.measurement.translation.y;
+-        let z = self.measurement.rotation.log();
++        let z = self.measurement_angle;
+         let angle = &b[2] - &a[2] - z;
+         let r = vec![
+-            z.cos() * &x + z.sin() * &y,
+-            -z.sin() * x + z.cos() * y,
++            self.measurement_cosine * &x + self.measurement_sine * &y,
++            -self.measurement_sine * x + self.measurement_cosine * y,
+             angle.sin().atan2(&angle.cos()),
+         ];
+         for x in &r {
+@@ -121,9 +167,13 @@
+     measurement: SE2,
+     options: FactorOptions,
+ ) -> Result<(), Error> {
+-    if !matches!(graph.variable_kind(a)?, VariableKind::SE2)
+-        || !matches!(graph.variable_kind(b)?, VariableKind::SE2)
+-    {
++    if !matches!(
++        graph.variable_kind(a)?,
++        VariableKind::SE2 | VariableKind::SE2Cartesian
++    ) || !matches!(
++        graph.variable_kind(b)?,
++        VariableKind::SE2 | VariableKind::SE2Cartesian
++    ) {
+         return Err(Error::InvalidDimensions);
+     }
+     let cost = RelativePose2::new(measurement)?;
+@@ -140,9 +190,13 @@
+     measurement: SE2,
+     options: FactorOptions,
+ ) -> Result<(), Error> {
+-    if !matches!(graph.variable_kind(a)?, VariableKind::SE2)
+-        || !matches!(graph.variable_kind(b)?, VariableKind::SE2)
+-    {
++    if !matches!(
++        graph.variable_kind(a)?,
++        VariableKind::SE2 | VariableKind::SE2Cartesian
++    ) || !matches!(
++        graph.variable_kind(b)?,
++        VariableKind::SE2 | VariableKind::SE2Cartesian
++    ) {
+         return Err(Error::InvalidDimensions);
+     }
+     let cost = RelativePose2::new(measurement)?;
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -22,6 +22,8 @@
+     SO2,
+     SO3,
+     SE2,
++    /// SE2 with a Cartesian right chart; Exp/Log on SE2 remain unchanged.
++    SE2Cartesian,
+     SE3,
+ }
+ impl VariableKind {
+@@ -30,7 +32,7 @@
+             Self::Euclidean(n) => (n, n),
+             Self::SO2 => (1, 1),
+             Self::SO3 => (4, 3),
+-            Self::SE2 => (3, 3),
++            Self::SE2 | Self::SE2Cartesian => (3, 3),
+             Self::SE3 => (7, 6),
+         }
+     }
+@@ -82,6 +84,9 @@
+                 so3_values(decode_so3(x.as_slice(), 0).retract(Vector3::new(d[0], d[1], d[2])))
+             }
+             Self::SE2 => se2_values(read_se2(x)?.retract(Vector3::new(d[0], d[1], d[2]))),
++            Self::SE2Cartesian => {
++                se2_values(read_se2(x)?.retract_cartesian(Vector3::new(d[0], d[1], d[2])))
++            }
+             Self::SE3 => {
+                 se3_values(read_se3(x)?.retract(Tangent6::from_column_slice(d.as_slice())))
+             }
+@@ -107,12 +112,17 @@
+                 let q = rotation.0.quaternion();
+                 out.copy_from_slice(&[q.w, q.i, q.j, q.k]);
+             }
+-            Self::SE2 => {
++            Self::SE2 | Self::SE2Cartesian => {
+                 let pose = SE2 {
+                     translation: Vector2::new(x[0], x[1]),
+                     rotation: SO2::exp(x[2]),
+-                }
+-                .retract(Vector3::new(d[0], d[1], d[2]));
++                };
++                let step = Vector3::new(d[0], d[1], d[2]);
++                let pose = if matches!(self, Self::SE2Cartesian) {
++                    pose.retract_cartesian(step)
++                } else {
++                    pose.retract(step)
++                };
+                 out.copy_from_slice(&[
+                     pose.translation[0],
+                     pose.translation[1],
+@@ -139,7 +149,8 @@
+         }
+         self.validate_slice(out)
+     }
+-    /// Principal right-local coordinates Log(anchor^-1 * value).
++    /// Principal right-local coordinates in the selected chart. SE2Cartesian
++    /// uses relative translation and angle; other Lie kinds use group Log.
+     pub fn local(self, anchor: &DVector<f64>, value: &DVector<f64>) -> Result<DVector<f64>, Error> {
+         self.validate(anchor)?;
+         self.validate(value)?;
+@@ -152,6 +163,11 @@
+             Self::SE2 => {
+                 DVector::from_column_slice(read_se2(anchor)?.local(read_se2(value)?).as_slice())
+             }
++            Self::SE2Cartesian => DVector::from_column_slice(
++                read_se2(anchor)?
++                    .local_cartesian(read_se2(value)?)
++                    .as_slice(),
++            ),
+             Self::SE3 => {
+                 DVector::from_column_slice(read_se3(anchor)?.local(read_se3(value)?).as_slice())
+             }
+--- a/crates/ropt/src/manifold.rs
++++ b/crates/ropt/src/manifold.rs
+@@ -53,6 +53,23 @@
+     pub translation: Vector2<f64>,
+ }
+ impl SE2 {
++    /// Right/body Cartesian chart: compose a translation and an SO2 increment.
++    /// Distinct from the group exponential; its differential at zero is identity.
++    pub fn retract_cartesian(self, d: Vector3<f64>) -> Self {
++        self.compose(Self {
++            translation: Vector2::new(d[0], d[1]),
++            rotation: SO2::exp(d[2]),
++        })
++    }
++    /// Inverse Cartesian chart, with principal relative rotation.
++    pub fn local_cartesian(self, b: Self) -> Vector3<f64> {
++        let translation = self.rotation.inverse().0 * (b.translation - self.translation);
++        Vector3::new(
++            translation[0],
++            translation[1],
++            self.rotation.local(b.rotation),
++        )
++    }
+     pub fn exp(v: Vector3<f64>) -> Self {
+         let w = v[2];
+         let (a, b) = if w.abs() < 1e-6 {
+--- a/crates/ropt/src/manifold_autodiff.rs
++++ b/crates/ropt/src/manifold_autodiff.rs
+@@ -61,6 +61,11 @@
+     let out = match kind {
+         VariableKind::Euclidean(_) => x.iter().zip(d).map(|(x, d)| *x + d).collect(),
+         VariableKind::SO2 => vec![angle(x[0], &d[0])],
++        VariableKind::SE2Cartesian => vec![
++            x[0] + x[2].cos() * &d[0] - x[2].sin() * &d[1],
++            x[1] + x[2].sin() * &d[0] + x[2].cos() * &d[1],
++            angle(x[2], &d[2]),
++        ],
+         VariableKind::SE2 => {
+             let w = &d[2];
+             let (a, b) = if w.value().abs() < 1e-6 {
+@@ -197,6 +202,17 @@
+             let w = &value[0] - anchor[0];
+             vec![w.sin().atan2(&w.cos())]
+         }
++        VariableKind::SE2Cartesian => {
++            let dx = &value[0] - anchor[0];
++            let dy = &value[1] - anchor[1];
++            let (c, s) = (anchor[2].cos(), anchor[2].sin());
++            let (cv, sv) = (value[2].cos(), value[2].sin());
++            vec![
++                c * &dx + s * &dy,
++                -s * dx + c * dy,
++                (c * &sv - s * &cv).atan2(&(c * cv + s * sv)),
++            ]
++        }
+         VariableKind::SE2 => {
+             let dx = &value[0] - anchor[0];
+             let dy = &value[1] - anchor[1];

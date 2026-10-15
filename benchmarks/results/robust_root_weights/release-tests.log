@@ -1,0 +1,14 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 7.53s
+     Running tests/robust_root_weights.rs (target/release/deps/robust_root_weights-c2838a1f29f26151)
+
+running 6 tests
+test huber_lm_moves_when_only_the_square_root_weight_is_representable ... ok
+test increasing_trials_with_tiny_weights_leave_the_accepted_state_intact ... ok
+test cauchy_lm_moves_when_only_the_square_root_weight_is_representable ... ok
+test fixed_lag_freezes_tiny_weights_without_losing_separator_information ... ok
+test unrepresentable_square_root_weight_still_has_zero_frozen_rank ... ok
+test tiny_robust_weights_keep_representable_frozen_information ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

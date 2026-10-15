@@ -1,0 +1,15 @@
+    Checking num-traits v0.2.19
+    Checking bytemuck v1.25.2
+    Checking rawpointer v0.2.1
+    Checking typenum v1.20.1
+    Checking matrixmultiply v0.3.11
+    Checking safe_arch v0.7.4
+    Checking wide v0.7.33
+    Checking num-integer v0.1.47
+    Checking approx v0.5.1
+    Checking num-complex v0.4.6
+    Checking num-rational v0.4.2
+    Checking simba v0.9.1
+    Checking nalgebra v0.34.2
+    Checking ropt v0.1.0 (/tmp/ropt-editable-cow-clone-diagnostic/after/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 8.01s

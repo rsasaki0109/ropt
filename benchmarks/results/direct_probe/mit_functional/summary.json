@@ -1,0 +1,27 @@
+{
+  "complete_replay": true,
+  "arrivals": 1227,
+  "eligible_quality": true,
+  "failed_arrivals": {
+    "root_exact": [],
+    "gradient_pass": [],
+    "reported_cost_pass": []
+  },
+  "max_normalized_gradient": 7.793438692606408e-08,
+  "max_raw_gradient": 0.12790521163879043,
+  "max_reported_cost_difference": 4.433786671143025e-12,
+  "timing_scope": "uncontrolled cold functional replay; excluded from comparative speed claims",
+  "archived_native_agreement": {
+    "max_world_pose_norm": 1.9450922130968535e-07,
+    "max_cost_difference": 7.176481631177012e-12
+  },
+  "source_sha256": "daa5994fbc2bfb6b539fd90b19170048b237df3b093a9d67192d4f50ce9a0fe8",
+  "before_after_means_byte_identical": true,
+  "before_after_non_timing_fields_identical": true,
+  "native_reference_sha256": {
+    "metadata.json": "c1da3abdbefed4fede5ca971f036b9f1cbe71c1a4bf317baff225226bade378d",
+    "report.json": "fd57254b2652af52d2c6b1355d751ac3d5b7d1f1d11d453ffd975fa278f475b9",
+    "quality.csv": "f2e1cb7f018aaa538782733cf01f652401db2258f66352bc5ad0b27c9c248808",
+    "native-poses.csv.gz": "2b3625ede18d33caf06048c94259ec0ee9729ebdf11d7a1cbbe0b8ca54601258"
+  }
+}

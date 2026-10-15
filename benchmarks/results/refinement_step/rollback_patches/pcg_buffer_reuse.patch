@@ -1,0 +1,150 @@
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -226,13 +226,12 @@
+     }
+     options.validate()?;
+     finite_vector(b)?;
+-    let precondition = |r: &DVector<f64>| -> Result<DVector<f64>, Error> {
+-        let z = preconditioner.apply(r)?;
++    let precondition = |r: &DVector<f64>, z: &mut DVector<f64>| -> Result<(), Error> {
++        preconditioner.apply_into(r, z)?;
+         if z.len() != n {
+             return Err(Error::InvalidDimensions);
+         }
+-        finite_vector(&z)?;
+-        Ok(z)
++        finite_vector(z)
+     };
+     let norm = b.norm();
+     if !norm.is_finite() {
+@@ -244,16 +243,17 @@
+     if !threshold.is_finite() {
+         return Err(Error::InvalidOptions);
+     }
+-    let apply = |v: &DVector<f64>| -> Result<DVector<f64>, Error> {
+-        let out = operator.apply(v)?;
++    let apply = |v: &DVector<f64>, out: &mut DVector<f64>| -> Result<(), Error> {
++        operator.apply_into(v, out)?;
+         if out.len() != n {
+             return Err(Error::InvalidDimensions);
+         }
+-        finite_vector(&out)?;
+-        Ok(out)
++        finite_vector(out)
+     };
+     let mut x = DVector::zeros(n);
+-    let mut r = b - &apply(&x)?;
++    let mut ap = DVector::zeros(n);
++    apply(&x, &mut ap)?;
++    let mut r = b - &ap;
+     if r.norm() <= threshold {
+         return Ok(CgReport {
+             x,
+@@ -261,11 +261,13 @@
+             residual_norm: r.norm(),
+         });
+     }
+-    let mut z = precondition(&r)?;
++    let mut z = DVector::zeros(n);
++    precondition(&r, &mut z)?;
+     let mut p = z.clone();
++    let mut true_r = DVector::zeros(n);
+     let mut rz = r.dot(&z);
+     for iteration in 1..=options.max_iterations {
+-        let ap = apply(&p)?;
++        apply(&p, &mut ap)?;
+         let curvature = p.dot(&ap);
+         if !curvature.is_finite() || !rz.is_finite() {
+             return Err(Error::NonFinite);
+@@ -279,7 +281,10 @@
+         finite_vector(&x)?;
+         finite_vector(&r)?;
+         if r.norm() <= threshold {
+-            let true_r = b - apply(&x)?;
++            apply(&x, &mut true_r)?;
++            for k in 0..n {
++                true_r[k] = b[k] - true_r[k];
++            }
+             let residual_norm = true_r.norm();
+             if residual_norm <= threshold {
+                 return Ok(CgReport {
+@@ -289,13 +294,13 @@
+                 });
+             }
+             // Restart if rounding made the recursive residual too optimistic.
+-            r = true_r;
+-            z = precondition(&r)?;
+-            p = z.clone();
++            r.copy_from(&true_r);
++            precondition(&r, &mut z)?;
++            p.copy_from(&z);
+             rz = r.dot(&z);
+             continue;
+         }
+-        z = precondition(&r)?;
++        precondition(&r, &mut z)?;
+         let next = r.dot(&z);
+         if !next.is_finite() {
+             return Err(Error::NonFinite);
+@@ -304,7 +309,7 @@
+             return Err(Error::LinearSolve);
+         }
+         let beta = next / rz;
+-        p = &z + beta * p;
++        p.axpy(1.0, &z, beta);
+         rz = next;
+     }
+     Err(Error::LinearIterationLimit {
+@@ -336,13 +341,8 @@
+         self.jacobian.columns
+     }
+     fn apply(&self, x: &DVector<f64>) -> Result<DVector<f64>, Error> {
+-        let mut out = self
+-            .jacobian
+-            .transpose_multiply(&self.jacobian.multiply(x)?)?;
+-        for i in 0..x.len() {
+-            out[i] += self.damping * self.diagonal[i].max(1.0) * x[i];
+-        }
+-        finite_vector(&out)?;
++        let mut out = DVector::zeros(self.dimension());
++        self.apply_into(x, &mut out)?;
+         Ok(out)
+     }
+     fn apply_into(&self, x: &DVector<f64>, out: &mut DVector<f64>) -> Result<(), Error> {
+--- a/crates/ropt/src/preconditioner.rs
++++ b/crates/ropt/src/preconditioner.rs
+@@ -44,12 +44,8 @@
+         self.diagonal.len()
+     }
+     fn apply(&self, r: &DVector<f64>) -> Result<DVector<f64>, Error> {
+-        if r.len() != self.dimension() {
+-            return Err(Error::InvalidDimensions);
+-        }
+-        finite_vector(r)?;
+-        let z = r.component_div(&self.diagonal);
+-        finite_vector(&z)?;
++        let mut z = DVector::zeros(self.dimension());
++        self.apply_into(r, &mut z)?;
+         Ok(z)
+     }
+     fn apply_into(&self, r: &DVector<f64>, z: &mut DVector<f64>) -> Result<(), Error> {
+@@ -163,18 +159,8 @@
+         self.dimension
+     }
+     fn apply(&self, r: &DVector<f64>) -> Result<DVector<f64>, Error> {
+-        if r.len() != self.dimension {
+-            return Err(Error::InvalidDimensions);
+-        }
+-        finite_vector(r)?;
+         let mut z = DVector::zeros(self.dimension);
+-        for b in &self.blocks {
+-            let solved = b
+-                .factor
+-                .solve(&r.rows(b.range.start, b.range.len()).into_owned());
+-            z.rows_mut(b.range.start, b.range.len()).copy_from(&solved);
+-        }
+-        finite_vector(&z)?;
++        self.apply_into(r, &mut z)?;
+         Ok(z)
+     }
+     fn apply_into(&self, r: &DVector<f64>, z: &mut DVector<f64>) -> Result<(), Error> {

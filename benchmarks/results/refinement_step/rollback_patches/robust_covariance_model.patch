@@ -1,0 +1,68 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -205,13 +205,46 @@
+     pub fn last_time(&self) -> Option<f64> {
+         self.last_time
+     }
++    fn validate_covariance_model(
++        &self,
++        factors: &[SmootherFactor],
++        options: &crate::covariance::CovarianceOptions,
++    ) -> Result<(), Error> {
++        match options.model {
++            crate::covariance::CovarianceModel::Gaussian => {
++                if factors.iter().any(|factor| {
++                    !matches!(
++                        factor.options.loss.unwrap_or(self.options.solver.loss),
++                        Loss::Squared
++                    )
++                }) {
++                    return Err(Error::Evaluation(
++                        "robust factors require explicit FrozenIrls covariance model".into(),
++                    ));
++                }
++            }
++            crate::covariance::CovarianceModel::FrozenIrls { fallback_loss } => {
++                let same_fallback = match (fallback_loss, self.options.solver.loss) {
++                    (Loss::Squared, Loss::Squared) => true,
++                    (Loss::Huber(a), Loss::Huber(b)) | (Loss::Cauchy(a), Loss::Cauchy(b)) => a == b,
++                    _ => false,
++                };
++                if !same_fallback && factors.iter().any(|factor| factor.options.loss.is_none()) {
++                    return Err(Error::InvalidOptions);
++                }
++            }
++        }
++        Ok(())
++    }
+     /// Selected right-tangent covariance of the live window and its frozen prior.
+     /// This is the current surrogate model, not exact nonlinear all-history covariance.
++    /// Inherited robust losses require matching explicit `FrozenIrls` options.
+     pub fn marginal_covariance(
+         &self,
+         keys: &[Key],
+         options: &crate::covariance::CovarianceOptions,
+     ) -> Result<crate::covariance::TangentCovariance, Error> {
++        self.validate_covariance_model(&self.factors, options)?;
+         let order = self.variables.keys().copied().collect::<Vec<_>>();
+         let (graph, ids) = build_graph(&self.variables, &self.factors, &order)?;
+         let query = keys
+@@ -238,6 +271,8 @@
+     /// Covariance or marginalization failure leaves all owned state unchanged.
+     /// The result describes the optimized window and its frozen priors, not an
+     /// exact nonlinear all-history posterior.
++    /// Inherited robust losses require `FrozenIrls` with a fallback loss matching
++    /// the solver, including its scale. Explicit per-factor overrides are honored.
+     ///
+     /// ```
+     /// use ropt::{DMatrix, DVector, factor::VariableKind, fixed_lag::*};
+@@ -317,6 +352,9 @@
+         }
+         let mut factors = self.factors.clone();
+         factors.extend(update.factors);
++        if let Some((_, options)) = covariance_query {
++            self.validate_covariance_model(&factors, options)?;
++        }
+         let order = variables.keys().copied().collect::<Vec<_>>();
+         let (graph, ids) = build_graph(&variables, &factors, &order)?;
+         let (_, n, m) = graph.dimensions();

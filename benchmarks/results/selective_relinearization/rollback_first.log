@@ -1,0 +1,4 @@
+patching file crates/ropt/src/fixed_lag.rs
+patching file crates/ropt/src/isam.rs
+patching file crates/ropt/src/isam/selective.rs
+Baseline source saved under /tmp/ropt-rollback-before-selective-final; compilation skipped

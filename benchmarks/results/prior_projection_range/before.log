@@ -1,0 +1,51 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+     Running tests/marginalization_projection_range.rs (target/debug/deps/marginalization_projection_range-ea56bf1b32ec6ba0)
+
+running 6 tests
+test rotated_projection_keeps_finite_information_after_intermediate_overflow ... FAILED
+test multiple_eliminated_directions_restore_only_the_retained_rows ... FAILED
+test projection_preserves_tiny_tails_beside_large_eliminable_components ... FAILED
+test fixed_lag_rolls_back_unrepresentable_output_then_retries_large_projection ... FAILED
+test small_elimination_coefficients_can_project_large_columns_to_finite_values ... FAILED
+test unrepresentable_retained_projection_still_returns_nonfinite ... ok
+
+failures:
+
+---- rotated_projection_keeps_finite_information_after_intermediate_overflow stdout ----
+
+thread 'rotated_projection_keeps_finite_information_after_intermediate_overflow' (105053) panicked at crates/ropt/tests/marginalization_projection_range.rs:30:10:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- multiple_eliminated_directions_restore_only_the_retained_rows stdout ----
+
+thread 'multiple_eliminated_directions_restore_only_the_retained_rows' (105051) panicked at crates/ropt/tests/marginalization_projection_range.rs:53:10:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- projection_preserves_tiny_tails_beside_large_eliminable_components stdout ----
+
+thread 'projection_preserves_tiny_tails_beside_large_eliminable_components' (105052) panicked at crates/ropt/tests/marginalization_projection_range.rs:13:10:
+called `Result::unwrap()` on an `Err` value: NonFinite
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- fixed_lag_rolls_back_unrepresentable_output_then_retries_large_projection stdout ----
+
+thread 'fixed_lag_rolls_back_unrepresentable_output_then_retries_large_projection' (105050) panicked at crates/ropt/tests/marginalization_projection_range.rs:144:62:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- small_elimination_coefficients_can_project_large_columns_to_finite_values stdout ----
+
+thread 'small_elimination_coefficients_can_project_large_columns_to_finite_values' (105054) panicked at crates/ropt/tests/marginalization_projection_range.rs:69:6:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+
+failures:
+    fixed_lag_rolls_back_unrepresentable_output_then_retries_large_projection
+    multiple_eliminated_directions_restore_only_the_retained_rows
+    projection_preserves_tiny_tails_beside_large_eliminable_components
+    rotated_projection_keeps_finite_information_after_intermediate_overflow
+    small_elimination_coefficients_can_project_large_columns_to_finite_values
+
+test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test marginalization_projection_range`

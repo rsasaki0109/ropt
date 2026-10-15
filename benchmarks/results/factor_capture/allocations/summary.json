@@ -1,0 +1,97 @@
+{
+  "eligible": true,
+  "exact_results_and_work": true,
+  "timers_noncomparative": true,
+  "cases": [
+    {
+      "case": "blocks32-rows1",
+      "allocation_totals": {
+        "before": [
+          1525,
+          108760
+        ],
+        "after": [
+          1493,
+          106456
+        ]
+      },
+      "saved_calls": 32,
+      "saved_requested_bytes": 2304
+    },
+    {
+      "case": "blocks32-rows3",
+      "allocation_totals": {
+        "before": [
+          3511,
+          267528
+        ],
+        "after": [
+          3351,
+          257544
+        ]
+      },
+      "saved_calls": 160,
+      "saved_requested_bytes": 9984
+    },
+    {
+      "case": "blocks32-rows16",
+      "allocation_totals": {
+        "before": [
+          3607,
+          331528
+        ],
+        "after": [
+          3351,
+          310536
+        ]
+      },
+      "saved_calls": 256,
+      "saved_requested_bytes": 20992
+    },
+    {
+      "case": "blocks512-rows1",
+      "allocation_totals": {
+        "before": [
+          23040,
+          1775688
+        ],
+        "after": [
+          22528,
+          1738824
+        ]
+      },
+      "saved_calls": 512,
+      "saved_requested_bytes": 36864
+    },
+    {
+      "case": "blocks512-rows3",
+      "allocation_totals": {
+        "before": [
+          54623,
+          4325904
+        ],
+        "after": [
+          52063,
+          4166160
+        ]
+      },
+      "saved_calls": 2560,
+      "saved_requested_bytes": 159744
+    },
+    {
+      "case": "blocks512-rows16",
+      "allocation_totals": {
+        "before": [
+          56159,
+          5349904
+        ],
+        "after": [
+          52063,
+          5014032
+        ]
+      },
+      "saved_calls": 4096,
+      "saved_requested_bytes": 335872
+    }
+  ]
+}

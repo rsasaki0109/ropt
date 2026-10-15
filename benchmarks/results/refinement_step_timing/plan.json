@@ -1,0 +1,10 @@
+{
+  "primary_pairs": 6,
+  "confirmation_pairs": 6,
+  "confirmation_condition": "primary after stream median lower and at least 5/6 faster pairs; otherwise stop with speed improvement unconfirmed",
+  "maximum_campaigns": 2,
+  "no_competing_builds_tests_audits_during_timing": true,
+  "reference": "archived native accuracy only; no fresh native timing",
+  "before_source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+  "source_sha256": "ffdd6fd2033b67900137ccbca263df7749c4f6ecc681d98601821e8a8fc2fd74"
+}

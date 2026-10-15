@@ -1,0 +1,162 @@
+[
+  {
+    "name": "csail-editable-pilot",
+    "policy": "editable",
+    "selected_cap": 8,
+    "complete_arrivals": 1044,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 10.670332147,
+    "forced_recoveries": 94,
+    "requested_calls": 817,
+    "max_normalized_gradient": 7.528208009807232e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 3.7715762048163825e-07,
+      "max_cost_difference": 4.156675004196586e-13
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "csail-full-pilot",
+    "policy": "full",
+    "selected_cap": 0,
+    "complete_arrivals": 1044,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 4.214401276,
+    "forced_recoveries": 0,
+    "requested_calls": 0,
+    "max_normalized_gradient": 2.44234378981837e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "csail-editable-cap1",
+    "policy": "editable",
+    "selected_cap": 1,
+    "complete_arrivals": 1044,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 6.041559287,
+    "forced_recoveries": 103,
+    "requested_calls": 130,
+    "max_normalized_gradient": 5.636754354038671e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 3.772476220690747e-07,
+      "max_cost_difference": 3.7836400679225335e-13
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "csail-editable-cap0",
+    "policy": "editable",
+    "selected_cap": 0,
+    "complete_arrivals": 1044,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 5.640747389,
+    "forced_recoveries": 129,
+    "requested_calls": 0,
+    "max_normalized_gradient": 3.883718183483213e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 3.772476188250395e-07,
+      "max_cost_difference": 3.694822225952521e-13
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "csail-global-cap1",
+    "policy": "global",
+    "selected_cap": 1,
+    "complete_arrivals": 1044,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 3.527242151,
+    "forced_recoveries": 103,
+    "requested_calls": 130,
+    "max_normalized_gradient": 5.6367517821743734e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 3.772474437295751e-07,
+      "max_cost_difference": 5.488942633746774e-13
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "mit-editable-cap1",
+    "policy": "editable",
+    "selected_cap": 1,
+    "complete_arrivals": 1227,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 8.613420285,
+    "forced_recoveries": 111,
+    "requested_calls": 111,
+    "max_normalized_gradient": 7.793438692606408e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 1.9450922130968535e-07,
+      "max_cost_difference": 7.176481631177012e-12
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "csail-editable-optimized-cap1",
+    "policy": "editable",
+    "selected_cap": 1,
+    "complete_arrivals": 1044,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 4.935666298,
+    "forced_recoveries": 103,
+    "requested_calls": 130,
+    "max_normalized_gradient": 5.636754354038671e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 3.772476220690747e-07,
+      "max_cost_difference": 3.7836400679225335e-13
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "mit-editable-optimized-cap1",
+    "policy": "editable",
+    "selected_cap": 1,
+    "complete_arrivals": 1227,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 6.640854954,
+    "forced_recoveries": 111,
+    "requested_calls": 111,
+    "max_normalized_gradient": 7.793438692606408e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 1.9450922130968535e-07,
+      "max_cost_difference": 7.176481631177012e-12
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "mit-full-pilot",
+    "policy": "full",
+    "selected_cap": 0,
+    "complete_arrivals": 1227,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 8.732268743,
+    "forced_recoveries": 0,
+    "requested_calls": 0,
+    "max_normalized_gradient": 4.390043755867622e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 2.043844639896681e-07,
+      "max_cost_difference": 7.830180948076304e-12
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  },
+  {
+    "name": "mit-global-cap1",
+    "policy": "global",
+    "selected_cap": 1,
+    "complete_arrivals": 1227,
+    "all_original_information_gates_pass": true,
+    "elapsed_seconds": 6.411993377,
+    "forced_recoveries": 111,
+    "requested_calls": 111,
+    "max_normalized_gradient": 7.793438692606408e-08,
+    "archived_native_agreement": {
+      "max_world_pose_norm": 1.9613874353927414e-07,
+      "max_cost_difference": 9.336531547887716e-12
+    },
+    "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+  }
+]

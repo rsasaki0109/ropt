@@ -1,0 +1,32 @@
+{
+  "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+  "cmake": "cmake version 3.31.6",
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+  "flags": [
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+    "-DGTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR=ON",
+    "-DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF",
+    "-DGTSAM_WITH_TBB=OFF",
+    "-DGTSAM_WITH_EIGEN_MKL=OFF",
+    "-DGTSAM_USE_SYSTEM_EIGEN=OFF",
+    "-DGTSAM_DEFAULT_ALLOCATOR=STL",
+    "-DGTSAM_BUILD_TESTS=OFF",
+    "-DGTSAM_BUILD_UNSTABLE=OFF",
+    "-DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF",
+    "-DGTSAM_BUILD_PYTHON=OFF",
+    "-DBOOST_ROOT=/workspace/.ropt-native/sysroot/usr",
+    "-DBoost_NO_SYSTEM_PATHS=ON",
+    "-DBoost_NO_BOOST_CMAKE=ON",
+    "-DCMAKE_POLICY_DEFAULT_CMP0167=OLD",
+    "-DBOOST_LIBRARYDIR=/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu"
+  ],
+  "reference_sources_sha256": {
+    "benchmark.cpp": "cbb6762f3c9f3ffb6d99fce3d697863c8349a08be263c47b1e706813c737c543",
+    "CMakeLists.txt": "dd9d782f3b905bbc2c8ed80258a31aa32f13ce04038bdb00488b7d505875a321",
+    "precision.hpp": "47dc3ded9146f6dc59484b9f81a7e471c8a0a5ad13c6f37586ce4d3523180294",
+    "factors.hpp": "4f14cbdd0c5624307cf228a3e621fad7fd424101dcd6c37f43e1c63e0b3ccad3",
+    "test_precision.cpp": "bec65331d99ee7038cbe85bb390af7d01b3e42159d9f75268d45db253d7659ac"
+  },
+  "dependency_manifest_sha256": "b9a0c73be08c4ff26c9530f01fadcb31a738a3909bd378aecb10b1bfca395b93"
+}

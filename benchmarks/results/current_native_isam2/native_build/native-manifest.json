@@ -1,0 +1,43 @@
+{
+  "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+  "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+  "exact_between": true,
+  "library_sha256": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89",
+  "executable_sha256": "e731889b772b32ea8a9cc3f91575560a4f7449e9978ebd95b6b454059fc85db9",
+  "cmake_cache_sha256": "c8b64df568418f0d6beacda932ee76bcd56ee99948b1da119538acc8c74ee40e",
+  "options": {
+    "CMAKE_BUILD_TYPE": "Release",
+    "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+    "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+    "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+    "GTSAM_WITH_TBB": "OFF",
+    "GTSAM_WITH_EIGEN_MKL": "OFF",
+    "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+    "GTSAM_DEFAULT_ALLOCATOR": "STL",
+    "Boost_INCLUDE_DIR": "/workspace/.ropt-native/sysroot/usr/include",
+    "GTSAM_BUILD_TESTS": "OFF",
+    "GTSAM_BUILD_UNSTABLE": "OFF"
+  },
+  "reference_sources_sha256": {
+    "benchmark.cpp": "cbb6762f3c9f3ffb6d99fce3d697863c8349a08be263c47b1e706813c737c543",
+    "CMakeLists.txt": "dd9d782f3b905bbc2c8ed80258a31aa32f13ce04038bdb00488b7d505875a321",
+    "precision.hpp": "47dc3ded9146f6dc59484b9f81a7e471c8a0a5ad13c6f37586ce4d3523180294",
+    "factors.hpp": "4f14cbdd0c5624307cf228a3e621fad7fd424101dcd6c37f43e1c63e0b3ccad3",
+    "test_precision.cpp": "bec65331d99ee7038cbe85bb390af7d01b3e42159d9f75268d45db253d7659ac"
+  },
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+  "reference_cache_sha256": "26d452109a5f3a49cab3436025fd3354ccc71f780c226787609473f4e5ebbb06",
+  "runtime_library_sha256": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89",
+  "reference_source_directory": "benchmarks/gtsam_precise_isam2",
+  "reference_generator_sha256": "991d600843b7a1adef1ba7cfea9180113b49c7cd53ad063649824e95aaa0b566",
+  "reference_compiler": "/usr/bin/c++",
+  "reference_flags": {
+    "CMAKE_CXX_FLAGS": "",
+    "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG"
+  },
+  "information_whitening": "same two-component arithmetic as ropt for squared relative pivots below 2^-26; original information unchanged",
+  "root_conditioning": "exact conditioned BetweenFactor residual and chart Jacobian",
+  "stationarity_arithmetic": "direct original-information compensated products and column energies for small pivots"
+}

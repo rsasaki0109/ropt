@@ -1,0 +1,22 @@
+[
+  [
+    "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "/workspace/ropt/benchmarks/paired_refinement_step.py",
+    "--binary",
+    "/workspace/.ropt-refinement/timing/after",
+    "--before-binary",
+    "/workspace/.ropt-refinement/timing/before",
+    "--before-source",
+    "/workspace/.ropt-refinement/before-source",
+    "--expected-before-source",
+    "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+    "--expected-source",
+    "ffdd6fd2033b67900137ccbca263df7749c4f6ecc681d98601821e8a8fc2fd74",
+    "--input",
+    "/workspace/ropt/benchmarks/results/csail_real_isam2/csail-se-sync1045-original.g2o",
+    "--reference",
+    "/workspace/ropt/benchmarks/results/csail_real_isam2/primary",
+    "--output",
+    "/workspace/.ropt-refinement/timing/primary"
+  ]
+]

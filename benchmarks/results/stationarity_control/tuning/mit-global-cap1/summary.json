@@ -1,0 +1,16 @@
+{
+  "name": "mit-global-cap1",
+  "policy": "global",
+  "selected_cap": 1,
+  "complete_arrivals": 1227,
+  "all_original_information_gates_pass": true,
+  "elapsed_seconds": 6.411993377,
+  "forced_recoveries": 111,
+  "requested_calls": 111,
+  "max_normalized_gradient": 7.793438692606408e-08,
+  "archived_native_agreement": {
+    "max_world_pose_norm": 1.9613874353927414e-07,
+    "max_cost_difference": 9.336531547887716e-12
+  },
+  "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+}

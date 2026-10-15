@@ -1,0 +1,5 @@
+{
+  "eligible": false,
+  "reason": "isolated build requires README.md included by lib.rs; initial snapshot omitted it",
+  "excluded": true
+}

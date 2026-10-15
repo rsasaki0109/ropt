@@ -1,0 +1,115 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -168,6 +168,52 @@
+     *entries += 1;
+     Ok(())
+ }
++// Insert a strictly ascending structural suffix with an advancing cursor.
++// Fill suffixes start at the existing diagonal of the destination column.
++fn add_pattern_entries(
++    column: &mut PatternColumn,
++    sorted: &[usize],
++    entries: &mut usize,
++    limit: usize,
++) -> Result<(), Error> {
++    if sorted.is_empty() {
++        return Ok(());
++    }
++    match column {
++        PatternColumn::Small(rows) => {
++            let mut position = 0;
++            for (index, &row) in sorted.iter().enumerate() {
++                while position < rows.len() && rows[position] < row {
++                    position += 1;
++                }
++                if position < rows.len() && rows[position] == row {
++                    position += 1;
++                    continue;
++                }
++                if *entries >= limit {
++                    return Err(Error::SparseFillLimit { limit });
++                }
++                if rows.len() < 64 {
++                    rows.insert(position, row);
++                    position += 1;
++                    *entries += 1;
++                } else {
++                    let mut tree = rows.iter().copied().collect::<BTreeSet<_>>();
++                    tree.insert(row);
++                    *entries += 1;
++                    *column = PatternColumn::Large(tree);
++                    return add_pattern_entries(column, &sorted[index + 1..], entries, limit);
++                }
++            }
++        }
++        PatternColumn::Large(_) => {
++            for &row in sorted {
++                add_pattern_entry(column, row, entries, limit)?;
++            }
++        }
++    }
++    Ok(())
++}
+ fn assemble_pattern(j: &CsrMatrix, limit: usize) -> Result<(Columns, usize), Error> {
+     let (m, n) = j.shape();
+     if n == 0 {
+@@ -181,6 +227,11 @@
+     let (offsets, indices) = j.pattern();
+     for r in 0..m {
+         let row = &indices[offsets[r]..offsets[r + 1]];
++        // Repeated supports introduce no new edges. Numeric values still
++        // contribute separately, in their original row order during refactor.
++        if r > 0 && row == &indices[offsets[r - 1]..offsets[r]] {
++            continue;
++        }
+         for (k, &a) in row.iter().enumerate() {
+             for &b in &row[k..] {
+                 add_pattern_entry(&mut columns[a], b, &mut entries, limit)?;
+@@ -340,9 +391,12 @@
+             }
+             max_off_diagonal = max_off_diagonal.max(column.len() - 1);
+             for (i, &a) in column[1..].iter().enumerate() {
+-                for &b in &column[i + 1..] {
+-                    add_pattern_entry(&mut work[a], b, &mut entries, options.max_entries)?;
+-                }
++                add_pattern_entries(
++                    &mut work[a],
++                    &column[i + 1..],
++                    &mut entries,
++                    options.max_entries,
++                )?;
+             }
+             rows.extend(column);
+             offsets.push(rows.len());
+@@ -420,14 +474,26 @@
+             let mut targets = self.assembly_targets.take().unwrap_or_default();
+             targets.clear();
+             targets.reserve_exact(operations);
++            let mut previous_start = 0;
+             for row in 0..j.shape().0 {
+-                for a in pattern_offsets[row]..pattern_offsets[row + 1] {
+-                    let ca = self.inverse[pattern_indices[a]];
+-                    for &original in &pattern_indices[a..pattern_offsets[row + 1]] {
+-                        let cb = self.inverse[original];
+-                        targets.push(self.entry(ca.min(cb), ca.max(cb)));
++                let start = targets.len();
++                let support = &pattern_indices[pattern_offsets[row]..pattern_offsets[row + 1]];
++                if row > 0
++                    && support == &pattern_indices[pattern_offsets[row - 1]..pattern_offsets[row]]
++                {
++                    // Each residual retains its complete plan and operation budget;
++                    // only identical column-to-destination lookups are copied.
++                    targets.extend_from_within(previous_start..start);
++                } else {
++                    for a in pattern_offsets[row]..pattern_offsets[row + 1] {
++                        let ca = self.inverse[pattern_indices[a]];
++                        for &original in &pattern_indices[a..pattern_offsets[row + 1]] {
++                            let cb = self.inverse[original];
++                            targets.push(self.entry(ca.min(cb), ca.max(cb)));
++                        }
+                     }
+                 }
++                previous_start = start;
+             }
+             self.assembly_targets = Some(targets);
+         } else {

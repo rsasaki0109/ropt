@@ -1,0 +1,40 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -164,6 +164,10 @@
+     /// Last optimized ambient values of the variables removed by this update.
+     /// Keys match `marginalized`; later updates do not revise this owned snapshot.
+     pub marginalized_estimates: BTreeMap<Key, DVector<f64>>,
++    /// Last assigned timestamp of each retired variable, including earlier
++    /// refreshes. Keys match `marginalized`; persistent variables never expire.
++    /// This is the variable's timestamp, not the update's `now` or expiry cutoff.
++    pub marginalized_timestamps: BTreeMap<Key, f64>,
+     /// Costs of the optimized window before expiry, including carried constants.
+     /// After nonlinear marginalization this is a surrogate, not all-history cost.
+     pub initial_cost: f64,
+@@ -315,6 +319,7 @@
+     ///     2., Default::default(), &[0], &Default::default(),
+     /// )?;
+     /// assert_eq!(report.marginalized_estimates[&0][0], 2.);
++    /// assert_eq!(report.marginalized_timestamps[&0], 0.);
+     /// assert!((covariance.matrix[(0, 0)] - 1.).abs() < 1e-12);
+     /// assert!(smoother.estimate(0).is_none());
+     /// # Ok::<(), ropt::Error>(())
+@@ -423,6 +428,10 @@
+             .iter()
+             .map(|&key| (key, variables[&key].value.clone()))
+             .collect();
++        let marginalized_timestamps = expired
++            .iter()
++            .map(|&key| (key, variables[&key].timestamp.unwrap()))
++            .collect();
+         let mut constant_cost = self.constant_cost;
+         let summary = marginalize(
+             &mut variables,
+@@ -449,6 +458,7 @@
+                 estimates,
+                 marginalized: expired.into_iter().collect(),
+                 marginalized_estimates,
++                marginalized_timestamps,
+                 initial_cost,
+                 final_cost,
+                 termination: solved.termination,

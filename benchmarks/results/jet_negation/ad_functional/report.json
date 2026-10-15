@@ -1,0 +1,67 @@
+{
+  "source_sha256": "81722fe58b43addfedeae12d13a94c3062c5731627ff1b62285ffbeee305415d",
+  "before_source_sha256": "5e03888fc601316ba2c877e98b0544c6e5daab767dad1b9540d93e29d4760b8c",
+  "scope": "functional/allocation only; instrumented timers noncomparative",
+  "dimensions": [
+    {
+      "width": 1,
+      "result_bits_identical": true,
+      "allocation_calls": 9,
+      "requested_bytes": 336
+    },
+    {
+      "width": 2,
+      "result_bits_identical": true,
+      "allocation_calls": 14,
+      "requested_bytes": 472
+    },
+    {
+      "width": 6,
+      "result_bits_identical": true,
+      "allocation_calls": 35,
+      "requested_bytes": 2136
+    },
+    {
+      "width": 7,
+      "result_bits_identical": true,
+      "allocation_calls": 40,
+      "requested_bytes": 2672
+    },
+    {
+      "width": 12,
+      "result_bits_identical": true,
+      "allocation_calls": 66,
+      "requested_bytes": 7192
+    },
+    {
+      "width": 13,
+      "result_bits_identical": true,
+      "allocation_calls": 71,
+      "requested_bytes": 8208
+    },
+    {
+      "width": 16,
+      "result_bits_identical": true,
+      "allocation_calls": 86,
+      "requested_bytes": 11736
+    },
+    {
+      "width": 17,
+      "result_bits_identical": true,
+      "allocation_calls": 92,
+      "requested_bytes": 14352
+    },
+    {
+      "width": 32,
+      "result_bits_identical": true,
+      "allocation_calls": 167,
+      "requested_bytes": 43992
+    },
+    {
+      "width": 65,
+      "result_bits_identical": true,
+      "allocation_calls": 334,
+      "requested_bytes": 180240
+    }
+  ]
+}

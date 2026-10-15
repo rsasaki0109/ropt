@@ -1,0 +1,11 @@
+configure.log
+Traceback (most recent call last):
+  File "/workspace/ropt/benchmarks/build_native_reference.py", line 147, in <module>
+    main()
+  File "/workspace/ropt/benchmarks/build_native_reference.py", line 113, in main
+    run([cmake, '-S', source / 'gtsam-4.2.1', '-B', build, f'-DCMAKE_INSTALL_PREFIX={prefix}', *flags, *boost_flags], 'configure.log')
+  File "/workspace/ropt/benchmarks/build_native_reference.py", line 110, in run
+    subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/workspace/.ropt-native/sysroot/usr/bin/cmake', '-S', '/workspace/.ropt-native/reference-build/source/gtsam-4.2.1', '-B', '/workspace/.ropt-native/reference-build/gtsam-build', '-DCMAKE_INSTALL_PREFIX=/workspace/.ropt-native/reference-build/prefix', '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_CXX_COMPILER=/usr/bin/c++', '-DGTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR=ON', '-DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF', '-DGTSAM_WITH_TBB=OFF', '-DGTSAM_WITH_EIGEN_MKL=OFF', '-DGTSAM_USE_SYSTEM_EIGEN=OFF', '-DGTSAM_DEFAULT_ALLOCATOR=STL', '-DGTSAM_BUILD_TESTS=OFF', '-DGTSAM_BUILD_UNSTABLE=OFF', '-DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF', '-DGTSAM_BUILD_PYTHON=OFF', '-DBOOST_ROOT=/workspace/.ropt-native/sysroot/usr', '-DBoost_NO_SYSTEM_PATHS=ON', '-DBoost_NO_BOOST_CMAKE=ON', '-DCMAKE_POLICY_DEFAULT_CMP0167=OLD']' returned non-zero exit status 1.

@@ -1,0 +1,299 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -54,6 +54,18 @@
+     Forced,
+     Interval,
+     Threshold,
++    /// Explicitly requested variable anchors; does not advance the arrival count.
++    Requested,
++}
++/// Explicit full nonlinear evaluation at the committed estimates. Gradient
++/// measures use current whitened right-tangent Jacobian columns, not cached R.
++#[derive(Debug, Clone)]
++pub struct IsamNonlinearSummary {
++    pub cost: f64,
++    pub gradient_norm: f64,
++    pub norm: crate::GradientNorm,
++    /// Per nonfixed variable, the maximum measured tangent gradient component.
++    pub variable_gradients: BTreeMap<Key, f64>,
+ }
+ #[derive(Debug)]
+ pub struct IsamReport {
+@@ -317,6 +329,116 @@
+     pub fn factor_count(&self) -> usize {
+         self.factors.len()
+     }
++    /// Evaluate every installed nonlinear factor at committed estimates. This
++    /// explicit probe neither changes anchors/caches nor advances the update
++    /// counter. Callbacks run again; it is not an inexpensive cached cost query.
++    /// A small gradient is a stationarity measure, not an observability certificate.
++    pub fn nonlinear_summary(
++        &self,
++        norm: crate::GradientNorm,
++    ) -> Result<IsamNonlinearSummary, Error> {
++        let (graph, ids) = build_graph(&self.variables, &self.factors, &self.order)?;
++        let (r, j) = graph.evaluate_sparse(&graph.initial())?;
++        let cost = -crate::solver::gaussian_reduction(&DVector::zeros(r.len()), &r)?;
++        let gradient = j.transpose_multiply(&r)?;
++        let mut scales = DVector::<f64>::zeros(gradient.len());
++        if norm == crate::GradientNorm::ColumnNormalized {
++            for (_, column, value) in j.entries() {
++                scales[column] = scales[column].hypot(value);
++            }
++        }
++        crate::sparse::finite_vector(&scales)?;
++        let mut components = DVector::zeros(gradient.len());
++        for (i, &value) in gradient.iter().enumerate() {
++            components[i] = if scales[i] == 0. {
++                value.abs()
++            } else {
++                value.abs() / scales[i]
++            };
++        }
++        crate::sparse::finite_vector(&components)?;
++        let mut variable_gradients = BTreeMap::new();
++        let mut gradient_norm = 0_f64;
++        for (&key, &id) in &ids {
++            if let Some(range) = graph.tangent_range(id)? {
++                let value = components.rows(range.start, range.len()).amax();
++                gradient_norm = gradient_norm.max(value);
++                variable_gradients.insert(key, value);
++            }
++        }
++        Ok(IsamNonlinearSummary {
++            cost,
++            gradient_norm,
++            norm,
++            variable_gradients,
++        })
++    }
++    /// Reevaluate factors incident on explicitly supplied nonfixed keys and
++    /// solve the resulting Gaussian model. Requires a selected-factor mode and
++    /// unique, known, nonempty keys. Its configured bounded threshold passes
++    /// can additionally select other variables. No observation is appended and
++    /// the arrival counter/damping schedule stays unchanged. Owned state is
++    /// unchanged on any error; callback side effects cannot be rolled back.
++    pub fn relinearize_selected(&mut self, keys: &[Key]) -> Result<IsamReport, Error> {
++        let mut selected = std::collections::BTreeSet::new();
++        if keys.is_empty() || self.selective_cache.is_none() {
++            return Err(Error::InvalidOptions);
++        }
++        for &key in keys {
++            if !selected.insert(key)
++                || self
++                    .variables
++                    .get(&key)
++                    .is_none_or(|variable| variable.fixed)
++            {
++                return Err(Error::InvalidDimensions);
++            }
++        }
++        let mut variables = self.variables.clone();
++        let mut anchors = self.anchors.clone();
++        let mut cache = self.selective_cache.clone().unwrap();
++        let result = cache.relinearize(
++            &mut variables,
++            &mut anchors,
++            SelectiveContext {
++                factors: &self.factors,
++                order: &self.order,
++                options: &self.options,
++                new_count: 0,
++            },
++            selected,
++            self.qr.clone(),
++        )?;
++        let mut qr = result.qr;
++        let linearized_cost = qr.cost(&result.coordinates.0)?;
++        if self.use_bayes_tree {
++            qr = qr.into_tree()?;
++        }
++        let report = IsamReport {
++            estimates: variables
++                .iter()
++                .map(|(&key, value)| (key, value.value.clone()))
++                .collect(),
++            kind: IsamUpdateKind::Relinearized,
++            relinearization_reason: Some(IsamRelinearizationReason::Requested),
++            factors_linearized: result.distinct_factors,
++            stored_entries: qr.stored_entries(),
++            linearized_cost,
++            max_anchor_delta: result.coordinates.1,
++            batch_trials: 0,
++            batch_initial_damping: None,
++            batch_final_damping: None,
++            refinement_steps: 0,
++            bayes_tree_update: qr.tree_update(),
++            selective_update: Some(result.report),
++            editable_bayes_tree_update: qr.editable_update(),
++        };
++        self.variables = variables;
++        self.anchors = anchors;
++        self.selective_cache = Some(cache);
++        self.qr = qr;
++        Ok(report)
++    }
+     /// Append variables/factors. Timestamps are not used by this all-history
+     /// smoother; timestamp refresh requests are rejected. Fixed flags cannot change.
+     /// Without a full refresh, estimates solve a cached linearization, not the
+--- a/crates/ropt/src/bayes_tree/editable.rs
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -257,6 +257,78 @@
+             .collect();
+         Ok((separators, parents, owners, count))
+     }
++    fn factor_support(&self, factor: &GaussianFactor) -> BTreeSet<usize> {
++        factor
++            .jacobian
++            .entries()
++            .map(|(_, column, _)| self.tree.to_internal[column])
++            .collect()
++    }
++    /// Adding supports cannot shrink symbolic fill. Same-support replacements
++    /// change numeric rows only. Propagate added separator tails in elimination
++    /// order; removals or changed supports use the complete pruning analysis.
++    fn added_topology(
++        &self,
++        removed: &[GaussianFactorId],
++        replacements: &[(GaussianFactorId, Arc<GaussianFactor>)],
++    ) -> Result<Option<Topology>, Error> {
++        if !removed.is_empty() {
++            return Ok(None);
++        }
++        let mut additions = Vec::new();
++        for (id, factor) in replacements {
++            let support = self.factor_support(factor);
++            if let Some(old) = self.factors.get(id) {
++                if self.factor_support(old) != support {
++                    return Ok(None);
++                }
++            } else {
++                additions.push((*id, support));
++            }
++        }
++        let mut separators = self.tree.separators.clone();
++        let mut parents = self.tree.parents.clone();
++        let mut owners = self.owners.clone();
++        let mut count = self.tree.symbolic_entries;
++        let mut pending = BTreeMap::<usize, BTreeSet<usize>>::new();
++        for (id, support) in additions {
++            let owner = support.first().copied();
++            owners.insert(id, owner);
++            if let Some(k) = owner {
++                pending
++                    .entry(k)
++                    .or_default()
++                    .extend(support.into_iter().skip(1));
++            }
++        }
++        while let Some((k, added)) = pending.pop_first() {
++            let filled = separators[k]
++                .iter()
++                .copied()
++                .chain(added)
++                .collect::<BTreeSet<_>>();
++            if filled.len() == separators[k].len() {
++                continue;
++            }
++            count = count
++                .checked_add(filled.len() - separators[k].len())
++                .ok_or(Error::InvalidDimensions)?;
++            if count > self.tree.options.max_entries {
++                return Err(Error::SparseFillLimit {
++                    limit: self.tree.options.max_entries,
++                });
++            }
++            parents[k] = filled.first().copied();
++            if let Some(parent) = parents[k] {
++                pending
++                    .entry(parent)
++                    .or_default()
++                    .extend(filled.iter().copied().skip(1));
++            }
++            separators[k] = Arc::from(filled.into_iter().collect::<Vec<_>>());
++        }
++        Ok(Some((separators, parents, owners, count)))
++    }
+     fn update_in_place(
+         &mut self,
+         removed: &[GaussianFactorId],
+@@ -296,6 +368,7 @@
+             };
+             return Ok(());
+         }
++        let incremental_topology = self.added_topology(removed, &replacements)?;
+         for &id in removed {
+             self.factors.remove(&id);
+         }
+@@ -310,7 +383,10 @@
+         if entries > limit {
+             return Err(Error::SparseFillLimit { limit });
+         }
+-        let (separators, parents, owners, symbolic_entries) = self.topology()?;
++        let (separators, parents, owners, symbolic_entries) = match incremental_topology {
++            Some(topology) => topology,
++            None => self.topology()?,
++        };
+         for id in &changed {
+             if let Some(Some(owner)) = owners.get(id) {
+                 pending.push(*owner);
+@@ -548,4 +624,59 @@
+         assert!(Arc::ptr_eq(&message, &tree.messages[1]));
+         assert!(Arc::ptr_eq(&factor, &tree.factors[&1]));
+     }
++    #[test]
++    fn incremental_symbolic_tails_match_full_pruning_and_reuse_unchanged_supports() {
++        let mut tree =
++            EditableBayesTree::new_ordered(vec![4, 2, 7, 0, 8, 5, 3, 6, 1], Default::default())
++                .unwrap();
++        let permutation = tree.column_permutation().to_vec();
++        let block = |columns: &[usize], scale: f64| {
++            GaussianFactor::new(
++                CsrMatrix::from_triplets(
++                    1,
++                    9,
++                    columns
++                        .iter()
++                        .map(|&column| (0, permutation[column], scale))
++                        .collect(),
++                )
++                .unwrap(),
++                DVector::from_element(1, -1.),
++            )
++            .unwrap()
++        };
++        let check = |tree: &EditableBayesTree| {
++            let (separators, parents, owners, count) = tree.topology().unwrap();
++            assert_eq!(tree.tree.separators, separators);
++            assert_eq!(tree.tree.parents, parents);
++            assert_eq!(tree.owners, owners);
++            assert_eq!(tree.tree.symbolic_entries, count);
++        };
++        tree.update(&[], vec![(1, block(&[0, 5, 8], 1.))]).unwrap();
++        check(&tree);
++        tree.update(&[], vec![(2, block(&[0, 3], 1.))]).unwrap();
++        check(&tree);
++        assert_eq!(tree.parent(0).unwrap(), Some(3));
++        assert_eq!(tree.separator(3).unwrap(), &[5, 8]);
++        let old = tree.tree.separators.clone();
++        tree.update(&[], vec![(2, block(&[0, 3], 7.))]).unwrap();
++        check(&tree);
++        for (a, b) in old.iter().zip(&tree.tree.separators) {
++            assert!(Arc::ptr_eq(a, b));
++        }
++        for index in 0..20 {
++            let a = index % 7;
++            let b = 1 + (index * 3) % 8;
++            tree.update(
++                &[],
++                vec![(10 + index as u64, block(&[a, b], 1. + index as f64 * 0.1))],
++            )
++            .unwrap();
++            check(&tree);
++        }
++        tree.update(&[1], vec![]).unwrap();
++        check(&tree);
++        tree.update(&[], vec![(2, block(&[8], 1.))]).unwrap();
++        check(&tree);
++    }
+ }

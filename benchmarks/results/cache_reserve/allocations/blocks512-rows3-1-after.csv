@@ -1,0 +1,2 @@
+blocks,rows,appends,elapsed_ns,allocation_calls,requested_bytes,callback_calls,cost_bits,gradient_bits,estimate_bits,cached_cost_bits,anchor_delta_bits,entries,reeliminated_cliques,input_factor_rows,input_separator_rows
+512,3,1,429244,3686,1072072,1,8000000000000000,0000000000000000,eb6c67321de37725,0000000000000000,0000000000000000,3072,3,4,3

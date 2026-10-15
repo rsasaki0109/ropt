@@ -1,0 +1,6 @@
+{
+  "initial_clippy_check": "Test module placement was corrected; all required checks passed before comparative timing. Initial logs are retained.",
+  "timing_restarts": 0,
+  "slower_rounds_retained": true,
+  "candidate_selection": "Strided writes rejected; stack wrappers selected for allocation reduction and case-specific probe latency improvement. Complete-update speedup remains unestablished."
+}

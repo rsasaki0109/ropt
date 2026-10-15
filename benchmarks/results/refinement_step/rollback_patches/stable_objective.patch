@@ -1,0 +1,263 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -184,6 +184,63 @@
+                 let s = (r / a).powi(2);
+                 (0.5 * a * a * s.ln_1p(), 1.0 / (1.0 + s))
+             }
++        }
++    }
++    // Difference of true losses for nonnegative scalar/block norms. Orient the
++    // Cauchy ratio positively so ln_1p cannot round its argument down to -1.
++    fn reduction(self, before: f64, after: f64) -> f64 {
++        if before < after {
++            return -self.reduction(after, before);
++        }
++        match self {
++            Self::Squared => 0.5 * (before - after) * (before + after),
++            Self::Huber(a) if after >= a => a * (before - after),
++            Self::Huber(a) if before > a => a * (before - a) + 0.5 * (a - after) * (a + after),
++            Self::Huber(_) => 0.5 * (before - after) * (before + after),
++            Self::Cauchy(a) => {
++                let (u, v) = (before / a, after / a);
++                let ratio = ((before - after) / a) * (u + v) / (1.0 + v * v);
++                if before <= a {
++                    // Cancel a^2 algebraically when normalized squared changes
++                    // can underflow. ln(1+z)/z has continuous value 1 at z=0.
++                    let log_ratio = if ratio == 0.0 {
++                        1.0
++                    } else {
++                        ratio.ln_1p() / ratio
++                    };
++                    0.5 * (before - after) * (before + after) / (1.0 + v * v) * log_ratio
++                } else {
++                    0.5 * a * a * ratio.ln_1p()
++                }
++            }
++        }
++    }
++}
++#[derive(Default)]
++struct CompensatedSum {
++    sum: f64,
++    correction: f64,
++}
++impl CompensatedSum {
++    fn add(&mut self, value: f64) -> Result<(), Error> {
++        let next = self.sum + value;
++        if !value.is_finite() || !next.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        self.correction += if self.sum.abs() >= value.abs() {
++            (self.sum - next) + value
++        } else {
++            (value - next) + self.sum
++        };
++        self.sum = next;
++        Ok(())
++    }
++    fn total(self) -> Result<f64, Error> {
++        let value = self.sum + self.correction;
++        if value.is_finite() {
++            Ok(value)
++        } else {
++            Err(Error::NonFinite)
+         }
+     }
+ }
+@@ -252,6 +309,9 @@
+     pub iteration: usize,
+     pub cost: f64,
+     pub trial_cost: f64,
++    /// True-loss reduction accumulated per scalar/joint block. It can be
++    /// nonzero even when rounded aggregate cost and trial_cost are identical.
++    pub actual_reduction: f64,
+     pub gradient_norm: f64,
+     pub step_norm: f64,
+     pub damping: f64,
+@@ -275,10 +335,40 @@
+ }
+ struct Linearization {
+     cost: f64,
++    objective_norms: Vec<f64>,
+     residual: DVector<f64>,
+     jacobian: Jacobian,
+ }
+ impl Linearization {
++    fn actual_reduction(
++        &self,
++        trial: &Self,
++        fallback: Loss,
++        blocks: &[LossBlock],
++    ) -> Result<f64, Error> {
++        if self.objective_norms.len() != trial.objective_norms.len() {
++            return Err(Error::InvalidDimensions);
++        }
++        let mut sum = CompensatedSum::default();
++        let mut index = 0;
++        let mut add = |loss: Loss| -> Result<(), Error> {
++            sum.add(loss.reduction(self.objective_norms[index], trial.objective_norms[index]))?;
++            index += 1;
++            Ok(())
++        };
++        let mut cursor = 0;
++        for block in blocks {
++            for _ in cursor..block.rows.start {
++                add(fallback)?;
++            }
++            add(block.loss)?;
++            cursor = block.rows.end;
++        }
++        for _ in cursor..self.residual.len() {
++            add(fallback)?;
++        }
++        sum.total()
++    }
+     fn gradient(&self) -> Result<DVector<f64>, Error> {
+         let g = match &self.jacobian {
+             Jacobian::Dense(j) => j.transpose() * &self.residual,
+@@ -429,7 +519,9 @@
+     if !r.iter().all(|v| v.is_finite()) {
+         return Err(Error::NonFinite);
+     }
+-    let (cost, weights) = robust_weights(&r, options.loss, loss_blocks)?;
++    let count = m - loss_blocks.iter().map(|b| b.rows.len() - 1).sum::<usize>();
++    let mut objective_norms = Vec::with_capacity(count);
++    let (cost, weights) = robust_model(&r, options.loss, loss_blocks, Some(&mut objective_norms))?;
+     r.component_mul_assign(&weights);
+     if !cost.is_finite() || !r.iter().chain(weights.iter()).all(|v| v.is_finite()) {
+         return Err(Error::NonFinite);
+@@ -447,6 +539,7 @@
+     }
+     Ok(Linearization {
+         cost,
++        objective_norms,
+         residual: r,
+         jacobian,
+     })
+@@ -456,33 +549,42 @@
+     fallback: Loss,
+     blocks: &[LossBlock],
+ ) -> Result<(f64, DVector<f64>), Error> {
++    robust_model(residual, fallback, blocks, None)
++}
++fn robust_model(
++    residual: &DVector<f64>,
++    fallback: Loss,
++    blocks: &[LossBlock],
++    mut norms: Option<&mut Vec<f64>>,
++) -> Result<(f64, DVector<f64>), Error> {
+     let m = residual.len();
+     let mut cursor = 0;
+-    let mut cost = 0.0;
++    let mut cost = CompensatedSum::default();
+     let mut weights = DVector::zeros(m);
++    let mut add = |norm: f64, loss: Loss, rows: Range<usize>| -> Result<(), Error> {
++        if !norm.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        let (c, w) = loss.value_weight(norm);
++        cost.add(c)?;
++        weights.rows_mut(rows.start, rows.len()).fill(w.sqrt());
++        if let Some(norms) = &mut norms {
++            norms.push(norm);
++        }
++        Ok(())
++    };
+     for block in blocks {
+         for i in cursor..block.rows.start {
+-            let (c, w) = fallback.value_weight(residual[i]);
+-            cost += c;
+-            weights[i] = w.sqrt();
++            add(residual[i].abs(), fallback, i..i + 1)?;
+         }
+         let norm = residual.rows(block.rows.start, block.rows.len()).norm();
+-        if !norm.is_finite() {
+-            return Err(Error::NonFinite);
+-        }
+-        let (c, w) = block.loss.value_weight(norm);
+-        cost += c;
+-        weights
+-            .rows_mut(block.rows.start, block.rows.len())
+-            .fill(w.sqrt());
++        add(norm, block.loss, block.rows.clone())?;
+         cursor = block.rows.end;
+     }
+     for i in cursor..m {
+-        let (c, w) = fallback.value_weight(residual[i]);
+-        cost += c;
+-        weights[i] = w.sqrt();
+-    }
+-    Ok((cost, weights))
++        add(residual[i].abs(), fallback, i..i + 1)?;
++    }
++    Ok((cost.total()?, weights))
+ }
+ pub(crate) fn validated_loss_blocks(
+     problem: &impl LocalProblem,
+@@ -639,7 +741,7 @@
+         let trial_model = linearize(problem, &trial, n, m, options, &loss_blocks)?;
+         let trial_cost = trial_model.cost;
+         let predicted = model.predicted(&gradient, &step)?;
+-        let actual = cost - trial_cost;
++        let actual = model.actual_reduction(&trial_model, options.loss, &loss_blocks)?;
+         let ratio = if predicted > 0.0 {
+             actual / predicted
+         } else {
+@@ -650,6 +752,7 @@
+             iteration,
+             cost,
+             trial_cost,
++            actual_reduction: actual,
+             gradient_norm,
+             step_norm,
+             damping,
+@@ -704,3 +807,49 @@
+         iterations: history,
+     })
+ }
++
++#[cfg(test)]
++mod stable_loss_tests {
++    use super::*;
++    #[test]
++    fn squared_and_huber_differences_preserve_small_changes_and_transition_signs() {
++        assert_eq!(
++            Loss::Squared.reduction(100_000_001., 100_000_000.),
++            100_000_000.5
++        );
++        assert_eq!(Loss::Huber(2.).reduction(4., 3.), 2.);
++        assert_eq!(Loss::Huber(2.).reduction(3., 1.), 3.5);
++        assert_eq!(Loss::Huber(2.).reduction(1., 3.), -3.5);
++        assert_eq!(Loss::Huber(2.).reduction(2., 1.), 1.5);
++        assert_eq!(Loss::Squared.reduction(3., 3.), 0.);
++    }
++    #[test]
++    fn cauchy_differences_handle_close_norms_and_extreme_ratio_in_both_directions() {
++        // High precision log((1+before^2)/(1+after^2))/2 = about 2e-16.
++        // Subtraction of separately rounded losses gives zero here.
++        let reduction = Loss::Cauchy(1.).reduction(1e16, 1e16 - 2.);
++        assert!((reduction - 2e-16).abs() < 1e-30);
++        let decrease = Loss::Cauchy(1.).reduction(1e100, 0.);
++        assert!((decrease - 230.25850929940458).abs() < 1e-12);
++        assert_eq!(Loss::Cauchy(1.).reduction(0., 1e100), -decrease);
++        assert_eq!(Loss::Cauchy(1.).reduction(1., 1.), 0.);
++        assert!((Loss::Cauchy(1e154).reduction(1., 0.5) - 0.375).abs() < 1e-15);
++        let tiny_change = Loss::Cauchy(1e154).reduction(1., 1. - f64::EPSILON);
++        assert!((tiny_change - f64::EPSILON).abs() < 1e-30);
++    }
++    #[test]
++    fn compensated_summation_retains_small_terms_and_rejects_nonfinite_totals() {
++        let mut sum = CompensatedSum::default();
++        for value in [1e16, 1., 1., -1e16] {
++            sum.add(value).unwrap();
++        }
++        assert_eq!(sum.total().unwrap(), 2.);
++        assert_eq!(
++            CompensatedSum::default().add(f64::INFINITY).unwrap_err(),
++            Error::NonFinite
++        );
++        let mut sum = CompensatedSum::default();
++        sum.add(f64::MAX).unwrap();
++        assert_eq!(sum.add(f64::MAX).unwrap_err(), Error::NonFinite);
++    }
++}

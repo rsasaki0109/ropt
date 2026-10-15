@@ -1,0 +1,51 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.97s
+     Running tests/cauchy_range.rs (target/debug/deps/cauchy_range-2f2bfa6dd0de6a30)
+
+running 6 tests
+test representable_cauchy_costs_survive_extreme_intermediates ... FAILED
+test lm_accepts_finite_cauchy_reduction_between_large_residuals ... FAILED
+test increasing_extreme_cauchy_trial_is_rejected ... FAILED
+test gauss_newton_accepts_cauchy_reduction_across_scale_boundary ... FAILED
+test subnormal_cauchy_weight_preserves_frozen_information ... FAILED
+test unrepresentable_cauchy_cost_is_still_rejected ... ok
+
+failures:
+
+---- representable_cauchy_costs_survive_extreme_intermediates stdout ----
+
+thread 'representable_cauchy_costs_survive_extreme_intermediates' (54640) panicked at crates/ropt/tests/cauchy_range.rs:64:18:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- lm_accepts_finite_cauchy_reduction_between_large_residuals stdout ----
+
+thread 'lm_accepts_finite_cauchy_reduction_between_large_residuals' (54639) panicked at crates/ropt/tests/cauchy_range.rs:118:14:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- increasing_extreme_cauchy_trial_is_rejected stdout ----
+
+thread 'increasing_extreme_cauchy_trial_is_rejected' (54638) panicked at crates/ropt/tests/cauchy_range.rs:170:14:
+called `Result::unwrap()` on an `Err` value: NonFinite
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- gauss_newton_accepts_cauchy_reduction_across_scale_boundary stdout ----
+
+thread 'gauss_newton_accepts_cauchy_reduction_across_scale_boundary' (54637) panicked at crates/ropt/tests/cauchy_range.rs:143:14:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- subnormal_cauchy_weight_preserves_frozen_information stdout ----
+
+thread 'subnormal_cauchy_weight_preserves_frozen_information' (54641) panicked at crates/ropt/tests/cauchy_range.rs:94:18:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+
+failures:
+    gauss_newton_accepts_cauchy_reduction_across_scale_boundary
+    increasing_extreme_cauchy_trial_is_rejected
+    lm_accepts_finite_cauchy_reduction_between_large_residuals
+    representable_cauchy_costs_survive_extreme_intermediates
+    subnormal_cauchy_weight_preserves_frozen_information
+
+test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test cauchy_range`

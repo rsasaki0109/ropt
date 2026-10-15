@@ -1,0 +1,3 @@
+norm,blocks,ad_factors,chunk,queries,seconds,cost_bits,gradient_bits,variable_bits,estimate_bits,callback_calls,allocation_calls,allocation_bytes
+Absolute,2048,1024,1,128,0.22378338600000008,407d7cbe8d045a0d,3fcd3851ca0f3734,86152fa738cd44bd,d7532973429d0a84,524288,0,0
+ColumnNormalized,2048,1024,1,128,0.23111756999999999,407d7cbe8d045a0d,3fc47e9aeeead1aa,1a7b00882c468685,d7532973429d0a84,524288,0,0

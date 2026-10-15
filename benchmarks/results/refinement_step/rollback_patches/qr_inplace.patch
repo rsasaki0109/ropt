@@ -1,0 +1,185 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -100,7 +100,7 @@
+                     row.remove(0);
+                     continue;
+                 }
+-                let old = &self.rows[k];
++                let old = &mut self.rows[k];
+                 let diagonal = old.first().map_or(0., |&(_, value)| value);
+                 let norm = diagonal.hypot(below);
+                 if !norm.is_finite() || norm == 0. {
+@@ -109,60 +109,123 @@
+                 let (c, s) = (diagonal / norm, below / norm);
+                 upper_row.clear();
+                 lower_row.clear();
+-                upper_row.push((k, norm));
+-                let (mut i, mut j) = (usize::from(!old.is_empty()), 1);
++                let has_diagonal = !old.is_empty();
++                let (mut i, mut j, mut write) =
++                    (usize::from(has_diagonal), 1, usize::from(has_diagonal));
+                 let mut entries = self.entries;
+-                let mut rotate_entry = |col: usize, upper: f64, lower: f64| -> Result<(), Error> {
++                if has_diagonal {
++                    old[0].1 = norm;
++                }
++                // Compact existing columns in place until the first new interior
++                // column. Writes never reach unread entries. Preserve ascending
++                // arithmetic, including explicit zero operands and cancellations.
++                while i < old.len() && (j == row.len() || old[i].0 <= row[j].0) {
++                    let (col, upper) = old[i];
++                    let lower = if j < row.len() && row[j].0 == col {
++                        let value = row[j].1;
++                        j += 1;
++                        value
++                    } else {
++                        0.
++                    };
+                     let a = c * upper + s * lower;
+                     let v = -s * upper + c * lower;
+                     if !a.is_finite() || !v.is_finite() {
+                         return Err(Error::NonFinite);
+                     }
+-                    // Match the old ascending map-update entry checks, including
+-                    // transient fill before later cancellations and the diagonal.
+-                    if a == 0. && upper != 0. {
++                    if a == 0. {
+                         entries -= 1;
+-                    }
+-                    if a != 0. && upper == 0. {
+-                        if entries >= max_entries {
+-                            return Err(Error::SparseFillLimit { limit: max_entries });
+-                        }
+-                        entries += 1;
+-                    }
+-                    if a != 0. {
+-                        upper_row.push((col, a));
++                    } else {
++                        old[write] = (col, a);
++                        write += 1;
+                     }
+                     if v != 0. {
+                         lower_row.push((col, v));
+                     }
+-                    Ok(())
+-                };
+-                while i < old.len() && j < row.len() {
+-                    let (upper_col, upper) = old[i];
+-                    let (lower_col, lower) = row[j];
+-                    match upper_col.cmp(&lower_col) {
+-                        std::cmp::Ordering::Less => {
+-                            rotate_entry(upper_col, upper, 0.)?;
+-                            i += 1;
++                    i += 1;
++                }
++                let in_place = has_diagonal && i == old.len();
++                if in_place {
++                    old.truncate(write);
++                    // New trailing columns cannot overwrite unread storage.
++                    for &(col, lower) in &row[j..] {
++                        let a = c * 0. + s * lower;
++                        let v = -s * 0. + c * lower;
++                        if !a.is_finite() || !v.is_finite() {
++                            return Err(Error::NonFinite);
+                         }
+-                        std::cmp::Ordering::Greater => {
+-                            rotate_entry(lower_col, 0., lower)?;
+-                            j += 1;
++                        if a != 0. {
++                            if entries >= max_entries {
++                                return Err(Error::SparseFillLimit { limit: max_entries });
++                            }
++                            entries += 1;
++                            old.push((col, a));
+                         }
+-                        std::cmp::Ordering::Equal => {
+-                            rotate_entry(upper_col, upper, lower)?;
+-                            i += 1;
+-                            j += 1;
++                        if v != 0. {
++                            lower_row.push((col, v));
+                         }
+                     }
+-                }
+-                // Tails remain in the same ascending union order, using the
+-                // same arithmetic and transient entry checks as paired columns.
+-                for &(col, upper) in &old[i..] {
+-                    rotate_entry(col, upper, 0.)?;
+-                }
+-                for &(col, lower) in &row[j..] {
+-                    rotate_entry(col, 0., lower)?;
++                } else {
++                    if has_diagonal {
++                        upper_row.extend_from_slice(&old[..write]);
++                    } else {
++                        upper_row.push((k, norm));
++                    }
++                    // A new interior column requires merging the remaining suffix.
++                    // Already rotated/compacted columns are copied, never replayed.
++                    let mut rotate_entry =
++                        |col: usize, upper: f64, lower: f64| -> Result<(), Error> {
++                            let a = c * upper + s * lower;
++                            let v = -s * upper + c * lower;
++                            if !a.is_finite() || !v.is_finite() {
++                                return Err(Error::NonFinite);
++                            }
++                            // Match the old ascending map-update entry checks, including
++                            // transient fill before later cancellations and the diagonal.
++                            if a == 0. && upper != 0. {
++                                entries -= 1;
++                            }
++                            if a != 0. && upper == 0. {
++                                if entries >= max_entries {
++                                    return Err(Error::SparseFillLimit { limit: max_entries });
++                                }
++                                entries += 1;
++                            }
++                            if a != 0. {
++                                upper_row.push((col, a));
++                            }
++                            if v != 0. {
++                                lower_row.push((col, v));
++                            }
++                            Ok(())
++                        };
++                    while i < old.len() && j < row.len() {
++                        let (upper_col, upper) = old[i];
++                        let (lower_col, lower) = row[j];
++                        match upper_col.cmp(&lower_col) {
++                            std::cmp::Ordering::Less => {
++                                rotate_entry(upper_col, upper, 0.)?;
++                                i += 1;
++                            }
++                            std::cmp::Ordering::Greater => {
++                                rotate_entry(lower_col, 0., lower)?;
++                                j += 1;
++                            }
++                            std::cmp::Ordering::Equal => {
++                                rotate_entry(upper_col, upper, lower)?;
++                                i += 1;
++                                j += 1;
++                            }
++                        }
++                    }
++                    // Tails remain in the same ascending union order, using the
++                    // same arithmetic and transient entry checks as paired columns.
++                    for &(col, upper) in &old[i..] {
++                        rotate_entry(col, upper, 0.)?;
++                    }
++                    for &(col, lower) in &row[j..] {
++                        rotate_entry(col, 0., lower)?;
++                    }
+                 }
+                 if diagonal == 0. {
+                     if entries >= self.options.max_entries {
+@@ -173,7 +236,9 @@
+                     entries += 1;
+                 }
+                 self.entries = entries;
+-                std::mem::swap(&mut self.rows[k], &mut upper_row);
++                if !in_place {
++                    std::mem::swap(old, &mut upper_row);
++                }
+                 std::mem::swap(&mut row, &mut lower_row);
+                 let old = self.rhs[k];
+                 self.rhs[k] = c * old + s * b;

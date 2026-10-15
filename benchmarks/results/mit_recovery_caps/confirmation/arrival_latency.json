@@ -1,0 +1,16 @@
+{
+  "before": {
+    "arrival_samples": 7362,
+    "median_ms": 2.7934015,
+    "p95_nearest_rank_ms": 32.345947,
+    "p99_nearest_rank_ms": 67.322686,
+    "max_ms": 123.897627
+  },
+  "after": {
+    "arrival_samples": 7362,
+    "median_ms": 2.8200744999999996,
+    "p95_nearest_rank_ms": 26.692729,
+    "p99_nearest_rank_ms": 56.710002,
+    "max_ms": 131.089987
+  }
+}

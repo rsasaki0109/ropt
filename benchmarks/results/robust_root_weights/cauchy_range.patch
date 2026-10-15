@@ -1,0 +1,129 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -206,7 +206,24 @@
+             Self::Huber(_) => (0.5 * r * r, 1.0),
+             Self::Cauchy(a) => {
+                 let s = (r / a).powi(2);
+-                (0.5 * a * a * s.ln_1p(), 1.0 / (1.0 + s))
++                let cost = 0.5 * a * a * s.ln_1p();
++                if s.is_normal() && cost.is_normal() {
++                    return (cost, 1.0 / (1.0 + s));
++                }
++                let norm = r.abs();
++                if norm <= a {
++                    // Cancel a^2 before multiplying when r/a is tiny or a^2
++                    // overflows. ln(1+s)/s has continuous value 1 at s=0.
++                    let correction = if s == 0.0 { 1.0 } else { s.ln_1p() / s };
++                    ((0.5 * norm) * (norm * correction), 1.0 / (1.0 + s))
++                } else {
++                    let inverse_squared = (a / norm).powi(2);
++                    let log = log_positive_ratio(norm, a) + 0.5 * inverse_squared.ln_1p();
++                    // Multiplication order preserves subnormal costs even
++                    // when a^2 underflows. The inverse ratio preserves weights
++                    // when (r/a)^2 overflows but its reciprocal is representable.
++                    (a * (a * log), inverse_squared / (1.0 + inverse_squared))
++                }
+             }
+         }
+     }
+@@ -222,9 +239,12 @@
+             Self::Huber(a) if before > a => a * (before - a) + 0.5 * (a - after) * (a + after),
+             Self::Huber(_) => 0.5 * (before - after) * (before + after),
+             Self::Cauchy(a) => {
++                if before == after {
++                    return 0.0;
++                }
+                 let (u, v) = (before / a, after / a);
+                 let ratio = ((before - after) / a) * (u + v) / (1.0 + v * v);
+-                if before <= a {
++                let reduction = if before <= a {
+                     // Cancel a^2 algebraically when normalized squared changes
+                     // can underflow. ln(1+z)/z has continuous value 1 at z=0.
+                     let log_ratio = if ratio == 0.0 {
+@@ -235,9 +255,52 @@
+                     0.5 * (before - after) * (before + after) / (1.0 + v * v) * log_ratio
+                 } else {
+                     0.5 * a * a * ratio.ln_1p()
++                };
++                if reduction.is_normal() {
++                    return reduction;
+                 }
+-            }
+-        }
++                if before <= a {
++                    let correction = if ratio == 0.0 {
++                        1.0
++                    } else {
++                        ratio.ln_1p() / ratio
++                    };
++                    // Scale before multiplication; both the unscaled sum and
++                    // its product with the difference can overflow needlessly.
++                    (before - after) * ((0.5 * before + 0.5 * after) * (correction / (1.0 + v * v)))
++                } else {
++                    let log = if after >= a {
++                        // Normalize by the smaller residual, keeping the scale
++                        // ratio <= 1 and retaining small relative improvements.
++                        let difference = (before - after) / after;
++                        let inverse_squared = (a / after).powi(2);
++                        let relative = difference * (2.0 + difference) / (1.0 + inverse_squared);
++                        if relative.is_finite() {
++                            0.5 * relative.ln_1p()
++                        } else {
++                            log_positive_ratio(before, after)
++                                + 0.5 * ((a / before).powi(2).ln_1p() - inverse_squared.ln_1p())
++                        }
++                    } else if ratio.is_finite() {
++                        0.5 * ratio.ln_1p()
++                    } else {
++                        log_positive_ratio(before, a)
++                            + 0.5 * ((a / before).powi(2).ln_1p() - v.powi(2).ln_1p())
++                    };
++                    a * (a * log)
++                }
++            }
++        }
++    }
++}
++// Positive finite arguments with numerator >= denominator. Use log subtraction
++// only if division overflows; direct division is more accurate near equality.
++fn log_positive_ratio(numerator: f64, denominator: f64) -> f64 {
++    let ratio = numerator / denominator;
++    if ratio.is_finite() {
++        ratio.ln()
++    } else {
++        numerator.ln() - denominator.ln()
+     }
+ }
+ #[derive(Default)]
+@@ -1180,6 +1243,31 @@
+         assert!((tiny_change - f64::EPSILON).abs() < 1e-30);
+     }
+     #[test]
++    fn cauchy_differences_survive_overflow_and_underflow_in_intermediates() {
++        // Independent Decimal references at 1100-digit precision, evaluated
++        // from the exact binary64 inputs before rounding the result to f64.
++        for (before, after, scale, expected) in [
++            (1e155, 5e154, 1., std::f64::consts::LN_2),
++            (1e300, 0., 1e-100, 9.210340371976183e-198),
++            (1., 0., 1e200, 0.5),
++            (2e154, 1e154, 2e154, 9.400072584914712e307),
++            (2e154, 0., 2e154, 1.3862943611198907e308),
++            (1., 0., 1e-162, 3.7e-322),
++            (1e155, 1e155 * (1. - 1e-12), 1., 9.99958899574909e-13),
++            (1e154, 1e154 * (1. - 1e-12), 1e200, 1.0000184422022033e296),
++        ] {
++            let loss = Loss::Cauchy(scale);
++            let reduction = loss.reduction(before, after);
++            let tolerance = (expected * 5e-14).max(f64::from_bits(2));
++            assert!(
++                (reduction - expected).abs() <= tolerance,
++                "before={before}, after={after}, scale={scale}: {reduction} != {expected}"
++            );
++            assert_eq!(loss.reduction(after, before), -reduction);
++            assert_eq!(loss.reduction(before, before), 0.);
++        }
++    }
++    #[test]
+     fn compensated_summation_retains_small_terms_and_rejects_nonfinite_totals() {
+         let mut sum = CompensatedSum::default();
+         for value in [1e16, 1., 1., -1e16] {

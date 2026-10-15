@@ -1,0 +1,8 @@
+{
+  "execution": "Two sequential six-pair campaigns with builds, tests, profiling and separate archival/audit work by this agent paused. Runner checking/compression occurs between timed processes.",
+  "repeatable_whole_stream_speedup_established": false,
+  "native_timing_measured": false,
+  "rust_source_changed_this_study": false,
+  "auditor_sha256": "688d2feb5b9f1c2d28c9f2937c8580bb591ae16df20876137f914fec8289c65a",
+  "arrival_statistics": "Pooled observations within each variant/campaign, nearest-rank quantiles, not paired confidence estimates or real-time guarantees."
+}

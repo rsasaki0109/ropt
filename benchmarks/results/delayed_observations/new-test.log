@@ -1,0 +1,9 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.38s
+     Running tests/fixed_lag_delayed.rs (target/debug/deps/fixed_lag_delayed-4dcd2c016eb165f1)
+
+running 1 test
+test delayed_live_observations_match_full_history_and_retired_references_cannot_leak_updates ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

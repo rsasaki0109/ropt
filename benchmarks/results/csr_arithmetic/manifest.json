@@ -1,0 +1,19 @@
+{
+  "source_sha256": "d959c9b657a6dc91b67049dfb597913e1116046df1fa4702619c3561919a192c",
+  "scope": "test-only follow-up for existing CSR numerical error handling; no numerical implementation change, new bug claim, or timing claim",
+  "validation": {
+    "rust_tests": 370,
+    "new_regression_tests": 3,
+    "release_regressions_rechecked": 3
+  },
+  "base_source_manifest_sha256": "45fa752132d9a1880a01e4c858999874ac99af23e0b0aeef5c5d7ff60123eae9",
+  "files_sha256": {
+    "benchmark-tests.log": "1b8191f656b6ae7e713c9d6fb8ff172b5348feda34fceb0b31942971336de3fa",
+    "clippy.log": "2051f146ec76a668f606ea328c905877eec1942f3c069b2c309ec9a103deb21e",
+    "csr_arithmetic.rs": "74fa1356aa42b1b5def03ed778dc761a66164bace110adebb4a006800b18621d",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "release.log": "43c8ffa50f5b59482671688c1ea77d513ddaf190393f7df803caa3b39d133be9",
+    "targeted.log": "3620527fd3a086930a3f9294c7d7a78f491f99bbe5fd9e550a4636f125af0903",
+    "workspace-tests.log": "aa11ffb72129fc05dfce993becdca6349442c638f586a699f06d2af517b90251"
+  }
+}

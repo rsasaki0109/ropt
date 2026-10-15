@@ -1,0 +1,473 @@
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -22,5 +22,6 @@
+ pub mod solver;
+ pub mod sparse;
+ pub mod sparse_direct;
++pub mod sparse_qr;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -2,6 +2,7 @@
+ use crate::schur::block_schur_solve;
+ use crate::sparse::{CgOptions, CsrMatrix, NormalOperator, conjugate_gradient, schur_solve};
+ pub use crate::sparse_direct::{SparseLdlOptions, SparseOrdering};
++pub use crate::sparse_qr::SparseQrOptions;
+ use crate::{DMatrix, DVector};
+ use std::ops::Range;
+ 
+@@ -264,6 +265,8 @@
+     SparseBlockCg(CgOptions),
+     /// Sparse LDL^T of damped normal equations with bounded fill; LM only.
+     SparseLdl(SparseLdlOptions),
++    /// Ordered sparse Givens QR of J (GN) or the augmented model (LM).
++    SparseQr(SparseQrOptions),
+     /// CSR-based independent-block elimination and reduced PCG; LM only.
+     BlockSchur {
+         retained: usize,
+@@ -285,6 +288,10 @@
+ pub struct Options {
+     pub linear_solver: LinearSolver,
+     pub algorithm: Algorithm,
++    /// Explicit GN policy allowing finite uphill trials, like unrestricted
++    /// Gauss-Newton iterations. Default GN rejects them. Invalid for LM.
++    /// Final convergence must still be checked; negative reduction is not convergence.
++    pub nonmonotonic_gauss_newton: bool,
+     pub loss: Loss,
+     pub max_iterations: usize,
+     pub gradient_tolerance: f64,
+@@ -300,6 +307,7 @@
+         Self {
+             linear_solver: LinearSolver::Dense,
+             algorithm: Algorithm::LevenbergMarquardt,
++            nonmonotonic_gauss_newton: false,
+             loss: Loss::Squared,
+             max_iterations: 100,
+             gradient_tolerance: 1e-10,
+@@ -352,6 +360,22 @@
+     objective_norms: Vec<f64>,
+     residual: DVector<f64>,
+     jacobian: Jacobian,
++}
++// Keep the LDL workspace inline to avoid an extra heap allocation per solve.
++#[allow(clippy::large_enum_variant)]
++enum LinearSolveWorkspace {
++    None,
++    Ldl(crate::sparse_direct::SparseLdlWorkspace),
++    Qr(crate::sparse_qr::SparseQrWorkspace),
++}
++impl LinearSolveWorkspace {
++    fn permutation(&self) -> Option<&[usize]> {
++        match self {
++            Self::None => None,
++            Self::Ldl(w) => w.symbolic().map(|s| s.permutation()),
++            Self::Qr(w) => w.permutation(),
++        }
++    }
+ }
+ impl Linearization {
+     /// Consume the already evaluated accepted model. iSAM uses this only for
+@@ -449,7 +473,7 @@
+         damping: f64,
+         options: &Options,
+         blocks: Option<&[Range<usize>]>,
+-        ldl_workspace: Option<&mut crate::sparse_direct::SparseLdlWorkspace>,
++        workspace: &mut LinearSolveWorkspace,
+     ) -> Result<(DVector<f64>, usize), Error> {
+         match &self.jacobian {
+             Jacobian::Dense(j) => {
+@@ -497,12 +521,21 @@
+             }
+             Jacobian::Sparse(j) => {
+                 if matches!(options.linear_solver, LinearSolver::SparseLdl(_)) {
+-                    let report = ldl_workspace.ok_or(Error::InvalidOptions)?.solve(
+-                        j,
+-                        &(-gradient),
+-                        damping,
+-                    )?;
++                    let LinearSolveWorkspace::Ldl(ldl_workspace) = workspace else {
++                        return Err(Error::InvalidOptions);
++                    };
++                    let report = ldl_workspace.solve(j, &(-gradient), damping)?;
+                     return Ok((report.x, 0));
++                }
++                if matches!(options.linear_solver, LinearSolver::SparseQr(_)) {
++                    let LinearSolveWorkspace::Qr(qr_workspace) = workspace else {
++                        return Err(Error::InvalidOptions);
++                    };
++                    let damping = match options.algorithm {
++                        Algorithm::GaussNewton => 0.,
++                        Algorithm::LevenbergMarquardt => damping,
++                    };
++                    return Ok((qr_workspace.solve(j, &self.residual, damping)?, 0));
+                 }
+                 let report = match options.linear_solver {
+                     LinearSolver::SparseCg(cg) => {
+@@ -558,6 +591,7 @@
+         LinearSolver::SparseCg(_)
+         | LinearSolver::SparseBlockCg(_)
+         | LinearSolver::SparseLdl(_)
++        | LinearSolver::SparseQr(_)
+         | LinearSolver::BlockSchur { .. } => {
+             let (r, j) = problem.evaluate_sparse(x)?;
+             if j.shape() != (m, n) {
+@@ -773,10 +807,7 @@
+     }
+     let (report, model, final_damping, workspace) = solve_local_model(problem, initial, options)?;
+     let column_permutation = if capture_ordering {
+-        workspace
+-            .as_ref()
+-            .and_then(|w| w.symbolic())
+-            .map(|s| s.permutation().to_vec())
++        workspace.permutation().map(|p| p.to_vec())
+     } else {
+         None
+     };
+@@ -793,15 +824,7 @@
+     problem: &impl LocalProblem,
+     initial: DVector<f64>,
+     options: &Options,
+-) -> Result<
+-    (
+-        Report,
+-        Linearization,
+-        f64,
+-        Option<crate::sparse_direct::SparseLdlWorkspace>,
+-    ),
+-    Error,
+-> {
++) -> Result<(Report, Linearization, f64, LinearSolveWorkspace), Error> {
+     let (ambient, n, m) = problem.dimensions();
+     if ambient == 0 || m == 0 || initial.len() != ambient {
+         return Err(Error::InvalidDimensions);
+@@ -810,6 +833,8 @@
+         return Err(Error::NonFinite);
+     }
+     if options.max_iterations == 0
++        || (options.nonmonotonic_gauss_newton
++            && !matches!(options.algorithm, Algorithm::GaussNewton))
+         || !options.loss.valid()
+         || !options.initial_damping.is_finite()
+         || options.initial_damping <= 0.0
+@@ -843,6 +868,9 @@
+     }
+     if let LinearSolver::SparseLdl(ldl) = options.linear_solver {
+         ldl.validate()?;
++    }
++    if let LinearSolver::SparseQr(qr) = options.linear_solver {
++        qr.validate()?;
+     }
+     if let LinearSolver::SparseCg(cg) | LinearSolver::SparseBlockCg(cg) = options.linear_solver {
+         cg.validate()?;
+@@ -885,16 +913,20 @@
+             },
+             model,
+             options.initial_damping,
+-            None,
++            LinearSolveWorkspace::None,
+         ));
+     }
+     let mut damping = options.initial_damping;
+     let mut growth = 2.0;
+     let mut history = Vec::new();
+-    let mut ldl_workspace = if let LinearSolver::SparseLdl(ldl) = options.linear_solver {
+-        Some(crate::sparse_direct::SparseLdlWorkspace::new(ldl)?)
+-    } else {
+-        None
++    let mut workspace = match options.linear_solver {
++        LinearSolver::SparseLdl(ldl) => {
++            LinearSolveWorkspace::Ldl(crate::sparse_direct::SparseLdlWorkspace::new(ldl)?)
++        }
++        LinearSolver::SparseQr(qr) => {
++            LinearSolveWorkspace::Qr(crate::sparse_qr::SparseQrWorkspace::new(qr)?)
++        }
++        _ => LinearSolveWorkspace::None,
+     };
+     let mut termination = Termination::MaxIterations;
+     for iteration in 0..options.max_iterations {
+@@ -912,7 +944,7 @@
+             damping,
+             options,
+             block_layout.as_deref(),
+-            ldl_workspace.as_mut(),
++            &mut workspace,
+         )?;
+         if !step.iter().all(|v| v.is_finite()) {
+             return Err(Error::NonFinite);
+@@ -936,7 +968,11 @@
+         } else {
+             f64::NEG_INFINITY
+         };
+-        let accepted = actual > 0.0 && ratio > 0.0;
++        let small_step = step_norm <= options.step_tolerance * (options.step_tolerance + scale);
++        let accepted = (actual > 0.0 && ratio > 0.0)
++            || (options.nonmonotonic_gauss_newton
++                && predicted > 0.0
++                && !(actual <= 0.0 && small_step));
+         history.push(Iteration {
+             iteration,
+             cost,
+@@ -963,7 +999,7 @@
+                 termination = Termination::Step;
+                 break;
+             }
+-            if actual <= options.cost_tolerance * previous.max(1.0) {
++            if actual > 0.0 && actual <= options.cost_tolerance * previous.max(1.0) {
+                 termination = Termination::Cost;
+                 break;
+             }
+@@ -998,7 +1034,7 @@
+         },
+         model,
+         damping,
+-        ldl_workspace,
++        workspace,
+     ))
+ }
+ 
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -126,7 +126,7 @@
+     pub fn with_batch_ordering_reuse(mut self) -> Result<Self, Error> {
+         if !matches!(
+             self.options.batch_solver.linear_solver,
+-            LinearSolver::SparseLdl(_)
++            LinearSolver::SparseLdl(_) | LinearSolver::SparseQr(_)
+         ) {
+             return Err(Error::InvalidOptions);
+         }
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -314,43 +314,57 @@
+     update_targets: Option<Vec<usize>>,
+     assembly_targets: Option<Vec<usize>>,
+ }
++pub(crate) fn column_ordering(
++    j: &CsrMatrix,
++    options: &SparseLdlOptions,
++) -> Result<Vec<usize>, Error> {
++    options.validate()?;
++    let (columns, entries) = assemble_pattern(j, options.max_entries)?;
++    choose_ordering(&columns, entries, options)
++}
++fn choose_ordering(
++    columns: &Columns,
++    normal_entries: usize,
++    options: &SparseLdlOptions,
++) -> Result<Vec<usize>, Error> {
++    let n = columns.len();
++    Ok(match options.ordering {
++        SparseOrdering::Natural => (0..n).collect(),
++        SparseOrdering::MinimumDegree => {
++            minimum_degree(columns, normal_entries, options.max_entries)?
++        }
++        SparseOrdering::BlockMinimumDegree { block_size } => {
++            if !n.is_multiple_of(block_size) {
++                return Err(Error::InvalidDimensions);
++            }
++            let blocks = n / block_size;
++            let mut coarse = (0..blocks)
++                .map(PatternColumn::diagonal)
++                .collect::<Columns>();
++            let mut entries = blocks;
++            for (col, values) in columns.iter().enumerate() {
++                for &row in values.iter() {
++                    add_pattern_entry(
++                        &mut coarse[col / block_size],
++                        row / block_size,
++                        &mut entries,
++                        options.max_entries,
++                    )?;
++                }
++            }
++            minimum_degree(&coarse, entries, options.max_entries)?
++                .into_iter()
++                .flat_map(|block| (0..block_size).map(move |offset| block * block_size + offset))
++                .collect()
++        }
++    })
++}
+ impl SparseLdlSymbolic {
+     pub fn analyze(j: &CsrMatrix, options: &SparseLdlOptions) -> Result<Self, Error> {
+         options.validate()?;
+         let (columns, normal_entries) = assemble_pattern(j, options.max_entries)?;
+         let n = columns.len();
+-        let permutation = match options.ordering {
+-            SparseOrdering::Natural => (0..n).collect(),
+-            SparseOrdering::MinimumDegree => {
+-                minimum_degree(&columns, normal_entries, options.max_entries)?
+-            }
+-            SparseOrdering::BlockMinimumDegree { block_size } => {
+-                if !n.is_multiple_of(block_size) {
+-                    return Err(Error::InvalidDimensions);
+-                }
+-                let blocks = n / block_size;
+-                let mut coarse = (0..blocks)
+-                    .map(PatternColumn::diagonal)
+-                    .collect::<Columns>();
+-                let mut entries = blocks;
+-                for (col, values) in columns.iter().enumerate() {
+-                    for &row in values.iter() {
+-                        add_pattern_entry(
+-                            &mut coarse[col / block_size],
+-                            row / block_size,
+-                            &mut entries,
+-                            options.max_entries,
+-                        )?;
+-                    }
+-                }
+-                minimum_degree(&coarse, entries, options.max_entries)?
+-                    .into_iter()
+-                    .flat_map(|block| {
+-                        (0..block_size).map(move |offset| block * block_size + offset)
+-                    })
+-                    .collect()
+-            }
+-        };
++        let permutation = choose_ordering(&columns, normal_entries, options)?;
+         // Exact original-coordinate normal graph, independent of residual row
+         // layout and numerical values. Keep equality checks collision-free.
+         let mut normal_offsets = Vec::with_capacity(n + 1);
+--- /dev/null
++++ b/crates/ropt/src/sparse_qr.rs
+@@ -0,0 +1,139 @@
++//! Ordered sparse Givens least squares. No numeric normal matrix or fallback.
++use crate::{
++    DVector, Error,
++    incremental_qr::{IncrementalQr, IncrementalQrOptions},
++    sparse::{CsrMatrix, finite_vector},
++    sparse_direct::{SparseLdlOptions, SparseOrdering, column_ordering},
++};
++
++#[derive(Debug, Clone, Copy)]
++pub struct SparseQrOptions {
++    pub ordering: SparseOrdering,
++    /// Relative cutoff on the ordered, unpivoted R diagonal; not an SVD certificate.
++    pub relative_rank_tolerance: f64,
++    /// Bound on symbolic ordering storage and numeric R entries, not peak memory.
++    pub max_entries: usize,
++}
++impl Default for SparseQrOptions {
++    fn default() -> Self {
++        Self {
++            ordering: SparseOrdering::MinimumDegree,
++            relative_rank_tolerance: 1e-12,
++            max_entries: 1_000_000,
++        }
++    }
++}
++impl SparseQrOptions {
++    pub(crate) fn validate(self) -> Result<(), Error> {
++        self.symbolic_options().validate()?;
++        if !self.relative_rank_tolerance.is_finite()
++            || self.relative_rank_tolerance <= 0.
++            || self.relative_rank_tolerance >= 1.
++        {
++            return Err(Error::InvalidOptions);
++        }
++        Ok(())
++    }
++    fn symbolic_options(self) -> SparseLdlOptions {
++        SparseLdlOptions {
++            ordering: self.ordering,
++            max_entries: self.max_entries,
++            ..Default::default()
++        }
++    }
++}
++
++struct Pattern {
++    shape: (usize, usize),
++    offsets: Vec<usize>,
++    indices: Vec<usize>,
++}
++pub(crate) struct SparseQrWorkspace {
++    options: SparseQrOptions,
++    pattern: Option<Pattern>,
++    order: Vec<usize>,
++}
++impl SparseQrWorkspace {
++    pub(crate) fn new(options: SparseQrOptions) -> Result<Self, Error> {
++        options.validate()?;
++        Ok(Self {
++            options,
++            pattern: None,
++            order: Vec::new(),
++        })
++    }
++    pub(crate) fn permutation(&self) -> Option<&[usize]> {
++        self.pattern.as_ref().map(|_| self.order.as_slice())
++    }
++    pub(crate) fn solve(
++        &mut self,
++        j: &CsrMatrix,
++        r: &DVector<f64>,
++        damping: f64,
++    ) -> Result<DVector<f64>, Error> {
++        let (m, n) = j.shape();
++        if m == 0 || n == 0 || r.len() != m {
++            return Err(Error::InvalidDimensions);
++        }
++        finite_vector(r)?;
++        if !damping.is_finite() || damping < 0. {
++            return Err(Error::InvalidOptions);
++        }
++        let (offsets, indices) = j.pattern();
++        if self
++            .pattern
++            .as_ref()
++            .is_none_or(|p| p.shape != j.shape() || p.offsets != offsets || p.indices != indices)
++        {
++            let order = column_ordering(j, &self.options.symbolic_options())?;
++            self.order = order;
++            self.pattern = Some(Pattern {
++                shape: j.shape(),
++                offsets: offsets.to_vec(),
++                indices: indices.to_vec(),
++            });
++        }
++        let mut qr = IncrementalQr::new(
++            n,
++            IncrementalQrOptions {
++                relative_rank_tolerance: self.options.relative_rank_tolerance,
++                max_entries: self.options.max_entries,
++            },
++        )?;
++        qr.set_column_order(self.permutation().unwrap().to_vec())?;
++        if damping == 0. {
++            qr.rebuild_in_place(j, r)?;
++        } else {
++            // Keep observation rows first and sort the complete augmented model
++            // during rebuilding; appending damping after R would cause extra fill.
++            let rows = m.checked_add(n).ok_or(Error::InvalidDimensions)?;
++            let mut entries: Vec<_> = j.entries().collect();
++            let mut norms = DVector::<f64>::zeros(n);
++            for (_, c, v) in j.entries() {
++                norms[c] = norms[c].hypot(v);
++            }
++            for c in 0..n {
++                let value = damping.sqrt() * norms[c].max(1.);
++                if !value.is_finite() {
++                    return Err(Error::NonFinite);
++                }
++                entries.push((m + c, c, value));
++            }
++            let augmented = CsrMatrix::from_triplets(rows, n, entries)?;
++            let mut residual = DVector::zeros(rows);
++            residual.rows_mut(0, m).copy_from(r);
++            qr.rebuild_in_place(&augmented, &residual)?;
++        }
++        qr.solve()
++    }
++}
++/// Solve `min_delta ||J delta + r||² + damping * sum(max(||J_col||²,1)*delta_col²)`.
++/// The elimination ordering is structural; numeric column pivoting is not provided.
++pub fn solve_least_squares(
++    j: &CsrMatrix,
++    r: &DVector<f64>,
++    damping: f64,
++    options: &SparseQrOptions,
++) -> Result<DVector<f64>, Error> {
++    SparseQrWorkspace::new(*options)?.solve(j, r, damping)
++}

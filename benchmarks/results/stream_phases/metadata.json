@@ -1,0 +1,51 @@
+{
+  "before_source_sha256": "408cdc1c2b4394120a8172592e4a20fd74b61188a5496ee826af733f331ee413",
+  "instrumented_source_sha256": "73268c464f08bddbe2d7e14f360b5f21e3bf8feb7f3e8f3bbe64d8587469a458",
+  "executable_sha256": "98f7d22a5f1430d379c4c8e81bd8a60367bbae5bba8a21427ffe7f9cad85f87b",
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null
+    }
+  },
+  "api_phases": [
+    "initial",
+    "requested",
+    "recovery",
+    "probe"
+  ],
+  "detail_phases": [
+    "graph_build",
+    "sparse_evaluation",
+    "cache_solve",
+    "batch_solver",
+    "sparse_qr_workspace",
+    "qr_rebuild",
+    "factor_capture",
+    "tree_update",
+    "tree_build",
+    "coordinates",
+    "selected_relinearize"
+  ],
+  "driver_sha256": "738db688871d8aaa5609592d39008872cf0a5242b7f57118b2ff9cda468e5442",
+  "script_sha256": "168112d602088824bb1a2e81ab7980e5427c994d688bc8861eb41ad4ed676cea",
+  "cpu_affinity": [
+    0
+  ],
+  "scope": "instrumented diagnosis only; details overlap by containment; no native/comparative timing"
+}

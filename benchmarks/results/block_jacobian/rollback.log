@@ -1,0 +1,3 @@
+patching file crates/ropt/src/dynamic_autodiff.rs
+patching file crates/ropt/src/factor/autodiff.rs
+Baseline source saved under /tmp/ropt-block-jacobian-rollback; compilation skipped

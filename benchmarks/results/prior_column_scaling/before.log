@@ -1,0 +1,44 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+     Running tests/marginalization_column_scales.rs (target/debug/deps/marginalization_column_scales-197988a4bf46a78e)
+
+running 5 tests
+test compression_still_rejects_an_unrepresentable_output ... ok
+test compression_keeps_independently_scaled_columns_and_constant_residual ... FAILED
+test rotated_elimination_preserves_dependent_retained_information ... FAILED
+test fixed_lag_keeps_tiny_separator_information_beside_a_large_constant ... FAILED
+test marginalization_failure_rolls_back_and_a_retry_preserves_information ... FAILED
+
+failures:
+
+---- compression_keeps_independently_scaled_columns_and_constant_residual stdout ----
+
+thread 'compression_keeps_independently_scaled_columns_and_constant_residual' (82396) panicked at crates/ropt/tests/marginalization_column_scales.rs:32:13:
+small=0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001, eliminated=0: LinearizedPrior { jacobian: VecStorage { data: [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0], nrows: Dyn(4), ncols: Dyn(3) }, residual: VecStorage { data: [0.0, 0.0, 0.0, 1e150], nrows: Dyn(4), ncols: Const } }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- rotated_elimination_preserves_dependent_retained_information stdout ----
+
+thread 'rotated_elimination_preserves_dependent_retained_information' (82400) panicked at crates/ropt/tests/marginalization_column_scales.rs:63:9:
+assertion failed: (gram - DMatrix::from_row_slice(2, 2, &[2., 4., 4., 8.])).norm() < 1e-12
+
+---- fixed_lag_keeps_tiny_separator_information_beside_a_large_constant stdout ----
+
+thread 'fixed_lag_keeps_tiny_separator_information_beside_a_large_constant' (82398) panicked at crates/ropt/tests/marginalization_column_scales.rs:149:14:
+called `Result::unwrap()` on an `Err` value: RankDeficient { rank: 0, parameters: 1 }
+
+---- marginalization_failure_rolls_back_and_a_retry_preserves_information stdout ----
+
+thread 'marginalization_failure_rolls_back_and_a_retry_preserves_information' (82399) panicked at crates/ropt/tests/marginalization_column_scales.rs:149:14:
+called `Result::unwrap()` on an `Err` value: RankDeficient { rank: 0, parameters: 1 }
+
+
+failures:
+    compression_keeps_independently_scaled_columns_and_constant_residual
+    fixed_lag_keeps_tiny_separator_information_beside_a_large_constant
+    marginalization_failure_rolls_back_and_a_retry_preserves_information
+    rotated_elimination_preserves_dependent_retained_information
+
+test result: FAILED. 1 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test marginalization_column_scales`

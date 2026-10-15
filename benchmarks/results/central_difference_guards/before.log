@@ -1,0 +1,41 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+     Running tests/central_difference_guards.rs (target/debug/deps/central_difference_guards-9c7bebd385c59d76)
+
+running 4 tests
+test representable_subnormal_step_and_normal_solve_remain_valid ... ok
+test nonfinite_callback_values_and_derivative_overflow_are_errors ... FAILED
+test too_small_a_step_cannot_falsely_establish_solver_convergence ... FAILED
+test invalid_perturbations_are_rejected_before_callbacks_or_output_changes ... FAILED
+
+failures:
+
+---- nonfinite_callback_values_and_derivative_overflow_are_errors stdout ----
+
+thread 'nonfinite_callback_values_and_derivative_overflow_are_errors' (2088) panicked at crates/ropt/tests/central_difference_guards.rs:78:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(NonFinite)
+
+---- too_small_a_step_cannot_falsely_establish_solver_convergence stdout ----
+
+thread 'too_small_a_step_cannot_falsely_establish_solver_convergence' (2090) panicked at crates/ropt/tests/central_difference_guards.rs:50:76:
+called `Result::unwrap_err()` on an `Ok` value: Report { x: VecStorage { data: [1.0], nrows: Dyn(1), ncols: Const }, initial_cost: 0.5, cost: 0.5, termination: Gradient, iterations: [] }
+
+---- invalid_perturbations_are_rejected_before_callbacks_or_output_changes stdout ----
+
+thread 'invalid_perturbations_are_rejected_before_callbacks_or_output_changes' (2087) panicked at crates/ropt/tests/central_difference_guards.rs:28:9:
+assertion `left == right` failed
+  left: Ok(())
+ right: Err(InvalidOptions)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    invalid_perturbations_are_rejected_before_callbacks_or_output_changes
+    nonfinite_callback_values_and_derivative_overflow_are_errors
+    too_small_a_step_cannot_falsely_establish_solver_convergence
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test central_difference_guards`

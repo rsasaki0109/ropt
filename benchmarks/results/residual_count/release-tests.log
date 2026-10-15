@@ -1,0 +1,11 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 46.67s
+     Running tests/factor_residual_count.rs (target/release/deps/factor_residual_count-948a53648b8a28d8)
+
+running 3 tests
+test oversized_factor_counts_are_rejected_without_mutating_graph_or_calling_callbacks ... ok
+test residual_sum_and_csr_offset_overflow_leave_existing_metadata_unchanged ... ok
+test overflow_rejection_preserves_fixed_lag_and_isam_state_then_retries_cleanly ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

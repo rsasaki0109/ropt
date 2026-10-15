@@ -1,0 +1,4 @@
+dimension,iterations,ownership,jet_bytes,seconds,allocations,requested_bytes
+6,4194304,borrowed,40,0.09635665400000000,0,0
+value_bits=7fefffffffffffff
+partial_bits=0000000000000000,0000000000000000,0000000000000000,0000000000000000,0000000000000000,3ff0000000000000

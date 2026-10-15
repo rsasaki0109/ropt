@@ -1,0 +1,13 @@
+configure.log
+library-build.log
+install.log
+Traceback (most recent call last):
+  File "/workspace/ropt/benchmarks/build_native_reference.py", line 157, in <module>
+    main()
+  File "/workspace/ropt/benchmarks/build_native_reference.py", line 118, in main
+    run([cmake, '--install', build], 'install.log')
+  File "/workspace/ropt/benchmarks/build_native_reference.py", line 113, in run
+    subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/workspace/.ropt-native/sysroot/usr/bin/cmake', '--install', '/workspace/.ropt-native/reference-build-v2/gtsam-build']' returned non-zero exit status 1.

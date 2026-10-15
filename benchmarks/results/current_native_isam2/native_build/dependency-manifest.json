@@ -1,0 +1,176 @@
+{
+  "packages": [
+    {
+      "file": "cmake-data_3.31.6-2_all.deb",
+      "Package": "cmake-data",
+      "Version": "3.31.6-2",
+      "Architecture": "all",
+      "sha256": "d9060145be892f43cd1888024114ceab019c81479d4b0a3383fe14cebe2295cb"
+    },
+    {
+      "file": "cmake_3.31.6-2_amd64.deb",
+      "Package": "cmake",
+      "Version": "3.31.6-2",
+      "Architecture": "amd64",
+      "sha256": "dee2fc94973325240604ffbca677a3f16b462fb6520946bd81be1ecbac770a02"
+    },
+    {
+      "file": "libboost-atomic1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-atomic1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "d10e48cc19a8d693a87f03030854d37fc4809baab059ebb2e8b2ed4a99cb805c"
+    },
+    {
+      "file": "libboost-atomic1.83.0_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-atomic1.83.0",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "2b612ebd5a7d9bfcd395af58c05b1b55e9e83f4b93db182fb269dd8478d27e54"
+    },
+    {
+      "file": "libboost-chrono-dev_1.83.0.2+b2_amd64.deb",
+      "Package": "libboost-chrono-dev",
+      "Version": "1.83.0.2+b2",
+      "Architecture": "amd64",
+      "sha256": "94d7d028e5713f50f18c477ba915daf14377e5da8429a67a2a81fbccf6e2be0c"
+    },
+    {
+      "file": "libboost-chrono1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-chrono1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "4b9729862d76f52c395983d4ec29066e411bf12bca172a2cbb2e3827b2f8e82d"
+    },
+    {
+      "file": "libboost-chrono1.83.0t64_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-chrono1.83.0t64",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "59ffe41ccadbaba0701ab17e77830022d7a0c9b7f5bf3f8d685c3f5dcb86bfc5"
+    },
+    {
+      "file": "libboost-filesystem-dev_1.83.0.2+b2_amd64.deb",
+      "Package": "libboost-filesystem-dev",
+      "Version": "1.83.0.2+b2",
+      "Architecture": "amd64",
+      "sha256": "1ebc1e2635c487670f08298ee28b0077efd9783ae8f0c1c23b78bfe198a6fd3f"
+    },
+    {
+      "file": "libboost-filesystem1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-filesystem1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "9a50fa4c8da94cef192a9139a9d26961689f8bc901ea4fdd5e5a912581f4a135"
+    },
+    {
+      "file": "libboost-filesystem1.83.0_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-filesystem1.83.0",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "6b587623a4fd1824613e7ee02ba35b84cd9534b520b7f3d08d15f9ed85f28cf3"
+    },
+    {
+      "file": "libboost-program-options-dev_1.83.0.2+b2_amd64.deb",
+      "Package": "libboost-program-options-dev",
+      "Version": "1.83.0.2+b2",
+      "Architecture": "amd64",
+      "sha256": "62584494594979037e7a07d36b30fa70c77b550907580ee1c538c63f08a0f204"
+    },
+    {
+      "file": "libboost-program-options1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-program-options1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "d4086487f60aafffce183184d7cdf34d08537576732c56d51bd6f74d9c077195"
+    },
+    {
+      "file": "libboost-program-options1.83.0_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-program-options1.83.0",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "dc5fa835e9362fd3d285ccb0aeaecada4954b9a2ccf765891af868482edeb6f4"
+    },
+    {
+      "file": "libboost-serialization-dev_1.83.0.2+b2_amd64.deb",
+      "Package": "libboost-serialization-dev",
+      "Version": "1.83.0.2+b2",
+      "Architecture": "amd64",
+      "sha256": "c2cf3ad188c2c224198539860339ef5ce711e760adec2f61094403ff1c21588f"
+    },
+    {
+      "file": "libboost-serialization1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-serialization1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "c1c71dfd14710e86eab7cd49d6be4722595d1bf4b48b4934e0136742a374c964"
+    },
+    {
+      "file": "libboost-serialization1.83.0_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-serialization1.83.0",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "5c0f28f2464e72c16c01440db47122e23ae0b4147e11e0e6d3b4ced86190324c"
+    },
+    {
+      "file": "libboost-system1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-system1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "ac60c2e1bdee779633fad66212b638bf77ddf1e99d650d06bd65ac55577e9839"
+    },
+    {
+      "file": "libboost-system1.83.0_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-system1.83.0",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "a453edc44ae53303495d6e123b3ea659431849dd52b075459518cfffc49ff179"
+    },
+    {
+      "file": "libboost-timer-dev_1.83.0.2+b2_amd64.deb",
+      "Package": "libboost-timer-dev",
+      "Version": "1.83.0.2+b2",
+      "Architecture": "amd64",
+      "sha256": "f837930ad318abd96f1e282acc192439dcf63dd14a92da6b2d5cf1281042ec78"
+    },
+    {
+      "file": "libboost-timer1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-timer1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "eaf6855c954e82fb98dbbe14425ffcf5607bc205eb273827cbbe6f1e8672fc3c"
+    },
+    {
+      "file": "libboost-timer1.83.0_1.83.0-4.2_amd64.deb",
+      "Package": "libboost-timer1.83.0",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "e2817022e8dbc3384e140b18de16ef3442f63ef45aebf23bce70957999fb29a3"
+    },
+    {
+      "file": "libboost1.83-dev_1.83.0-4.2_amd64.deb",
+      "Package": "libboost1.83-dev",
+      "Version": "1.83.0-4.2",
+      "Architecture": "amd64",
+      "sha256": "1f11fc6fb2ffe9378a0f0ebc8f2fd9223fb958b4a40bb9381c67a8857d947ca3"
+    },
+    {
+      "file": "librhash1_1.4.5-1_amd64.deb",
+      "Package": "librhash1",
+      "Version": "1.4.5-1",
+      "Architecture": "amd64",
+      "sha256": "9bf56d7d8ce3e7680a0dd8e3cfe8acdf50e0aa3b98b0a907cf744a4d1711af72"
+    },
+    {
+      "file": "libuv1t64_1.50.0-2_amd64.deb",
+      "Package": "libuv1t64",
+      "Version": "1.50.0-2",
+      "Architecture": "amd64",
+      "sha256": "5fec8035002e0c745b64d1c5b3e1dc42790d1a77574315b976cf3e4aab9ddc0a"
+    }
+  ],
+  "signed_repository_metadata_sha256": {
+    "apt/lists/deb.debian.org_debian_dists_trixie_InRelease": "0584fba32e13e0ab8285fb16c27adea1ec03a73669c18702821094fd6ca86675"
+  },
+  "archive_keyring_sha256": "506b815cbb32d9b6066b4a2aa524071e071761e7e7f68c3ac74f3061ba852017"
+}

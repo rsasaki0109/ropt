@@ -1,0 +1,137 @@
+{
+  "dataset": {
+    "dataset": "CSAIL recorded SE2 pose graph",
+    "variant": "csail-se-sync1045",
+    "source_url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+    "source_commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+    "source_sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6",
+    "total_source_poses": 1045,
+    "total_source_edges": 1172,
+    "used_arrivals": 1044,
+    "used_edges": 1172,
+    "complete_dataset": true,
+    "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+    "initialization": "original consecutive odometry measurements composed once from root (0,0,0); no loop constraints or optimizer used for seeds",
+    "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+    "stream_sha256": "fe3ffed0fdae1d69d0e374a915f3364860602a7fe1ad34d19d6de7571e98718a"
+  },
+  "source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+  "executable_sha256": {
+    "ropt": "0f62822299ff9dfc92ec8ce74d5c64c8bee0e2c7c9d24047ceb1d51f5d638e9b",
+    "native": "e731889b772b32ea8a9cc3f91575560a4f7449e9978ebd95b6b454059fc85db9"
+  },
+  "native_manifest": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89",
+    "executable_sha256": "e731889b772b32ea8a9cc3f91575560a4f7449e9978ebd95b6b454059fc85db9",
+    "cmake_cache_sha256": "c8b64df568418f0d6beacda932ee76bcd56ee99948b1da119538acc8c74ee40e",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/workspace/.ropt-native/sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "benchmark.cpp": "cbb6762f3c9f3ffb6d99fce3d697863c8349a08be263c47b1e706813c737c543",
+      "CMakeLists.txt": "dd9d782f3b905bbc2c8ed80258a31aa32f13ce04038bdb00488b7d505875a321",
+      "precision.hpp": "47dc3ded9146f6dc59484b9f81a7e471c8a0a5ad13c6f37586ce4d3523180294",
+      "factors.hpp": "4f14cbdd0c5624307cf228a3e621fad7fd424101dcd6c37f43e1c63e0b3ccad3",
+      "test_precision.cpp": "bec65331d99ee7038cbe85bb390af7d01b3e42159d9f75268d45db253d7659ac"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "reference_cache_sha256": "26d452109a5f3a49cab3436025fd3354ccc71f780c226787609473f4e5ebbb06",
+    "runtime_library_sha256": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89",
+    "reference_source_directory": "benchmarks/gtsam_precise_isam2",
+    "reference_generator_sha256": "991d600843b7a1adef1ba7cfea9180113b49c7cd53ad063649824e95aaa0b566",
+    "reference_compiler": "/usr/bin/c++",
+    "reference_flags": {
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG"
+    },
+    "information_whitening": "same two-component arithmetic as ropt for squared relative pivots below 2^-26; original information unchanged",
+    "root_conditioning": "exact conditioned BetweenFactor residual and chart Jacobian",
+    "stationarity_arithmetic": "direct original-information compensated products and column energies for small pivots"
+  },
+  "native_manifest_sha256": "c428c0dcdc0735c820765432c0c6fd01d7f59c4e5e6a24748a63484e6d2551c7",
+  "linked_libraries_sha256": {
+    "/workspace/.ropt-native/reference-build-v2/prefix/lib/libgtsam.so.4": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89",
+    "/lib/x86_64-linux-gnu/libstdc++.so.6": "972bb2a18b71140dab0240f8a1f68ab3fb1d56bcd4c4f824a91b70888faf5a00",
+    "/lib/x86_64-linux-gnu/libm.so.6": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+    "/lib/x86_64-linux-gnu/libgcc_s.so.1": "30c61ab012a4241bed033725a09b61f5fdd3bb7df95ee852d0b096520524c7af",
+    "/lib/x86_64-linux-gnu/libc.so.6": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.83.0": "d9ac464397973b3d89821e85740c4f59762dd6d7ac91c6f887339ae2af41fee6",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.83.0": "2c7b57a0b57199accc88c1882db981a2181f313b2ad15e5a40a0e28914bf78fd",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu/libboost_timer.so.1.83.0": "08ea77556b4eb2a5f0c5006db63591126c6babf4a158a78369186312f7fc93aa",
+    "/workspace/.ropt-native/reference-build-v2/prefix/lib/libmetis-gtsam.so": "79623aa7faf610e0767348b078ac8c9ccd322fee10c9b2282d6e2e1b6ff7c812"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_ad_selective_se2_isam.rs": "d75c34cf7052bdf1995e6627c64c1917feacc08de05ee1c702bff9e7fafa274e",
+    "crates/ropt/examples/support/real_selective_se2.rs": "1a439c4c6ef28b96d8d203088530368118a2cd341d50f37520b33ba956bddd87",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "afe40c20ddb61f1c2c87e41c1da61b5b08fb5c7e86466dae49229ba5738f9eb2",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/paired_current_native_isam2.py": "6bf6828023beff3a83be5930ba8f067170266dde864fd91170336b4a83b10d02",
+    "benchmarks/paired_isam2.py": "84f38629ca9287ccfa2c1078baf642b76830ea49ff9b2e19bfbf00bf00f48d75",
+    "benchmarks/real_se2_stream.py": "72f90518690429cf1070abd7c68ee95121b343a53173c881efa72b2677b99502",
+    "benchmarks/se2_stream.py": "a436a9e4a7dd98056ea448e922daec3d9a7f34d7405541f59c884354fcbf2849",
+    "benchmarks/information_precision.py": "40999a95f896eb45ced9cbad3e0525eff64c8151b649593debea4b8b4f437cf1"
+  },
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null
+    }
+  },
+  "rounds": 6,
+  "cpu_affinity": [
+    0
+  ],
+  "warmup_streams_per_process": 1,
+  "timed_streams_per_process": 1,
+  "ropt_policy": "editable selective mixed AD chunk6 stride2; explicit requested passes zero, implicit automatic threshold passes retained; explicit recovery if target unmet; periodic refresh disabled; frozen editable-tree refinement four steps; internal column-normalized gradient target 8e-8",
+  "native_policy": "GTSAM 4.2.1 exact BetweenFactor Jacobian; compensated information adapter; QR/GN, full relinearization every arrival and timed empty updates to internal normalized target 8e-8, max 200 calls; not default iSAM2",
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "world_pose_norm_difference": 2e-06,
+    "relative_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "fixed_root": "exact"
+  },
+  "ropt_ad_factors": 586,
+  "factors": 1172,
+  "native_runtime_search_paths": [
+    "/workspace/.ropt-native/reference-build-v2/prefix/lib",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu"
+  ],
+  "native_jacobians": "analytic",
+  "fresh_native_timing": true,
+  "timed": "complete updates, nonlinear probes, recovery/empty updates, owned estimates and report; parser, factor construction, external validation and serialization excluded",
+  "allocator_counting": false,
+  "memory_measured": false,
+  "scope": "complete recorded SE2 stream at common accuracy; explicit selected policies, no general/default-policy superiority claim"
+}

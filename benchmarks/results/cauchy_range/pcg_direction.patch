@@ -1,0 +1,40 @@
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -337,6 +337,8 @@
+ /// Does not certify global SPD; both operator and preconditioner must satisfy their contracts.
+ /// The final allowed step always checks `b - A*x` before reporting the iteration
+ /// limit. No preconditioner application is performed to prepare a further step.
++/// Recurrence breakdown and nonfinite search directions are rejected before
++/// evaluating the operator on the affected direction.
+ pub fn conjugate_gradient_preconditioned(
+     operator: &impl LinearOperator,
+     preconditioner: &impl crate::preconditioner::Preconditioner,
+@@ -388,12 +390,18 @@
+     let mut true_r = DVector::zeros(n);
+     let mut rz = r.dot(&z);
+     for iteration in 1..=options.max_iterations {
++        if !rz.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        if rz <= 0.0 {
++            return Err(Error::LinearSolve);
++        }
+         apply(&p, &mut ap)?;
+         let curvature = p.dot(&ap);
+-        if !curvature.is_finite() || !rz.is_finite() {
++        if !curvature.is_finite() {
+             return Err(Error::NonFinite);
+         }
+-        if curvature <= 0.0 || rz <= 0.0 {
++        if curvature <= 0.0 {
+             return Err(Error::LinearSolve);
+         }
+         let alpha = rz / curvature;
+@@ -434,6 +442,7 @@
+         }
+         let beta = next / rz;
+         p.axpy(1.0, &z, beta);
++        finite_vector(&p)?;
+         rz = next;
+     }
+     Err(Error::LinearIterationLimit {

@@ -1,0 +1,45 @@
+round 0 ropt: 13.423572s; all 1044 original-information prefixes pass
+round 0 native: 24.628161s; all 1044 original-information prefixes pass
+round 1 native: 24.694613s; all 1044 original-information prefixes pass
+round 1 ropt: 15.961107s; all 1044 original-information prefixes pass
+round 2 ropt: 11.433955s; all 1044 original-information prefixes pass
+round 2 native: 18.494212s; all 1044 original-information prefixes pass
+round 3 native: 26.522751s; all 1044 original-information prefixes pass
+round 3 ropt: 18.965999s; all 1044 original-information prefixes pass
+round 4 ropt: 12.563222s; all 1044 original-information prefixes pass
+round 4 native: 31.973122s; all 1044 original-information prefixes pass
+round 5 native: 35.535946s; all 1044 original-information prefixes pass
+round 5 ropt: 14.053444s; all 1044 original-information prefixes pass
+{
+  "eligible": true,
+  "fresh_native_timing": true,
+  "within_variant_results_identical": true,
+  "timed_updates": 12528,
+  "cases": {
+    "ropt": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 13738.507718500001,
+        "min_ms": 11433.955438,
+        "max_ms": 18965.998625,
+        "mean_ms": 14400.216546,
+        "stdev_ms": 2467.457693491362
+      },
+      "max_normalized_gradient": 2.516765743356827e-08
+    },
+    "native": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 25608.6818915,
+        "min_ms": 18494.211799,
+        "max_ms": 35535.946284,
+        "mean_ms": 26974.800820666667,
+        "stdev_ms": 5494.044475039235
+      },
+      "max_normalized_gradient": 7.287964624451133e-08
+    }
+  },
+  "ropt_faster_pairs": 6,
+  "native_median_over_ropt_median": 1.8640075338761763,
+  "ropt_qualifies_in_this_case": true
+}

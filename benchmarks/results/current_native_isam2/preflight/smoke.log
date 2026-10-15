@@ -1,0 +1,22 @@
+{
+  "scope": "functional only; no comparative timing",
+  "arrivals_per_variant": 25,
+  "variants": {
+    "ropt": {
+      "executable_sha256": "0f62822299ff9dfc92ec8ce74d5c64c8bee0e2c7c9d24047ceb1d51f5d638e9b",
+      "max_normalized_gradient": 2.2183504602749424e-11,
+      "existing_output_protection": true,
+      "invalid_repeat_protection": true
+    },
+    "native": {
+      "executable_sha256": "e731889b772b32ea8a9cc3f91575560a4f7449e9978ebd95b6b454059fc85db9",
+      "max_normalized_gradient": 9.562260393582978e-09,
+      "existing_output_protection": true,
+      "invalid_repeat_protection": true
+    }
+  },
+  "agreement": {
+    "max_world_pose_norm": 7.758321820264758e-10,
+    "max_cost_difference": 1.0547118733938987e-15
+  }
+}

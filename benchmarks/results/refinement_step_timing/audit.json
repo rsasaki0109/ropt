@@ -1,0 +1,24 @@
+{
+  "primary": {
+    "before": {
+      "stream_median_ms": 11029.2989185,
+      "arrival_median_ms": 4.6167560000000005,
+      "arrival_p95_ms": 59.619781,
+      "arrival_p99_ms": 119.662022,
+      "arrival_max_ms": 748.545141
+    },
+    "after": {
+      "stream_median_ms": 11929.924636,
+      "arrival_median_ms": 4.7966295,
+      "arrival_p95_ms": 60.918499,
+      "arrival_p99_ms": 116.836213,
+      "arrival_max_ms": 1252.352321
+    },
+    "time_reduction_percent": -8.165756719036189,
+    "faster_pairs": 1,
+    "qualifies": false,
+    "timed_arrivals": 12528
+  },
+  "scope": "before/after ropt wall times; archived native accuracy only; no fresh GTSAM timing",
+  "repeated_speed_improvement_confirmed": false
+}

@@ -1,0 +1,11 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 1m 37s
+     Running tests/csr_arithmetic.rs (target/release/deps/csr_arithmetic-d94670f865c39873)
+
+running 3 tests
+test duplicate_reduction_rejects_overflow_and_preserves_finite_cancellation ... ok
+test finite_operands_that_overflow_return_nonfinite_without_changing_matrix ... ok
+test structurally_unused_nonfinite_vector_entries_are_rejected ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

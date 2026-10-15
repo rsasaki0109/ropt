@@ -1,0 +1,20 @@
+{
+  "MIT_original_gate": {
+    "complete_replay": true,
+    "arrivals": 1227,
+    "eligible_quality": true,
+    "failed_arrivals": {
+      "root_exact": [],
+      "gradient_pass": [],
+      "reported_cost_pass": []
+    },
+    "max_normalized_gradient": 7.793438497199398e-08,
+    "max_raw_gradient": 0.12790520846974165,
+    "max_reported_cost_difference": 5.144329406903125e-12,
+    "timing_scope": "single diagnostic replay; no comparative speed claim"
+  },
+  "native_agreement": {
+    "max_world_pose_norm": 2.0375466499172747e-07,
+    "max_cost_difference": 7.574385563202668e-12
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "current_source_sha256": "5a2f130b59b3b3c8a45f97a825d3339c68f0611fa03c00b63c667246c1eef63e",
+  "preceding_source_sha256": "daa5994fbc2bfb6b539fd90b19170048b237df3b093a9d67192d4f50ce9a0fe8",
+  "rust_unit_integration": 302,
+  "rust_doctests": 18,
+  "python_tests": 23,
+  "clippy_all_targets_warnings_denied": true,
+  "format_check": true,
+  "rustdoc_warnings_denied": true,
+  "python_compile_check": true,
+  "scoped_diff_whitespace_check": true,
+  "timed_queries": 49152,
+  "all_16_conditions_meet_criterion_in_both_campaigns": true,
+  "source_driver_executable_hashes_match_measured_campaigns": true,
+  "exact_repeated_result_bits_digests_and_callback_counts": true,
+  "allocation_counts_repeat_exactly": true,
+  "functional_arrivals": 2271,
+  "functional_original_quality_gates_pass": true,
+  "exact_functional_pose_bytes_and_non_timing_update_fields": true,
+  "historical_source_only_stages": 38,
+  "older_builds_skipped": true,
+  "scope": "synthetic current-estimate query performance; analytic real-stream functional regression",
+  "native_timing_measured": false,
+  "complete_ad_stream_timing_measured": false,
+  "live_or_peak_memory_measured": false,
+  "build_readme_sha256": "61af90a5d526c45f2a360c0a52f2a415fcbd458cd7cbe7dc9e078d5945a93f02",
+  "support_files_sha256": {
+    "benchmarks/mixed_probe.patch": "82e0e4b6ee1d3e9d04ab47a586ee2fd3489c673975b7b9976033f014ca1c382c",
+    "benchmarks/make_ldl_baseline.py": "81d9ec6b30abdfff7707392b2dcb79da1b33a0f487bd1b304f4225640655481c",
+    "benchmarks/verify_autodiff_probe.py": "28c340c6979442d1e5c60287afdaa79a1dffee6cae0bfad62c3ec22056be239b",
+    "benchmarks/MIXED_AUTODIFF_PROBE.md": "59ef1208c322120f541f8add920a27443a113d24177a6e146f094c79623aba4c"
+  }
+}

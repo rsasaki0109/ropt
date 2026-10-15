@@ -1,0 +1,29 @@
+{
+  "before_source_sha256": "ee9385ac5faef90c00f825ced8a9de02872030a6a892dbdebbe8bcfb108e77a6",
+  "source_sha256": "6531c33f26a77ba2dea2fe180a44973fd832a8fef4123b58414ea90606d055fb",
+  "scope": "owned retired-variable timestamps; manifold, refreshed-time, key-reuse and robust-cost preservation checks; no new performance claim",
+  "validation": {
+    "rust_tests": 359,
+    "python_checks": 27,
+    "source_only_rollback_stages": 55,
+    "zero_fuzz_forward_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "benchmark-tests.log": "72e799e8d7fecfd0f97a1fc307394b24f3816d35e7de5a42eaf7e3dd8c95964f",
+    "check_rollbacks.py": "e04aa6cd87f789b896f72e05b27c4c3dbe9f34852bbb18d48ee86fa898434df0",
+    "clippy.log": "1d561b1a44a06ae504df971e6f9d605c66748f02d9a770efdbdc80bdc8a49036",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "fixed_lag.rs": "349e675b4221f3d435d2b8f5a87541124995f874d5201ca0a6a4c94b3d39fe7b",
+    "fixed_lag.rs.before": "dff046a5dd69e109e6e27d06d1168fc28499e08a3eafae086d753b649fe7644e",
+    "fixed_lag_retired_times.rs": "54ddfe48803abd5e67bef30d29fce173ee8e40b8b7c70631a01b03cfdaa6188d",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "73af30c7d8d765f98781ab243faf6627bb8ba0e8df0bc79da54a31f40008d169",
+    "python-tests.log": "0a1c0ab08dc64a8b45d1fbda1ff892323e5c5494aca5156591f0ca0361dc9ad3",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "673f9fa897c1cb8dc785da246ad0e62d3ecc139706f66ec9835beb2d5f20a718",
+    "rollback/report.json": "cc546b7d3125a3d0581acb0f476f6b6635e32c5325b30f88e0645e852a0eb651",
+    "targeted.log": "3946723dfbb2276f84f49f4d44a977e172813564b34de7ca38f714782f2332ca",
+    "workspace-tests.log": "2a884dce30f80cc0a4c34729ef0ae1dea2b326c92ca0343ba34ad92ddfdb271c"
+  }
+}

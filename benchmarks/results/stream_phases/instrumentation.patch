@@ -1,0 +1,947 @@
+--- a/crates/ropt/src/bayes_tree/editable.rs
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -285,11 +285,13 @@
+         removed: &[GaussianFactorId],
+         replacements: Vec<(GaussianFactorId, Arc<GaussianFactor>)>,
+     ) -> Result<EditableBayesTreeUpdate, Error> {
+-        let mut candidate = self.clone();
+-        candidate.update_in_place(removed, replacements)?;
+-        let report = candidate.last_update;
+-        *self = candidate;
+-        Ok(report)
++        crate::stream_profile::measure(7, || {
++            let mut candidate = self.clone();
++            candidate.update_in_place(removed, replacements)?;
++            let report = candidate.last_update;
++            *self = candidate;
++            Ok(report)
++        })
+     }
+     fn topology(&self) -> Result<Topology, Error> {
+         let n = self.dimension();
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -678,51 +678,53 @@
+         })
+     }
+     fn evaluate_sparse(&self, x: &DVector<f64>) -> Result<(DVector<f64>, CsrMatrix), Error> {
+-        let mut residuals = DVector::zeros(self.residual_size);
+-        let mut offsets = Vec::with_capacity(self.residual_size + 1);
+-        offsets.push(0);
+-        let mut indices = Vec::new();
+-        let mut values = Vec::new();
+-        let mut order = Vec::new();
+-        self.visit_factors(x, |row, f, residual, blocks| {
+-            residuals.rows_mut(row, f.residuals).copy_from(&residual);
+-            // Callback/whitening slots retain the caller's order. Only assembly
+-            // visits distinct active blocks in their current tangent-column order.
+-            order.clear();
+-            order.extend(
+-                (0..f.variables.len())
+-                    .filter(|&slot| self.variables[f.variables[slot].index].tangent.is_some()),
+-            );
+-            order.sort_unstable_by_key(|&slot| f.variables[slot].index);
+-            for r in 0..f.residuals {
+-                for &slot in &order {
+-                    let t = self.variables[f.variables[slot].index]
+-                        .tangent
+-                        .as_ref()
+-                        .unwrap();
+-                    let block = &blocks[slot];
+-                    for c in 0..t.len() {
+-                        let v = block[(r, c)];
+-                        if v != 0.0 {
+-                            indices.push(t.start + c);
+-                            values.push(v);
++        crate::stream_profile::measure(1, || {
++            let mut residuals = DVector::zeros(self.residual_size);
++            let mut offsets = Vec::with_capacity(self.residual_size + 1);
++            offsets.push(0);
++            let mut indices = Vec::new();
++            let mut values = Vec::new();
++            let mut order = Vec::new();
++            self.visit_factors(x, |row, f, residual, blocks| {
++                residuals.rows_mut(row, f.residuals).copy_from(&residual);
++                // Callback/whitening slots retain the caller's order. Only assembly
++                // visits distinct active blocks in their current tangent-column order.
++                order.clear();
++                order.extend(
++                    (0..f.variables.len())
++                        .filter(|&slot| self.variables[f.variables[slot].index].tangent.is_some()),
++                );
++                order.sort_unstable_by_key(|&slot| f.variables[slot].index);
++                for r in 0..f.residuals {
++                    for &slot in &order {
++                        let t = self.variables[f.variables[slot].index]
++                            .tangent
++                            .as_ref()
++                            .unwrap();
++                        let block = &blocks[slot];
++                        for c in 0..t.len() {
++                            let v = block[(r, c)];
++                            if v != 0.0 {
++                                indices.push(t.start + c);
++                                values.push(v);
++                            }
+                         }
+                     }
++                    offsets.push(indices.len());
+                 }
+-                offsets.push(indices.len());
+-            }
+-            Ok(())
+-        })?;
+-        Ok((
+-            residuals,
+-            CsrMatrix::from_canonical(
+-                self.residual_size,
+-                self.tangent_size,
+-                offsets,
+-                indices,
+-                values,
+-            )?,
+-        ))
++                Ok(())
++            })?;
++            Ok((
++                residuals,
++                CsrMatrix::from_canonical(
++                    self.residual_size,
++                    self.tangent_size,
++                    offsets,
++                    indices,
++                    values,
++                )?,
++            ))
++        })
+     }
+ }
+ 
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -319,23 +319,25 @@
+     factors: &[SmootherFactor],
+     order: &[Key],
+ ) -> Result<(FactorGraph, BTreeMap<Key, VariableId>), Error> {
+-    let mut graph = FactorGraph::new();
+-    let mut ids = BTreeMap::new();
+-    for key in order {
+-        let v = variables.get(key).ok_or(Error::InvalidDimensions)?;
+-        let id = graph.add_variable(v.kind, v.value.clone())?;
+-        graph.set_fixed(id, v.fixed)?;
+-        ids.insert(*key, id);
+-    }
+-    for f in factors {
+-        let connected = f
+-            .keys
+-            .iter()
+-            .map(|key| ids.get(key).copied().ok_or(Error::InvalidDimensions))
+-            .collect::<Result<Vec<_>, _>>()?;
+-        f.register(&mut graph, &connected)?;
+-    }
+-    Ok((graph, ids))
++    crate::stream_profile::measure(0, || {
++        let mut graph = FactorGraph::new();
++        let mut ids = BTreeMap::new();
++        for key in order {
++            let v = variables.get(key).ok_or(Error::InvalidDimensions)?;
++            let id = graph.add_variable(v.kind, v.value.clone())?;
++            graph.set_fixed(id, v.fixed)?;
++            ids.insert(*key, id);
++        }
++        for f in factors {
++            let connected = f
++                .keys
++                .iter()
++                .map(|key| ids.get(key).copied().ok_or(Error::InvalidDimensions))
++                .collect::<Result<Vec<_>, _>>()?;
++            f.register(&mut graph, &connected)?;
++        }
++        Ok((graph, ids))
++    })
+ }
+ fn marginalize(
+     variables: &mut BTreeMap<Key, WindowVariable>,
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -246,50 +246,52 @@
+         residual: &DVector<f64>,
+         cached: Option<&QrRowOrder>,
+     ) -> Result<(), Error> {
+-        // A complete new model can group rows by their first pivot, avoiding
+-        // late rotations through already populated downstream rows. Preserve
+-        // original order within each group. Incremental append stays in input
+-        // order; only a fresh factor may use this rebuild path.
+-        if self.entries != 0 || self.constant_cost != 0. || self.rhs.iter().any(|&v| v != 0.) {
+-            return Err(Error::InvalidOptions);
+-        }
+-        let (m, n) = j.shape();
+-        if n != self.dimension() || m != residual.len() {
+-            return Err(Error::InvalidDimensions);
+-        }
+-        let (offsets, indices) = j.pattern();
+-        // Leading pivots are integers in 0..=n. Compute each key once and
+-        // stably count into buckets, keeping the exact previous row sequence.
+-        // Empty rows belong to the final bucket and retain residual energy.
+-        let mut starts = vec![0_usize; n.checked_add(2).ok_or(Error::InvalidDimensions)?];
+-        let keys: Vec<_> = (0..m)
+-            .map(|r| {
+-                let key = if offsets[r] == offsets[r + 1] {
+-                    n
+-                } else if let Some(order) = cached {
+-                    order.columns[offsets[r]]
+-                } else if let Some(order) = &self.column_order {
+-                    indices[offsets[r]..offsets[r + 1]]
+-                        .iter()
+-                        .map(|&c| order.to_internal[c])
+-                        .min()
+-                        .unwrap()
+-                } else {
+-                    indices[offsets[r]]
+-                };
+-                starts[key + 1] += 1;
+-                key
+-            })
+-            .collect();
+-        for k in 1..starts.len() {
+-            starts[k] += starts[k - 1];
+-        }
+-        let mut rows = vec![0; m];
+-        for (r, key) in keys.into_iter().enumerate() {
+-            rows[starts[key]] = r;
+-            starts[key] += 1;
+-        }
+-        self.append_rows_with_order(j, residual, rows.into_iter(), cached)
++        crate::stream_profile::measure(5, || {
++            // A complete new model can group rows by their first pivot, avoiding
++            // late rotations through already populated downstream rows. Preserve
++            // original order within each group. Incremental append stays in input
++            // order; only a fresh factor may use this rebuild path.
++            if self.entries != 0 || self.constant_cost != 0. || self.rhs.iter().any(|&v| v != 0.) {
++                return Err(Error::InvalidOptions);
++            }
++            let (m, n) = j.shape();
++            if n != self.dimension() || m != residual.len() {
++                return Err(Error::InvalidDimensions);
++            }
++            let (offsets, indices) = j.pattern();
++            // Leading pivots are integers in 0..=n. Compute each key once and
++            // stably count into buckets, keeping the exact previous row sequence.
++            // Empty rows belong to the final bucket and retain residual energy.
++            let mut starts = vec![0_usize; n.checked_add(2).ok_or(Error::InvalidDimensions)?];
++            let keys: Vec<_> = (0..m)
++                .map(|r| {
++                    let key = if offsets[r] == offsets[r + 1] {
++                        n
++                    } else if let Some(order) = cached {
++                        order.columns[offsets[r]]
++                    } else if let Some(order) = &self.column_order {
++                        indices[offsets[r]..offsets[r + 1]]
++                            .iter()
++                            .map(|&c| order.to_internal[c])
++                            .min()
++                            .unwrap()
++                    } else {
++                        indices[offsets[r]]
++                    };
++                    starts[key + 1] += 1;
++                    key
++                })
++                .collect();
++            for k in 1..starts.len() {
++                starts[k] += starts[k - 1];
++            }
++            let mut rows = vec![0; m];
++            for (r, key) in keys.into_iter().enumerate() {
++                rows[starts[key]] = r;
++                starts[key] += 1;
++            }
++            self.append_rows_with_order(j, residual, rows.into_iter(), cached)
++        })
+     }
+     /// Internal column ordering only. Input Jacobians, returned steps, supplied
+     /// cost vectors and future appended columns retain original coordinates.
+--- a/crates/ropt/src/isam/selective.rs
++++ b/crates/ropt/src/isam/selective.rs
+@@ -56,40 +56,42 @@
+     factors: &[SmootherFactor],
+     limit: usize,
+ ) -> Result<Vec<Arc<GaussianFactor>>, Error> {
+-    if j.shape().0 != r.len()
+-        || factors
+-            .iter()
+-            .try_fold(0usize, |sum, f| sum.checked_add(f.residuals))
+-            != Some(r.len())
+-    {
+-        return Err(Error::InvalidDimensions);
+-    }
+-    if r.len()
+-        .checked_add(j.nnz())
+-        .is_none_or(|entries| entries > limit)
+-    {
+-        return Err(Error::SparseFillLimit { limit });
+-    }
+-    let mut start = 0;
+-    let mut blocks = Vec::with_capacity(factors.len());
+-    for factor in factors {
+-        let mut offsets = vec![0];
+-        let mut columns = Vec::new();
+-        let mut values = Vec::new();
+-        for row in start..start + factor.residuals {
+-            for (column, value) in j.row(row)? {
+-                columns.push(column);
+-                values.push(value);
+-            }
+-            offsets.push(values.len());
+-        }
+-        blocks.push(Arc::new(GaussianFactor::new(
+-            CsrMatrix::from_canonical(factor.residuals, j.shape().1, offsets, columns, values)?,
+-            r.rows(start, factor.residuals).into_owned(),
+-        )?));
+-        start += factor.residuals;
+-    }
+-    Ok(blocks)
++    crate::stream_profile::measure(6, || {
++        if j.shape().0 != r.len()
++            || factors
++                .iter()
++                .try_fold(0usize, |sum, f| sum.checked_add(f.residuals))
++                != Some(r.len())
++        {
++            return Err(Error::InvalidDimensions);
++        }
++        if r.len()
++            .checked_add(j.nnz())
++            .is_none_or(|entries| entries > limit)
++        {
++            return Err(Error::SparseFillLimit { limit });
++        }
++        let mut start = 0;
++        let mut blocks = Vec::with_capacity(factors.len());
++        for factor in factors {
++            let mut offsets = vec![0];
++            let mut columns = Vec::new();
++            let mut values = Vec::new();
++            for row in start..start + factor.residuals {
++                for (column, value) in j.row(row)? {
++                    columns.push(column);
++                    values.push(value);
++                }
++                offsets.push(values.len());
++            }
++            blocks.push(Arc::new(GaussianFactor::new(
++                CsrMatrix::from_canonical(factor.residuals, j.shape().1, offsets, columns, values)?,
++                r.rows(start, factor.residuals).into_owned(),
++            )?));
++            start += factor.residuals;
++        }
++        Ok(blocks)
++    })
+ }
+ impl FactorCache {
+     pub fn new(max_passes: usize) -> Self {
+@@ -173,12 +175,14 @@
+         permutation: Option<&[usize]>,
+         options: IncrementalQrOptions,
+     ) -> Result<EditableBayesTree, Error> {
+-        let mut tree = EditableBayesTree::new_ordered(
+-            permutation.map_or_else(|| (0..columns).collect(), <[usize]>::to_vec),
+-            options,
+-        )?;
+-        tree.update_shared(&[], self.shared_factors(0..self.blocks.len())?)?;
+-        Ok(tree)
++        crate::stream_profile::measure(8, || {
++            let mut tree = EditableBayesTree::new_ordered(
++                permutation.map_or_else(|| (0..columns).collect(), <[usize]>::to_vec),
++                options,
++            )?;
++            tree.update_shared(&[], self.shared_factors(0..self.blocks.len())?)?;
++            Ok(tree)
++        })
+     }
+     pub fn relinearize(
+         &mut self,
+@@ -188,101 +192,103 @@
+         mut keys: BTreeSet<Key>,
+         mut gaussian: GaussianCache,
+     ) -> Result<SelectiveResult, Error> {
+-        if self.blocks.len() != context.factors.len()
+-            || context.new_count > self.blocks.len()
+-            || keys.is_empty()
+-        {
+-            return Err(Error::InvalidDimensions);
+-        }
+-        let mut touched =
+-            (self.blocks.len() - context.new_count..self.blocks.len()).collect::<BTreeSet<_>>();
+-        let mut moved = BTreeSet::new();
+-        let mut report = SelectiveRelinearizationReport {
+-            passes: 0,
+-            variables_relinearized: Vec::new(),
+-            factor_relinearizations: 0,
+-            retained_factors: 0,
+-            threshold_remaining: false,
+-        };
+-        let permutation = gaussian.column_permutation().map(<[usize]>::to_vec);
+-        for _ in 0..self.max_passes {
+-            for &key in &keys {
+-                let variable = variables.get(&key).ok_or(Error::InvalidDimensions)?;
+-                if variable.fixed {
+-                    return Err(Error::InvalidDimensions);
+-                }
+-                anchors.insert(key, variable.clone());
+-                moved.insert(key);
+-            }
+-            let indices = context
+-                .factors
+-                .iter()
+-                .enumerate()
+-                .filter(|(_, factor)| factor.keys.iter().any(|key| keys.contains(key)))
+-                .map(|(index, _)| index)
+-                .collect::<Vec<_>>();
+-            let factors = indices
+-                .iter()
+-                .map(|&index| context.factors[index].clone())
+-                .collect::<Vec<_>>();
+-            let (graph, ids) = build_graph(anchors, &factors, context.order)?;
+-            let (r, j) = graph.evaluate_sparse(&graph.initial())?;
+-            let replacement = capture(&j, &r, &factors, context.options.qr.max_entries)?;
+-            let removed = indices.iter().try_fold(0usize, |sum, &index| {
+-                sum.checked_add(self.blocks[index].entries()?)
+-                    .ok_or(Error::InvalidDimensions)
+-            })?;
+-            let entries = (self.entries - removed)
+-                .checked_add(r.len())
+-                .and_then(|n| n.checked_add(j.nnz()))
+-                .filter(|&n| n <= context.options.qr.max_entries)
+-                .ok_or(Error::SparseFillLimit {
+-                    limit: context.options.qr.max_entries,
++        crate::stream_profile::measure(10, || {
++            if self.blocks.len() != context.factors.len()
++                || context.new_count > self.blocks.len()
++                || keys.is_empty()
++            {
++                return Err(Error::InvalidDimensions);
++            }
++            let mut touched =
++                (self.blocks.len() - context.new_count..self.blocks.len()).collect::<BTreeSet<_>>();
++            let mut moved = BTreeSet::new();
++            let mut report = SelectiveRelinearizationReport {
++                passes: 0,
++                variables_relinearized: Vec::new(),
++                factor_relinearizations: 0,
++                retained_factors: 0,
++                threshold_remaining: false,
++            };
++            let permutation = gaussian.column_permutation().map(<[usize]>::to_vec);
++            for _ in 0..self.max_passes {
++                for &key in &keys {
++                    let variable = variables.get(&key).ok_or(Error::InvalidDimensions)?;
++                    if variable.fixed {
++                        return Err(Error::InvalidDimensions);
++                    }
++                    anchors.insert(key, variable.clone());
++                    moved.insert(key);
++                }
++                let indices = context
++                    .factors
++                    .iter()
++                    .enumerate()
++                    .filter(|(_, factor)| factor.keys.iter().any(|key| keys.contains(key)))
++                    .map(|(index, _)| index)
++                    .collect::<Vec<_>>();
++                let factors = indices
++                    .iter()
++                    .map(|&index| context.factors[index].clone())
++                    .collect::<Vec<_>>();
++                let (graph, ids) = build_graph(anchors, &factors, context.order)?;
++                let (r, j) = graph.evaluate_sparse(&graph.initial())?;
++                let replacement = capture(&j, &r, &factors, context.options.qr.max_entries)?;
++                let removed = indices.iter().try_fold(0usize, |sum, &index| {
++                    sum.checked_add(self.blocks[index].entries()?)
++                        .ok_or(Error::InvalidDimensions)
+                 })?;
+-            for (&index, block) in indices.iter().zip(replacement) {
+-                self.blocks[index] = block;
+-                touched.insert(index);
+-            }
+-            self.entries = entries;
+-            if let GaussianCache::Editable(tree) = &mut gaussian {
+-                tree.update_shared(&[], self.shared_factors(indices.iter().copied())?)?;
+-            } else {
+-                let (r, j) = self.assemble(graph.dimensions().1)?;
+-                let mut qr = IncrementalQr::new(j.shape().1, context.options.qr)?;
+-                if let Some(order) = &permutation {
+-                    qr.set_column_order(order.clone())?;
+-                }
+-                qr.rebuild_in_place(&j, &r)?;
+-                gaussian = GaussianCache::Qr(qr);
+-            }
+-            let delta = gaussian.solve()?;
+-            let state = graph.retract(&graph.initial(), &delta)?;
+-            for (&key, &id) in &ids {
+-                variables.get_mut(&key).unwrap().value = graph.value(&state, id)?;
+-            }
+-            keys = threshold_keys(
+-                variables,
+-                anchors,
+-                &graph,
+-                &ids,
+-                &delta,
+-                context.options.relinearization_threshold,
+-            )?;
+-            report.passes += 1;
+-            report.factor_relinearizations += indices.len();
+-            report.threshold_remaining = !keys.is_empty();
+-            if keys.is_empty() || report.passes == self.max_passes {
+-                report.retained_factors = self.blocks.len() - touched.len();
+-                report.variables_relinearized = moved.into_iter().collect();
+-                return Ok(SelectiveResult {
+-                    qr: gaussian,
+-                    coordinates: anchor_coordinates(variables, anchors, &graph, &ids)?,
+-                    report,
+-                    distinct_factors: touched.len(),
+-                });
+-            }
+-        }
+-        Err(Error::InvalidOptions)
++                let entries = (self.entries - removed)
++                    .checked_add(r.len())
++                    .and_then(|n| n.checked_add(j.nnz()))
++                    .filter(|&n| n <= context.options.qr.max_entries)
++                    .ok_or(Error::SparseFillLimit {
++                        limit: context.options.qr.max_entries,
++                    })?;
++                for (&index, block) in indices.iter().zip(replacement) {
++                    self.blocks[index] = block;
++                    touched.insert(index);
++                }
++                self.entries = entries;
++                if let GaussianCache::Editable(tree) = &mut gaussian {
++                    tree.update_shared(&[], self.shared_factors(indices.iter().copied())?)?;
++                } else {
++                    let (r, j) = self.assemble(graph.dimensions().1)?;
++                    let mut qr = IncrementalQr::new(j.shape().1, context.options.qr)?;
++                    if let Some(order) = &permutation {
++                        qr.set_column_order(order.clone())?;
++                    }
++                    qr.rebuild_in_place(&j, &r)?;
++                    gaussian = GaussianCache::Qr(qr);
++                }
++                let delta = gaussian.solve()?;
++                let state = graph.retract(&graph.initial(), &delta)?;
++                for (&key, &id) in &ids {
++                    variables.get_mut(&key).unwrap().value = graph.value(&state, id)?;
++                }
++                keys = threshold_keys(
++                    variables,
++                    anchors,
++                    &graph,
++                    &ids,
++                    &delta,
++                    context.options.relinearization_threshold,
++                )?;
++                report.passes += 1;
++                report.factor_relinearizations += indices.len();
++                report.threshold_remaining = !keys.is_empty();
++                if keys.is_empty() || report.passes == self.max_passes {
++                    report.retained_factors = self.blocks.len() - touched.len();
++                    report.variables_relinearized = moved.into_iter().collect();
++                    return Ok(SelectiveResult {
++                        qr: gaussian,
++                        coordinates: anchor_coordinates(variables, anchors, &graph, &ids)?,
++                        report,
++                        distinct_factors: touched.len(),
++                    });
++                }
++            }
++            Err(Error::InvalidOptions)
++        })
+     }
+ }
+ pub(super) fn threshold_keys(
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -167,11 +167,11 @@
+         }
+     }
+     fn solve(&self) -> Result<DVector<f64>, Error> {
+-        match self {
++        crate::stream_profile::measure(2, || match self {
+             Self::Qr(qr) => qr.solve(),
+             Self::Tree(tree) => tree.solve(),
+             Self::Editable(tree) => tree.solve(),
+-        }
++        })
+     }
+     fn solve_gradient(&self, g: &DVector<f64>) -> Result<DVector<f64>, Error> {
+         match self {
+@@ -791,20 +791,22 @@
+     graph: &FactorGraph,
+     ids: &BTreeMap<Key, VariableId>,
+ ) -> Result<(DVector<f64>, f64), Error> {
+-    let mut delta = DVector::zeros(graph.dimensions().1);
+-    let mut maximum = 0.0_f64;
+-    // Key order matches the previous norm reduction. Column ranges follow graph
+-    // insertion order, which need not match the numeric keys.
+-    for (&key, &id) in ids {
+-        if let Some(range) = graph.tangent_range(id)? {
+-            let v = &values[&key];
+-            let local = v.kind.local(&anchors[&key].value, &v.value)?;
+-            maximum = maximum.max(local.norm());
+-            delta.rows_mut(range.start, range.len()).copy_from(&local);
+-        }
+-    }
+-    if !maximum.is_finite() {
+-        return Err(Error::NonFinite);
+-    }
+-    Ok((delta, maximum))
+-}
++    crate::stream_profile::measure(9, || {
++        let mut delta = DVector::zeros(graph.dimensions().1);
++        let mut maximum = 0.0_f64;
++        // Key order matches the previous norm reduction. Column ranges follow graph
++        // insertion order, which need not match the numeric keys.
++        for (&key, &id) in ids {
++            if let Some(range) = graph.tangent_range(id)? {
++                let v = &values[&key];
++                let local = v.kind.local(&anchors[&key].value, &v.value)?;
++                maximum = maximum.max(local.norm());
++                delta.rows_mut(range.start, range.len()).copy_from(&local);
++            }
++        }
++        if !maximum.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        Ok((delta, maximum))
++    })
++}
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -26,3 +26,5 @@
+ pub mod sparse_qr;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++pub mod stream_profile;
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -823,27 +823,30 @@
+     options: &Options,
+     capture_ordering: bool,
+ ) -> Result<GaussianSolution, Error> {
+-    if !matches!(options.loss, Loss::Squared)
+-        || problem
+-            .loss_blocks()
+-            .iter()
+-            .any(|block| !matches!(block.loss, Loss::Squared))
+-    {
+-        return Err(Error::InvalidOptions);
+-    }
+-    let (report, model, final_damping, workspace) = solve_local_model(problem, initial, options)?;
+-    let column_permutation = if capture_ordering {
+-        workspace.permutation().map(|p| p.to_vec())
+-    } else {
+-        None
+-    };
+-    let (r, j) = model.into_sparse()?;
+-    Ok(GaussianSolution {
+-        report,
+-        residual: r,
+-        jacobian: j,
+-        final_damping,
+-        column_permutation,
++    crate::stream_profile::measure(3, || {
++        if !matches!(options.loss, Loss::Squared)
++            || problem
++                .loss_blocks()
++                .iter()
++                .any(|block| !matches!(block.loss, Loss::Squared))
++        {
++            return Err(Error::InvalidOptions);
++        }
++        let (report, model, final_damping, workspace) =
++            solve_local_model(problem, initial, options)?;
++        let column_permutation = if capture_ordering {
++            workspace.permutation().map(|p| p.to_vec())
++        } else {
++            None
++        };
++        let (r, j) = model.into_sparse()?;
++        Ok(GaussianSolution {
++            report,
++            residual: r,
++            jacobian: j,
++            final_damping,
++            column_permutation,
++        })
+     })
+ }
+ fn solve_local_model(
+--- a/crates/ropt/src/sparse_qr.rs
++++ b/crates/ropt/src/sparse_qr.rs
+@@ -74,45 +74,47 @@
+         r: &DVector<f64>,
+         damping: f64,
+     ) -> Result<DVector<f64>, Error> {
+-        let (m, n) = j.shape();
+-        if m == 0 || n == 0 || r.len() != m {
+-            return Err(Error::InvalidDimensions);
+-        }
+-        finite_vector(r)?;
+-        if !damping.is_finite() || damping < 0. {
+-            return Err(Error::InvalidOptions);
+-        }
+-        if self.pattern.as_ref().is_none_or(|p| !p.matches(j)) {
+-            let order = column_ordering(j, &self.options.symbolic_options())?;
+-            self.order = order;
+-            self.pattern = Some(QrRowOrder::new(j, &self.order)?);
+-        }
+-        self.factor.reset_for_rebuild(n, &self.order)?;
+-        let qr = &mut self.factor;
+-        if damping == 0. {
+-            qr.rebuild_cached_row_order(j, r, self.pattern.as_ref().unwrap())?;
+-        } else {
+-            // Keep observation rows first and sort the complete augmented model
+-            // during rebuilding; appending damping after R would cause extra fill.
+-            let rows = m.checked_add(n).ok_or(Error::InvalidDimensions)?;
+-            let mut entries: Vec<_> = j.entries().collect();
+-            let mut norms = DVector::<f64>::zeros(n);
+-            for (_, c, v) in j.entries() {
+-                norms[c] = norms[c].hypot(v);
++        crate::stream_profile::measure(4, || {
++            let (m, n) = j.shape();
++            if m == 0 || n == 0 || r.len() != m {
++                return Err(Error::InvalidDimensions);
+             }
+-            for c in 0..n {
+-                let value = damping.sqrt() * norms[c].max(1.);
+-                if !value.is_finite() {
+-                    return Err(Error::NonFinite);
++            finite_vector(r)?;
++            if !damping.is_finite() || damping < 0. {
++                return Err(Error::InvalidOptions);
++            }
++            if self.pattern.as_ref().is_none_or(|p| !p.matches(j)) {
++                let order = column_ordering(j, &self.options.symbolic_options())?;
++                self.order = order;
++                self.pattern = Some(QrRowOrder::new(j, &self.order)?);
++            }
++            self.factor.reset_for_rebuild(n, &self.order)?;
++            let qr = &mut self.factor;
++            if damping == 0. {
++                qr.rebuild_cached_row_order(j, r, self.pattern.as_ref().unwrap())?;
++            } else {
++                // Keep observation rows first and sort the complete augmented model
++                // during rebuilding; appending damping after R would cause extra fill.
++                let rows = m.checked_add(n).ok_or(Error::InvalidDimensions)?;
++                let mut entries: Vec<_> = j.entries().collect();
++                let mut norms = DVector::<f64>::zeros(n);
++                for (_, c, v) in j.entries() {
++                    norms[c] = norms[c].hypot(v);
+                 }
+-                entries.push((m + c, c, value));
++                for c in 0..n {
++                    let value = damping.sqrt() * norms[c].max(1.);
++                    if !value.is_finite() {
++                        return Err(Error::NonFinite);
++                    }
++                    entries.push((m + c, c, value));
++                }
++                let augmented = CsrMatrix::from_triplets(rows, n, entries)?;
++                let mut residual = DVector::zeros(rows);
++                residual.rows_mut(0, m).copy_from(r);
++                qr.rebuild_in_place(&augmented, &residual)?;
+             }
+-            let augmented = CsrMatrix::from_triplets(rows, n, entries)?;
+-            let mut residual = DVector::zeros(rows);
+-            residual.rows_mut(0, m).copy_from(r);
+-            qr.rebuild_in_place(&augmented, &residual)?;
+-        }
+-        qr.solve()
++            qr.solve()
++        })
+     }
+ }
+ /// Solve `min_delta ||J delta + r||² + damping * sum(max(||J_col||²,1)*delta_col²)`.
+--- /dev/null
++++ b/crates/ropt/src/stream_profile.rs
+@@ -0,0 +1,42 @@
++use std::{
++    cell::{Cell, RefCell},
++    time::Instant,
++};
++#[derive(Clone, Copy)]
++pub struct Record {
++    pub ns: u128,
++    pub calls: u64,
++    pub errors: u64,
++}
++const ZERO: Record = Record {
++    ns: 0,
++    calls: 0,
++    errors: 0,
++};
++thread_local! {
++    static DATA: RefCell<[[Record; 11]; 4]> = const { RefCell::new([[ZERO; 11]; 4]) };
++    static API: Cell<usize> = const { Cell::new(0) };
++}
++pub fn reset() {
++    DATA.with(|d| *d.borrow_mut() = [[ZERO; 11]; 4]);
++}
++pub fn enter(api: usize) {
++    API.with(|a| a.set(api));
++}
++pub fn snapshot() -> [[Record; 11]; 4] {
++    DATA.with(|d| *d.borrow())
++}
++pub fn measure<T, E>(slot: usize, f: impl FnOnce() -> Result<T, E>) -> Result<T, E> {
++    let api = API.with(Cell::get);
++    let start = Instant::now();
++    let result = f();
++    let ns = start.elapsed().as_nanos();
++    DATA.with(|d| {
++        let mut d = d.borrow_mut();
++        let r = &mut d[api][slot];
++        r.ns += ns;
++        r.calls += 1;
++        r.errors += u64::from(result.is_err());
++    });
++    result
++}
+--- a/crates/ropt/examples/support/real_selective_se2.rs
++++ b/crates/ropt/examples/support/real_selective_se2.rs
+@@ -153,10 +153,25 @@
+                 factors: frame.factors.clone(),
+                 ..Default::default()
+             };
++            ropt::stream_profile::reset();
++            let mut profile_ns = [0_u128; 4];
++            let mut profile_calls = [0_usize; 4];
++            let mut profile_errors = [0_usize; 4];
++            macro_rules! profile_call {
++                ($slot:expr, $call:expr) => {{
++                    ropt::stream_profile::enter($slot);
++                    let t = Instant::now();
++                    let result = $call;
++                    profile_ns[$slot] += t.elapsed().as_nanos();
++                    profile_calls[$slot] += 1;
++                    profile_errors[$slot] += usize::from(result.is_err());
++                    result
++                }};
++            }
+             let start = Instant::now();
+             let mut work = Work::default();
+             let mut recovery_reason = "";
+-            let mut report = match smoother.update(update(), policy == "full") {
++            let mut report = match profile_call!(0, smoother.update(update(), policy == "full")) {
+                 Ok(report) => report,
+                 Err(error) if policy != "full" => {
+                     eprintln!(
+@@ -166,12 +181,15 @@
+                     work.calls += 1;
+                     work.recovery = 1;
+                     recovery_reason = "initial_error";
+-                    smoother.update(update(), true)?
++                    profile_call!(2, smoother.update(update(), true))?
+                 }
+                 Err(error) => return Err(error.into()),
+             };
+             work.record(&report);
+-            let mut probe = smoother.nonlinear_summary(GradientNorm::ColumnNormalized)?;
++            let mut probe = profile_call!(
++                3,
++                smoother.nonlinear_summary(GradientNorm::ColumnNormalized)
++            )?;
+             work.queries += 1;
+             if policy != "full" {
+                 for _ in 0..cap {
+@@ -184,7 +202,7 @@
+                         .filter(|(_, g)| **g > target * 0.5)
+                         .map(|(&key, _)| key)
+                         .collect::<Vec<_>>();
+-                    match smoother.relinearize_selected(&keys) {
++                    match profile_call!(1, smoother.relinearize_selected(&keys)) {
+                         Ok(result) => {
+                             report = result;
+                             work.record(&report);
+@@ -197,17 +215,23 @@
+                             break;
+                         }
+                     }
+-                    probe = smoother.nonlinear_summary(GradientNorm::ColumnNormalized)?;
++                    probe = profile_call!(
++                        3,
++                        smoother.nonlinear_summary(GradientNorm::ColumnNormalized)
++                    )?;
+                     work.queries += 1;
+                 }
+                 if probe.gradient_norm > target {
+-                    report = smoother.update(Default::default(), true)?;
++                    report = profile_call!(2, smoother.update(Default::default(), true))?;
+                     work.record(&report);
+                     work.recovery += 1;
+                     if recovery_reason.is_empty() {
+                         recovery_reason = "selected_cap";
+                     }
+-                    probe = smoother.nonlinear_summary(GradientNorm::ColumnNormalized)?;
++                    probe = profile_call!(
++                        3,
++                        smoother.nonlinear_summary(GradientNorm::ColumnNormalized)
++                    )?;
+                     work.queries += 1;
+                 }
+             }
+@@ -221,6 +245,53 @@
+             }
+             let elapsed = start.elapsed().as_nanos();
+             total += elapsed;
++            eprintln!(
++                "stream_profile round={} frame={} total={} initial={} requested={} recovery={} probe={} initial_calls={} requested_calls={} recovery_calls={} probe_calls={} initial_errors={} requested_errors={} recovery_errors={} probe_errors={}",
++                round,
++                index + 1,
++                elapsed,
++                profile_ns[0],
++                profile_ns[1],
++                profile_ns[2],
++                profile_ns[3],
++                profile_calls[0],
++                profile_calls[1],
++                profile_calls[2],
++                profile_calls[3],
++                profile_errors[0],
++                profile_errors[1],
++                profile_errors[2],
++                profile_errors[3]
++            );
++            let names = [
++                "graph_build",
++                "sparse_evaluation",
++                "cache_solve",
++                "batch_solver",
++                "sparse_qr_workspace",
++                "qr_rebuild",
++                "factor_capture",
++                "tree_update",
++                "tree_build",
++                "coordinates",
++                "selected_relinearize",
++            ];
++            for (api, records) in ropt::stream_profile::snapshot().iter().enumerate() {
++                for (name, r) in names.iter().zip(records) {
++                    if r.calls != 0 {
++                        eprintln!(
++                            "stream_detail round={} frame={} api={} phase={} ns={} calls={} errors={}",
++                            round,
++                            index + 1,
++                            api,
++                            name,
++                            r.ns,
++                            r.calls,
++                            r.errors
++                        );
++                    }
++                }
++            }
+             if round >= warmup {
+                 writeln!(
+                     updates,

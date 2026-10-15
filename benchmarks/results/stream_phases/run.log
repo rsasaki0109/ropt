@@ -1,0 +1,645 @@
+{
+  "case": "csail_cold",
+  "arrivals": 1044,
+  "warmup_streams": 0,
+  "scope": "inclusive instrumented phase diagnosis; clock/bookkeeping/output affect execution; no comparative latency or speed claim",
+  "exact_complete_pose_bytes": true,
+  "exact_non_timing_work": true,
+  "max_original_normalized_gradient": 5.8075741199751337e-08,
+  "native_agreement": {
+    "max_world_pose_norm": 3.772474963380071e-07,
+    "max_cost_difference": 4.3165471197426086e-13
+  },
+  "native_reference_sha256": {
+    "metadata.json": "9ec33f492c144e78e82704343cc984b156af4963ed21648e291baebc10c8a9d0",
+    "report.json": "38900dbde496260c63e2ec109f45850c05ac7f8e62d414ad57655b6ae2eccf18",
+    "quality.csv": "7d890e4bad50691da80b252803b96f4ac3b11118624ad82115938a5fdf1bbd03",
+    "native-poses.csv.gz": "0611193adebbd92e2c286cbcefb73ea3390c69da12abbaff447df61d4439b121"
+  },
+  "instrumented_total_ns": 5475870062,
+  "api_phases": {
+    "initial": {
+      "ns": 1359244195,
+      "percent_of_outer": 24.822433323108317,
+      "calls": 1044,
+      "errors": 0
+    },
+    "requested": {
+      "ns": 503793891,
+      "percent_of_outer": 9.200252841938235,
+      "calls": 130,
+      "errors": 0
+    },
+    "recovery": {
+      "ns": 2494610742,
+      "percent_of_outer": 45.55642690120502,
+      "calls": 103,
+      "errors": 0
+    },
+    "probe": {
+      "ns": 1110952335,
+      "percent_of_outer": 20.28814275030911,
+      "calls": 1277,
+      "errors": 0
+    }
+  },
+  "other": {
+    "ns": 7268899,
+    "percent_of_outer": 0.13274418343931843
+  },
+  "inclusive_details": {
+    "initial": {
+      "graph_build": {
+        "ns": 111123525,
+        "percent_of_outer": 2.0293309326520683,
+        "calls": 1916,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 20012605,
+        "percent_of_outer": 0.3654689533062189,
+        "calls": 1916,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 74432308,
+        "percent_of_outer": 1.3592781997609058,
+        "calls": 1916,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 61575097,
+        "percent_of_outer": 1.124480608612367,
+        "calls": 46599,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 2617487,
+        "percent_of_outer": 0.04780038551616019,
+        "calls": 1916,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 319707163,
+        "percent_of_outer": 5.838472414066571,
+        "calls": 1916,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 164363997,
+        "percent_of_outer": 3.0016051356041107,
+        "calls": 1916,
+        "errors": 0
+      },
+      "selected_relinearize": {
+        "ns": 490847168,
+        "percent_of_outer": 8.963820588188383,
+        "calls": 872,
+        "errors": 0
+      }
+    },
+    "requested": {
+      "graph_build": {
+        "ns": 17772629,
+        "percent_of_outer": 0.32456265029613846,
+        "calls": 130,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 44439184,
+        "percent_of_outer": 0.8115456264820332,
+        "calls": 130,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 8332585,
+        "percent_of_outer": 0.152169151306644,
+        "calls": 130,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 109048074,
+        "percent_of_outer": 1.9914291750044086,
+        "calls": 129657,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 10719809,
+        "percent_of_outer": 0.19576448817495698,
+        "calls": 130,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 287343035,
+        "percent_of_outer": 5.247440712555023,
+        "calls": 130,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 14290659,
+        "percent_of_outer": 0.26097512976377124,
+        "calls": 130,
+        "errors": 0
+      },
+      "selected_relinearize": {
+        "ns": 427501512,
+        "percent_of_outer": 7.8070061407530895,
+        "calls": 130,
+        "errors": 0
+      }
+    },
+    "recovery": {
+      "graph_build": {
+        "ns": 36554797,
+        "percent_of_outer": 0.6675614392984477,
+        "calls": 206,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 1016489310,
+        "percent_of_outer": 18.563064837019503,
+        "calls": 890,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 5788285,
+        "percent_of_outer": 0.10570530225265963,
+        "calls": 103,
+        "errors": 0
+      },
+      "batch_solver": {
+        "ns": 692703726,
+        "percent_of_outer": 12.650112551191505,
+        "calls": 103,
+        "errors": 0
+      },
+      "sparse_qr_workspace": {
+        "ns": 261502253,
+        "percent_of_outer": 4.775537951762304,
+        "calls": 210,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 465973442,
+        "percent_of_outer": 8.509578144186431,
+        "calls": 246169,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 28516601,
+        "percent_of_outer": 0.5207684016808943,
+        "calls": 103,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 552557106,
+        "percent_of_outer": 10.09076365479324,
+        "calls": 103,
+        "errors": 0
+      },
+      "tree_build": {
+        "ns": 574868339,
+        "percent_of_outer": 10.498210010301738,
+        "calls": 103,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 15226570,
+        "percent_of_outer": 0.2780666784930734,
+        "calls": 103,
+        "errors": 0
+      }
+    },
+    "probe": {}
+  }
+}
+{
+  "case": "csail_warm",
+  "arrivals": 1044,
+  "warmup_streams": 1,
+  "scope": "inclusive instrumented phase diagnosis; clock/bookkeeping/output affect execution; no comparative latency or speed claim",
+  "exact_complete_pose_bytes": true,
+  "exact_non_timing_work": true,
+  "max_original_normalized_gradient": 5.8075741199751337e-08,
+  "native_agreement": {
+    "max_world_pose_norm": 3.772474963380071e-07,
+    "max_cost_difference": 4.3165471197426086e-13
+  },
+  "native_reference_sha256": {
+    "metadata.json": "9ec33f492c144e78e82704343cc984b156af4963ed21648e291baebc10c8a9d0",
+    "report.json": "38900dbde496260c63e2ec109f45850c05ac7f8e62d414ad57655b6ae2eccf18",
+    "quality.csv": "7d890e4bad50691da80b252803b96f4ac3b11118624ad82115938a5fdf1bbd03",
+    "native-poses.csv.gz": "0611193adebbd92e2c286cbcefb73ea3390c69da12abbaff447df61d4439b121"
+  },
+  "instrumented_total_ns": 5720902108,
+  "api_phases": {
+    "initial": {
+      "ns": 1453485349,
+      "percent_of_outer": 25.40657612315152,
+      "calls": 1044,
+      "errors": 0
+    },
+    "requested": {
+      "ns": 523980806,
+      "percent_of_outer": 9.159059115297136,
+      "calls": 130,
+      "errors": 0
+    },
+    "recovery": {
+      "ns": 2555086617,
+      "percent_of_outer": 44.66230270619411,
+      "calls": 103,
+      "errors": 0
+    },
+    "probe": {
+      "ns": 1180792952,
+      "percent_of_outer": 20.63997827106326,
+      "calls": 1277,
+      "errors": 0
+    }
+  },
+  "other": {
+    "ns": 7556384,
+    "percent_of_outer": 0.1320837842939717
+  },
+  "inclusive_details": {
+    "initial": {
+      "graph_build": {
+        "ns": 116744546,
+        "percent_of_outer": 2.0406667304575383,
+        "calls": 1916,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 21416719,
+        "percent_of_outer": 0.3743591237132212,
+        "calls": 1916,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 79808529,
+        "percent_of_outer": 1.3950339910273466,
+        "calls": 1916,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 63396550,
+        "percent_of_outer": 1.1081565250233434,
+        "calls": 46599,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 2961271,
+        "percent_of_outer": 0.05176230853275771,
+        "calls": 1916,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 335801834,
+        "percent_of_outer": 5.869735710569512,
+        "calls": 1916,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 172551083,
+        "percent_of_outer": 3.0161516443133656,
+        "calls": 1916,
+        "errors": 0
+      },
+      "selected_relinearize": {
+        "ns": 517936393,
+        "percent_of_outer": 9.053404222311856,
+        "calls": 872,
+        "errors": 0
+      }
+    },
+    "requested": {
+      "graph_build": {
+        "ns": 17202529,
+        "percent_of_outer": 0.3006960908480555,
+        "calls": 130,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 43650959,
+        "percent_of_outer": 0.7630083188971077,
+        "calls": 130,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 9260893,
+        "percent_of_outer": 0.1618781937738411,
+        "calls": 130,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 117303059,
+        "percent_of_outer": 2.0504294040613917,
+        "calls": 129657,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 11573763,
+        "percent_of_outer": 0.20230660797036662,
+        "calls": 130,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 301594170,
+        "percent_of_outer": 5.271793928762677,
+        "calls": 130,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 14722091,
+        "percent_of_outer": 0.2573386281057477,
+        "calls": 130,
+        "errors": 0
+      },
+      "selected_relinearize": {
+        "ns": 444477148,
+        "percent_of_outer": 7.769354196402901,
+        "calls": 130,
+        "errors": 0
+      }
+    },
+    "recovery": {
+      "graph_build": {
+        "ns": 37509246,
+        "percent_of_outer": 0.6556526451929283,
+        "calls": 206,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 1025210837,
+        "percent_of_outer": 17.9204401272024,
+        "calls": 890,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 5765854,
+        "percent_of_outer": 0.10078574831646114,
+        "calls": 103,
+        "errors": 0
+      },
+      "batch_solver": {
+        "ns": 684917221,
+        "percent_of_outer": 11.97218914202753,
+        "calls": 103,
+        "errors": 0
+      },
+      "sparse_qr_workspace": {
+        "ns": 256536729,
+        "percent_of_outer": 4.4842006410363835,
+        "calls": 210,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 473961823,
+        "percent_of_outer": 8.284739260565582,
+        "calls": 246169,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 30055348,
+        "percent_of_outer": 0.5253602916569954,
+        "calls": 103,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 565394526,
+        "percent_of_outer": 9.882961031781388,
+        "calls": 103,
+        "errors": 0
+      },
+      "tree_build": {
+        "ns": 587623370,
+        "percent_of_outer": 10.271515906176383,
+        "calls": 103,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 15682551,
+        "percent_of_outer": 0.2741272390952088,
+        "calls": 103,
+        "errors": 0
+      }
+    },
+    "probe": {}
+  }
+}
+{
+  "case": "mit_cold",
+  "arrivals": 1227,
+  "warmup_streams": 0,
+  "scope": "inclusive instrumented phase diagnosis; clock/bookkeeping/output affect execution; no comparative latency or speed claim",
+  "exact_complete_pose_bytes": true,
+  "exact_non_timing_work": true,
+  "max_original_normalized_gradient": 7.793438497199398e-08,
+  "native_agreement": {
+    "max_world_pose_norm": 1.945092214966316e-07,
+    "max_cost_difference": 6.423306331271306e-12
+  },
+  "native_reference_sha256": {
+    "metadata.json": "c1da3abdbefed4fede5ca971f036b9f1cbe71c1a4bf317baff225226bade378d",
+    "report.json": "fd57254b2652af52d2c6b1355d751ac3d5b7d1f1d11d453ffd975fa278f475b9",
+    "quality.csv": "f2e1cb7f018aaa538782733cf01f652401db2258f66352bc5ad0b27c9c248808",
+    "native-poses.csv.gz": "2b3625ede18d33caf06048c94259ec0ee9729ebdf11d7a1cbbe0b8ca54601258"
+  },
+  "instrumented_total_ns": 7530538386,
+  "api_phases": {
+    "initial": {
+      "ns": 2151686668,
+      "percent_of_outer": 28.572813226743442,
+      "calls": 1227,
+      "errors": 0
+    },
+    "requested": {
+      "ns": 875782391,
+      "percent_of_outer": 11.629744728851847,
+      "calls": 111,
+      "errors": 0
+    },
+    "recovery": {
+      "ns": 2858228015,
+      "percent_of_outer": 37.955161616515,
+      "calls": 111,
+      "errors": 0
+    },
+    "probe": {
+      "ns": 1638030145,
+      "percent_of_outer": 21.751833149742076,
+      "calls": 1449,
+      "errors": 0
+    }
+  },
+  "other": {
+    "ns": 6811167,
+    "percent_of_outer": 0.09044727814763708
+  },
+  "inclusive_details": {
+    "initial": {
+      "graph_build": {
+        "ns": 171519257,
+        "percent_of_outer": 2.277649328750132,
+        "calls": 2289,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 27134713,
+        "percent_of_outer": 0.36032899122386863,
+        "calls": 2289,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 123004635,
+        "percent_of_outer": 1.6334109023157963,
+        "calls": 2289,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 115884623,
+        "percent_of_outer": 1.5388623901770522,
+        "calls": 49890,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 3422679,
+        "percent_of_outer": 0.04545065471498149,
+        "calls": 2289,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 520321360,
+        "percent_of_outer": 6.9094842005895325,
+        "calls": 2289,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 251902775,
+        "percent_of_outer": 3.345083207706791,
+        "calls": 2289,
+        "errors": 0
+      },
+      "selected_relinearize": {
+        "ns": 760321935,
+        "percent_of_outer": 10.096514963837274,
+        "calls": 1062,
+        "errors": 0
+      }
+    },
+    "requested": {
+      "graph_build": {
+        "ns": 24739968,
+        "percent_of_outer": 0.3285285424743866,
+        "calls": 111,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 97433712,
+        "percent_of_outer": 1.2938478898286836,
+        "calls": 111,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 10896376,
+        "percent_of_outer": 0.14469584299918606,
+        "calls": 111,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 215622031,
+        "percent_of_outer": 2.8633016651354204,
+        "calls": 199488,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 25844718,
+        "percent_of_outer": 0.3431988083089495,
+        "calls": 111,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 513415773,
+        "percent_of_outer": 6.817783094426417,
+        "calls": 111,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 11920521,
+        "percent_of_outer": 0.15829573383705742,
+        "calls": 111,
+        "errors": 0
+      },
+      "selected_relinearize": {
+        "ns": 750438333,
+        "percent_of_outer": 9.965268013176024,
+        "calls": 111,
+        "errors": 0
+      }
+    },
+    "recovery": {
+      "graph_build": {
+        "ns": 36192569,
+        "percent_of_outer": 0.4806106435535272,
+        "calls": 222,
+        "errors": 0
+      },
+      "sparse_evaluation": {
+        "ns": 1051403506,
+        "percent_of_outer": 13.961863708903747,
+        "calls": 1034,
+        "errors": 0
+      },
+      "cache_solve": {
+        "ns": 6151071,
+        "percent_of_outer": 0.08168168973728938,
+        "calls": 111,
+        "errors": 0
+      },
+      "batch_solver": {
+        "ns": 891689542,
+        "percent_of_outer": 11.840979971070025,
+        "calls": 111,
+        "errors": 0
+      },
+      "sparse_qr_workspace": {
+        "ns": 472787094,
+        "percent_of_outer": 6.278264179344162,
+        "calls": 216,
+        "errors": 0
+      },
+      "qr_rebuild": {
+        "ns": 796830416,
+        "percent_of_outer": 10.581320685933756,
+        "calls": 215295,
+        "errors": 0
+      },
+      "factor_capture": {
+        "ns": 30898111,
+        "percent_of_outer": 0.4103041431598381,
+        "calls": 111,
+        "errors": 0
+      },
+      "tree_update": {
+        "ns": 577498263,
+        "percent_of_outer": 7.668751334879658,
+        "calls": 111,
+        "errors": 0
+      },
+      "tree_build": {
+        "ns": 597309476,
+        "percent_of_outer": 7.931829643288934,
+        "calls": 111,
+        "errors": 0
+      },
+      "coordinates": {
+        "ns": 14010049,
+        "percent_of_outer": 0.1860431257617123,
+        "calls": 111,
+        "errors": 0
+      }
+    },
+    "probe": {}
+  }
+}

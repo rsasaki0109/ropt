@@ -1,0 +1,28 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.47s
+     Running tests/csr_dimensions.rs (target/debug/deps/csr_dimensions-29b2ba364decf7f0)
+
+running 2 tests
+test unrepresentable_row_storage_returns_dimension_error ... ok
+test empty_shapes_and_wide_sparse_metadata_remain_valid ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sparse.rs (target/debug/deps/sparse-5953229859a6e0be)
+
+running 12 tests
+test csr_combines_duplicates_and_matches_dense_products ... ok
+test csr_spd_operator_and_duplicate_cancellation ... ok
+test damping_overflow_is_an_error_for_dense_and_sparse ... ok
+test dense_schur_matches_full_system_and_rejects_invalid_input ... ok
+test matrix_free_damped_normal_operator_matches_dense ... ok
+test pcg_failure_modes_are_explicit ... ok
+test pcg_matches_cholesky_and_verifies_true_residual ... ok
+test sparse_backend_does_not_silently_use_dense_or_gn ... ok
+test sparse_rejections_and_iteration_limit_propagation ... ok
+test robust_losses_and_schur_backend_match_dense_lm ... ok
+test graph_sparse_assembly_and_lm_match_dense ... ok
+test larger_sparse_chain_converges_with_linear_storage ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.51s
+

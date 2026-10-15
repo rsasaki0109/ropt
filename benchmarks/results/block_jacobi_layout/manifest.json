@@ -1,0 +1,41 @@
+{
+  "before_source_sha256": "d6b30bf45f955d34f83e01f5519e73f4e32bd8ba70367ef83f891e5d02ee59a3",
+  "source_sha256": "aa55e42dac98f2f2d430087c84ece4469e6301246cb711d21078a2c67994fb46",
+  "scope": "Block Jacobi preflights column mapping and dense block count/byte layouts before allocation; test-only allocator bounds malformed-size regression requests; no memory budget or timing claim",
+  "validation": {
+    "rust_tests": 383,
+    "release_regressions_rechecked": 3,
+    "python_checks": 27,
+    "source_only_rollback_stages": 62,
+    "before_failures": 1,
+    "before_filter": "unrepresentable_column_mapping_returns_dimension_error",
+    "zero_fuzz_source_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "before.log": "d56b3d0bed18c05c698b8bca933ce47e903b6ac956dc6ca7f193634b6902179f",
+    "benchmark-tests.log": "68fdd98a24327c2878cb7422aca78e5a8bf9c8c5ba5aec71dca1efd8597ce700",
+    "block_jacobi_dimensions.rs": "f31176478db665aac96ba74e33f2f90e2ecc1f4cdd40efe54d9c825e4a4243bb",
+    "block_jacobi_layout.patch": "1f1d8aa4b27819af237e7c7539c23f1e707bdde2bf2fd275f9807bced3b6ce78",
+    "check_rollbacks.py": "e9bcdec5e48df6e538f69c5e522fbfbc01564d1b741eb895df71608b1caafeeb",
+    "clippy.log": "dc7cab143829815af396d3fe8cc56d94af02c5bd092c4303080312bcb64e7cc7",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "csr_dimensions.patch": "eb94321c21905d2b1774c183b191798746e135509ed056cea9823b6f1376f2a4",
+    "empty_window.patch": "63eca993cb5228342b8781806f8d2710f6953ecbc1c915fb6f063d55a19b56fd",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "febadb3a5946e266796b09519caf49a8da03b94f311a97b9b29f189190d0a0ee",
+    "pcg_direction.patch": "ea042a0ab4b0afadf1804d8aceaa786bacdab2abe0a1ed7206ebcf62e5dbfd91",
+    "pcg_iteration_limit.patch": "264158c70436f5e5c5041b3e8b8520b127042a8b5aba621bcd6f7ded07397f8d",
+    "pcg_residual_norm.patch": "8d3559672f88e8b49bca02d23cd50714ca5997458129255101a2b2bbd5c1ae74",
+    "preconditioner.rs": "7e7d7d632264043f1be03c229d162605fdfb4a1ec9ae037a974e337fee882835",
+    "preconditioner.rs.before": "20c6f90b6302c9ed95db2c264eed45fdffbd95a94c8fc3bf528b4d1387942e49",
+    "python-tests.log": "463bdcc6dbee919b5171b509ee5eb055882e6f90f606e2becc903235eeaa6831",
+    "release-tests.log": "c6be91864b52b3ba6b69886937b7c9148933bf45675e46ca15c8706b89f661b5",
+    "residual_count.patch": "47c665d3e044c0ad4463a60bda21ab32009fe76ccab4791dc24aea96bad0df61",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "39b263adb360ed70f0f8aa3f9d6e40dd42416168b660b2f5ae0b539bce6785c3",
+    "rollback/report.json": "f2cc2ed241f2bbf5035f6298567b1e074a9a33c6f3f08025bc70bb0623af90ce",
+    "targeted.log": "4924bdf9bf26b3e3ff2aeafdd0ad53fdffe5c3bbd92ab2f16a23a9919bb2bcb3",
+    "workspace-tests.log": "25469bfc7b772812f262483b3af0dfc77e82d987424a746eef45f3076e4adb0b"
+  }
+}

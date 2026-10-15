@@ -1,0 +1,11 @@
+{
+  "production_source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+  "release_driver_sha256": "0f62822299ff9dfc92ec8ce74d5c64c8bee0e2c7c9d24047ceb1d51f5d638e9b",
+  "candidate_source_sha256": "ffdd6fd2033b67900137ccbca263df7749c4f6ecc681d98601821e8a8fc2fd74",
+  "decision": "adoption withdrawn; preceding implementation restored after 8.2% higher observed median and 1/6 faster pairs",
+  "scope": "allocation benefit remains archived, no speed adoption; no causal slowdown claim",
+  "expanded_refinement_anchor_and_rollback_regressions_retained": true,
+  "rust_tests": 355,
+  "python_checks": 27,
+  "source_only_rollback_stages": 53
+}

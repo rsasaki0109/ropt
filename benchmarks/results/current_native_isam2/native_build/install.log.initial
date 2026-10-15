@@ -1,0 +1,21 @@
+-- Install configuration: "Release"
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/gtsam_extra.cmake
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/GTSAMConfig.cmake
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/GTSAMConfigVersion.cmake
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/GTSAM-exports.cmake
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/GTSAM-exports-release.cmake
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/include/gtsam/3rdparty/metis/metis.h
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/lib/libmetis-gtsam.so
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/include/CppUnitLite/Failure.h
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/include/CppUnitLite/Test.h
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/include/CppUnitLite/TestHarness.h
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/include/CppUnitLite/TestRegistry.h
+-- Installing: /workspace/.ropt-native/reference-build-v2/prefix/include/CppUnitLite/TestResult.h
+CMake Error at /workspace/.ropt-native/reference-build-v2/gtsam-build/CppUnitLite/cmake_install.cmake:56 (file):
+  file INSTALL cannot find
+  "/workspace/.ropt-native/reference-build-v2/gtsam-build/CppUnitLite/libCppUnitLite.a":
+  No such file or directory.
+Call Stack (most recent call first):
+  /workspace/.ropt-native/reference-build-v2/gtsam-build/cmake_install.cmake:90 (include)
+
+

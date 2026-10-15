@@ -1,0 +1,12 @@
+{
+  "production_source_sha256": "10a41ce417d42667132cd2ceaab6c916a88855b8e83aaaf0920ce421141667e3",
+  "candidate_source_sha256": "939279f7aa51cd59af04323230a1433620751c75df1625fbf3c62d26243bc1de",
+  "rust_tests": {
+    "tests": 334,
+    "example-tests": 2
+  },
+  "python_tests": 23,
+  "builder_sha256": "bc22c3b205bcd2b15c2cd23b972aa5adba8c4fa7cd8691c1f296d61b6b267ce0",
+  "restored_exact_preceding_source": true,
+  "unrelated_Rust_changes_preserved": true
+}

@@ -1,0 +1,205 @@
+{
+  "eligible": true,
+  "dimensions": [
+    {
+      "dimension": 1,
+      "before_seconds": 0.1443997695,
+      "after_seconds": 0.153257169,
+      "median_speedup": 0.9422056432479188,
+      "time_reduction_percent": -6.133942963115335,
+      "faster_pairs": 0,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          9,
+          336
+        ],
+        "after": [
+          9,
+          336
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 2,
+      "before_seconds": 0.127149146,
+      "after_seconds": 0.124707044,
+      "median_speedup": 1.0195827109814262,
+      "time_reduction_percent": 1.9206593805985883,
+      "faster_pairs": 4,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          14,
+          472
+        ],
+        "after": [
+          14,
+          472
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 6,
+      "before_seconds": 0.1138519815,
+      "after_seconds": 0.109357231,
+      "median_speedup": 1.0411015390468328,
+      "time_reduction_percent": 3.947889567473184,
+      "faster_pairs": 5,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          35,
+          2136
+        ],
+        "after": [
+          35,
+          2136
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 7,
+      "before_seconds": 0.1058706915,
+      "after_seconds": 0.105101919,
+      "median_speedup": 1.0073145429437877,
+      "time_reduction_percent": 0.7261428910190881,
+      "faster_pairs": 4,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          40,
+          2672
+        ],
+        "after": [
+          40,
+          2672
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 12,
+      "before_seconds": 0.0999780715,
+      "after_seconds": 0.1028419935,
+      "median_speedup": 0.9721522123158766,
+      "time_reduction_percent": -2.864550152880274,
+      "faster_pairs": 2,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          66,
+          7192
+        ],
+        "after": [
+          66,
+          7192
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 13,
+      "before_seconds": 0.11275444100000001,
+      "after_seconds": 0.117656203,
+      "median_speedup": 0.9583382611794807,
+      "time_reduction_percent": -4.347289522724873,
+      "faster_pairs": 2,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          71,
+          8208
+        ],
+        "after": [
+          71,
+          8208
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 16,
+      "before_seconds": 0.16021899950000001,
+      "after_seconds": 0.162666105,
+      "median_speedup": 0.9849562667035029,
+      "time_reduction_percent": -1.5273503814383638,
+      "faster_pairs": 3,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          86,
+          11736
+        ],
+        "after": [
+          86,
+          11736
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 17,
+      "before_seconds": 0.09124719949999999,
+      "after_seconds": 0.0847807065,
+      "median_speedup": 1.0762731671739487,
+      "time_reduction_percent": 7.086785167582033,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          92,
+          14352
+        ],
+        "after": [
+          92,
+          14352
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 32,
+      "before_seconds": 0.23778224250000002,
+      "after_seconds": 0.1990607465,
+      "median_speedup": 1.1945210026628732,
+      "time_reduction_percent": 16.284435537695806,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          167,
+          43992
+        ],
+        "after": [
+          167,
+          43992
+        ]
+      },
+      "all_result_bits_identical": true
+    },
+    {
+      "dimension": 65,
+      "before_seconds": 0.826960725,
+      "after_seconds": 0.6242278525,
+      "median_speedup": 1.3247738332854988,
+      "time_reduction_percent": 24.51541728296709,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "allocations_per_call": {
+        "before": [
+          334,
+          180240
+        ],
+        "after": [
+          334,
+          180240
+        ]
+      },
+      "all_result_bits_identical": true
+    }
+  ]
+}

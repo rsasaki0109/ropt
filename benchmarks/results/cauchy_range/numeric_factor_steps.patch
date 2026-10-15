@@ -1,0 +1,36 @@
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -418,6 +418,9 @@
+     /// Central differences stay explicit; whitening is applied after differentiating.
+     /// Each perturbation output and derivative column is validated before the next
+     /// callback, preserving the first detected dimension or numerical error.
++    /// `step` and `2*step` must be finite and positive. Active perturbations must
++    /// be distinct from the base storage and from each other; otherwise evaluation
++    /// returns `InvalidOptions` before perturbation callbacks. Fixed blocks are skipped.
+     pub fn add_numeric_factor_with_options<F>(
+         &mut self,
+         ids: &[VariableId],
+@@ -431,7 +434,7 @@
+     {
+         self.check_factor(ids, m)?;
+         options.validate(m)?;
+-        if !step.is_finite() || step <= 0.0 {
++        if !step.is_finite() || step <= 0.0 || !(2.0 * step).is_finite() {
+             return Err(Error::InvalidOptions);
+         }
+         self.factors.push(Factor {
+@@ -796,6 +799,14 @@
+                             let mut minus = values.to_vec();
+                             plus[index] = kind.retract(&values[index], &d)?;
+                             minus[index] = kind.retract(&values[index], &(-d))?;
++                            // Comparing both samples also catches a canonicalized
++                            // Lie-group storage value that differs from the base.
++                            if plus[index] == values[index]
++                                || minus[index] == values[index]
++                                || plus[index] == minus[index]
++                            {
++                                return Err(Error::InvalidOptions);
++                            }
+                             let a = function(&plus)?;
+                             check_residual(&a, f.residuals)?;
+                             let b = function(&minus)?;

@@ -1,0 +1,6 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running `target/debug/examples/selective_bayes_tree`
+selected keys: [0]; nonlinear factors retained: 2047; passes: 1; callbacks: 5
+Gaussian cliques: 2 re-eliminated, 1023 reused; 1023 boundary messages reused
+cached Gaussian cost: 1.7168021312; original nonlinear cost: 1.7205319284; original gradient inf: 7.466e-2
+threshold remaining: false; symbolic analysis/back-substitution remain global

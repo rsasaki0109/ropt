@@ -1,0 +1,699 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.76s
+     Running unittests src/lib.rs (target/debug/deps/ropt-337b91254b11f4f4)
+
+running 22 tests
+test incremental_qr::column_tests::wide_contiguous_and_gapped_suffixes_check_endpoints_and_interior ... ok
+test incremental_qr::norm_tests::extreme_scales_boundaries_zeros_and_nonfinite_inputs_keep_hypot_behavior ... ok
+test incremental_qr::norm_tests::squared_norm_matches_hypot_within_two_ulps_across_exponents_and_signs ... ok
+test incremental_qr::rebuild_tests::invalid_column_orders_leave_a_fresh_order_unchanged ... ok
+test incremental_qr::rebuild_tests::rebuild_keeps_exact_extreme_power_of_two_models_finite ... ok
+test incremental_qr::rebuild_tests::rebuild_rejects_existing_models_bad_inputs_rank_loss_and_fill_overflow ... ok
+test noise::workspace_tests::overflow_errors_do_not_poison_a_later_whitening_call ... ok
+test noise::workspace_tests::poisoned_scratch_and_changing_shapes_match_owned_products_bit_for_bit ... ok
+test solver::stable_loss_tests::cauchy_differences_handle_close_norms_and_extreme_ratio_in_both_directions ... ok
+test solver::stable_loss_tests::compensated_summation_retains_small_terms_and_rejects_nonfinite_totals ... ok
+test solver::stable_loss_tests::normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients ... ok
+test solver::stable_loss_tests::squared_and_huber_differences_preserve_small_changes_and_transition_signs ... ok
+test sparse::canonical_tests::canonical_handoff_checks_storage_and_matches_independent_products ... ok
+test incremental_qr::column_tests::sorted_subset_masks_exhaustively_check_gaps_widths_and_max_indices ... ok
+test sparse_direct::adjacency_tests::sorted_neighbors_preserve_membership_through_promotion_removal_and_clear ... ok
+test sparse_direct::normal_rebind_tests::equal_counts_with_different_normal_edges_require_full_analysis ... ok
+test sparse_direct::normal_rebind_tests::equal_normal_graph_rebinds_rows_and_plan_budget_without_changing_arithmetic ... ok
+test sparse_direct::normal_rebind_tests::failed_numeric_factor_after_rebinding_cannot_expose_old_solution_and_recovers ... ok
+test incremental_qr::rebuild_tests::arbitrary_column_orders_keep_external_coordinates_through_append_and_extension ... ok
+test incremental_qr::rebuild_tests::grouped_rebuild_and_later_extension_match_refined_dense_reference_and_original_energy ... ok
+test sparse_direct::update_cursor_tests::destination_cursor_matches_binary_lookup_for_cliques_gaps_and_all_orders ... ok
+test sparse_direct::adjacency_tests::greedy_order_and_cumulative_fill_limits_match_independent_dense_graph ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/block_schur.rs (target/debug/deps/block_schur-9aa7281b4f9df3fb)
+
+running 7 tests
+test coupled_blocks_and_invalid_partitions_do_not_silently_pass ... ok
+test block_schur_solution_matches_full_normal_solve_and_residual ... ok
+test graph_layout_checks_fixed_blocks_and_connectivity ... ok
+test reduced_operator_rhs_diagonal_and_backsub_match_dense_elimination ... ok
+test block_schur_linear_iteration_failure_is_propagated ... ok
+test analytic_bundle_adjustment_recovers_pose_and_points_with_fixed_anchors ... ok
+test noisy_robust_ba_reduces_error_and_matches_dense_solution ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/calibration.rs (target/debug/deps/calibration-4dc40e37b5b08eaa)
+
+running 7 tests
+test known_radial_and_tangential_pixel_matches_independent_formula ... ok
+test invalid_calibration_factor_types_do_not_register_a_factor ... ok
+test intrinsic_jacobian_matches_analytic_formulas_in_log_focal_coordinates ... ok
+test log_focal_storage_roundtrips_and_invalid_domains_are_reported ... ok
+test zero_distortion_matches_pinhole_residuals_and_tangent_derivatives ... ok
+test all_seventeen_tangent_columns_match_whitened_central_differences ... ok
+test shared_calibration_ba_recovers_intrinsics_distortion_and_geometry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.68s
+
+     Running tests/camera.rs (target/debug/deps/camera-c25f5cad228c66b6)
+
+running 3 tests
+test camera_invalid_domains_and_factor_types_are_rejected ... ok
+test pinhole_analytic_jacobians_have_expected_signs ... ok
+test reprojection_pose_and_point_derivatives_match_central_differences ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/canonical_assembly.rs (target/debug/deps/canonical_assembly-fc2ca23f7034ee7a)
+
+running 2 tests
+test exact_zero_derivative_changes_and_tiny_nonzero_entries_keep_the_correct_pattern ... ok
+test reversed_callback_blocks_whitening_and_changed_fixed_layout_match_dense_assembly ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/covariance.rs (target/debug/deps/covariance-f8fa5986a5c646ca)
+
+running 11 tests
+test irls_scalar_fallback_only_affects_uncovered_rows ... ok
+test fixed_variables_are_conditioned_and_layout_changes_are_resolved_from_ids ... ok
+test invalid_selections_options_metadata_and_nonfinite_evaluations_are_errors ... ok
+test rank_threshold_and_extreme_scale_do_not_produce_damped_or_pseudo_inverse_covariance ... ok
+test known_correlated_measurement_covariance_is_recovered_without_residual_scale_estimation ... ok
+test robust_covariance_requires_explicit_irls_and_uses_joint_weights_once ... ok
+test standalone_euclidean_residual_covariance_matches_known_sigma_and_explicit_scalar_loss ... ok
+test selected_marginals_include_uncertain_nuisance_variables_and_preserve_order ... ok
+test singularity_is_checked_in_the_full_problem_even_when_only_observable_columns_are_queried ... ok
+test svd_iteration_limits_fail_explicitly ... ok
+test gauge_freedom_fails_and_anchored_se3_covariance_uses_six_body_tangent_dimensions ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dense_qr.rs (target/debug/deps/dense_qr-6d239bc85a16d691)
+
+running 8 tests
+test invalid_qr_inputs_and_rank_tolerance_are_errors ... ok
+test lm_qr_matches_damped_normal_solution_and_column_floor ... ok
+test nearly_dependent_columns_are_solved_without_a_collapsed_normal_matrix ... ok
+test qr_scaling_and_damping_rows_avoid_unnecessary_overflow ... ok
+test rectangular_pivoted_qr_restores_column_order_and_matches_svd ... ok
+test robust_whitened_lm_qr_uses_the_true_objective_for_gain_ratio ... ok
+test singular_and_underdetermined_gn_fail_but_lm_regularization_is_solved ... ok
+test qr_rosenbrock_has_rejections_and_rejected_trials_preserve_state ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dynamic_autodiff.rs (target/debug/deps/dynamic_autodiff-00188e7ac15fef04)
+
+running 8 tests
+test constant_broadcast_scalar_operators_and_error_carrying_are_explicit ... ok
+test changing_values_dimensions_domains_and_callback_errors_are_rejected ... ok
+test autodiff_factor_rejects_invalid_chunks_and_preserves_registration_state ... ok
+test fixed_and_dynamic_edge_formulas_are_finite_or_report_domain_errors ... ok
+test runtime_chunks_match_fixed_jets_analytic_formula_and_central_differences ... ok
+test bounded_seed_chunks_cover_a_runtime_parameter_count ... ok
+test euclidean_autodiff_factors_support_whitening_joint_losses_and_backends ... ok
+test runtime_rosenbrock_solves_with_each_chunk_size ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/factor_buffers.rs (target/debug/deps/factor_buffers-2d3d7ee3623de508)
+
+running 2 tests
+test disconnected_and_fixed_manifold_blocks_are_validated_before_any_callback ... ok
+test alternating_callback_arity_and_dimensions_do_not_expose_stale_values ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/factor_graph.rs (target/debug/deps/factor_graph-f279f9a9b7e02fad)
+
+running 8 tests
+test all_fixed_graph_is_evaluated_without_a_solve ... ok
+test graph_rejects_bad_shapes_and_nonfinite_callbacks ... ok
+test analytic_blocks_assemble_and_fixed_variables_are_excluded ... ok
+test quaternion_sign_representation_and_se2_wrap_are_consistent ... ok
+test variable_ids_cannot_cross_graphs ... ok
+test analytic_so3_tangent_jacobian_matches_numeric_and_converges ... ok
+test quaternion_retraction_preserves_unit_norm_over_many_updates ... ok
+test se3_graph_solves_chain_and_loop_with_fixed_anchor ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/fixed_lag.rs (target/debug/deps/fixed_lag-bf4f427e8166ef2c)
+
+running 8 tests
+test failed_updates_leave_state_time_and_factors_unchanged ... ok
+test rank_failure_during_marginalization_rolls_back_and_gauge_is_not_invented ... ok
+test coupled_separator_prior_preserves_cross_covariance_after_new_observations ... ok
+test robust_marginalization_requires_explicit_frozen_irls ... ok
+test timestamps_are_strict_at_cutoff_and_refresh_does_not_change_estimates ... ok
+test fixed_anchor_information_survives_expiry_and_persistent_variables_stay_live ... ok
+test linear_stream_matches_full_history_estimates_and_covariance_without_double_counting ... ok
+test se2_and_se3_streams_keep_manifold_priors_and_anchor_information ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.25s
+
+     Running tests/g2o.rs (target/debug/deps/g2o-f8023c550a43452f)
+
+running 8 tests
+test information_requires_finite_symmetric_positive_definite_matrix ... ok
+test connected_components_get_anchors_and_explicit_fixes_are_respected ... ok
+test invalid_records_report_lines_instead_of_discarding_data ... ok
+test parser_handles_comments_forward_references_aliases_and_large_ids ... ok
+test relative_measurement_coordinates_match_g2o_not_lie_log ... ok
+test relative_ad_tangent_jacobian_matches_central_differences ... ok
+test information_whitening_matches_correlated_energy_and_gradient ... ok
+test loop_closure_recovers_truth_across_backends_and_roundtrips_output ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/gradient_norm.rs (target/debug/deps/gradient_norm-9a74e13156633377)
+
+running 2 tests
+test column_normalization_has_the_same_stopping_measure_under_parameter_unit_changes ... ok
+test reported_normalized_gradient_matches_original_column_projection ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/graph_retraction.rs (target/debug/deps/graph_retraction-c2b26f6952cf5ea4)
+
+running 3 tests
+test overflow_errors_preserve_inputs_and_agree_with_owned_retraction ... ok
+test invalid_fixed_and_disconnected_values_and_steps_are_rejected ... ok
+test mixed_graph_retraction_matches_owned_api_bits_across_fixed_layouts ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/incremental_qr.rs (target/debug/deps/incremental_qr-f97aff9d3edfc838)
+
+running 5 tests
+test failed_row_insertion_is_atomic_and_limits_and_nonfinite_values_are_checked ... ok
+test appended_columns_preserve_old_information_and_require_observability ... ok
+test overflow_after_a_successful_rotation_restores_the_original_factor ... ok
+test row_updates_match_independent_svd_solution_and_full_objective ... ok
+test sparse_merge_handles_disjoint_columns_cancellations_and_scaled_batches ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/inplace_pcg.rs (target/debug/deps/inplace_pcg-08df77eb6ade7e0c)
+
+running 4 tests
+test legacy_implementations_keep_working_and_arithmetic_overflow_is_an_error ... ok
+test buffer_contract_failures_are_checked_after_overrides ... ok
+test pcg_uses_buffered_overrides_and_verifies_the_actual_linear_residual ... ok
+test reusable_outputs_match_independent_dense_products_and_cholesky ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/isam.rs (target/debug/deps/isam-dfd8f9734fa89285)
+
+running 13 tests
+test failing_batch_trial_preserves_new_keys_history_cache_and_update_interval ... ok
+test refresh_reuses_the_accepted_whitened_model_without_a_final_callback_replay ... ok
+test failed_nonlinear_refresh_keeps_the_committed_estimate_and_factor_count ... ok
+test reused_stationary_model_still_checks_final_qr_fill_and_rolls_back ... ok
+test scheduled_refresh_still_rejects_an_unobservable_final_model_and_rolls_back ... ok
+test scheduled_refresh_uses_current_estimates_when_new_rows_are_singular_at_old_anchors ... ok
+test reused_layout_handles_unsorted_keys_fixed_blocks_and_mixed_manifold_dimensions ... ok
+test subsequent_cached_update_uses_the_converged_model_after_rejected_nonlinear_trials ... ok
+test threshold_and_periodic_refresh_converge_on_nonlinear_factors ... ok
+test sparse_refresh_uses_backend_and_factor_limits_instead_of_a_dense_matrix_limit ... ok
+test unobservable_invalid_and_failing_updates_preserve_cached_information ... ok
+test incremental_stream_matches_batch_and_never_reevaluates_old_factors ... ok
+test se3_updates_use_six_right_tangent_columns_and_refresh_matches_batch ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/isam_coordinates.rs (target/debug/deps/isam_coordinates-347b8b667601bbdc)
+
+running 3 tests
+test batch_ordering_preserves_mixed_charts_and_fixed_insertion_layout ... ok
+test mixed_charts_preserve_insertion_layout_cost_and_refreshed_coordinates ... ok
+test a_full_turn_raw_step_still_triggers_refresh_in_a_small_principal_chart ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/isam_damping.rs (target/debug/deps/isam_damping-1507ea6525a900d7)
+
+running 4 tests
+test invalid_reuse_configuration_is_rejected_and_gn_reports_no_lm_damping ... ok
+test abrupt_nonlinear_change_still_rejects_overshoots_and_converges ... ok
+test failed_final_fill_does_not_commit_the_adapted_damping_or_history ... ok
+test reuse_is_explicit_reduces_trials_and_ordinary_updates_leave_it_unchanged ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/isam_refinement.rs (target/debug/deps/isam_refinement-227bd6b410f10630)
+
+running 3 tests
+test refinement_rejects_invalid_limits_and_incompatible_ordering_backend ... ok
+test initially_converged_refresh_extends_an_ordered_cache_then_appends_in_external_coordinates ... ok
+test refined_estimates_keep_the_batch_anchor_for_cached_updates_and_rollback ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/isam_se2.rs (target/debug/deps/isam_se2-1d9f367fd8ea2f0b)
+
+running 1 test
+test delayed_non_root_loops_match_autodiff_dense_qr_after_nonlinear_refresh ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests/local_coordinates.rs (target/debug/deps/local_coordinates-b4e9b283501fd8b0)
+
+running 2 tests
+test local_charts_wrap_angles_and_ignore_quaternion_sign ... ok
+test local_and_ad_match_right_retractions_and_central_differences ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/manifold_autodiff.rs (target/debug/deps/manifold_autodiff-0634f158c3bf8f2e)
+
+running 6 tests
+test ad_projection_reports_shape_cheirality_and_nonfinite_errors ... ok
+test all_manifold_graph_blocks_use_tangent_not_ambient_columns ... ok
+test manifold_retractions_reject_invalid_inputs_without_panics ... ok
+test every_retraction_matches_f64_values_and_central_derivatives ... ok
+test graph_reprojection_ad_matches_analytic_and_numeric_with_noise_and_fixed_pose ... ok
+test autodiff_ba_matches_analytic_backends_with_and_without_noise ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests/manifolds.rs (target/debug/deps/manifolds-cdf93cf23131796c)
+
+running 4 tests
+test euclidean_retraction ... ok
+test so2_and_se2_roundtrip ... ok
+test so3_and_se3_roundtrip_near_zero_and_pi ... ok
+test se3_non_axis_aligned_roundtrips ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/marginalization.rs (target/debug/deps/marginalization-18228af8148ffe26)
+
+running 4 tests
+test unobservable_eliminated_directions_and_bad_inputs_fail ... ok
+test compression_preserves_information_at_large_and_small_scales ... ok
+test exact_and_underdetermined_retained_systems_work ... ok
+test qr_prior_preserves_profile_objective_and_constant_without_normal_equations ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/measurement.rs (target/debug/deps/measurement-adeb63bdc85bd9f1)
+
+running 11 tests
+test explicit_blocks_and_scalar_fallback_cover_middle_and_trailing_rows ... ok
+test analytic_and_numeric_whitening_share_sparse_and_dense_results ... ok
+test correlated_covariance_whitens_residuals_and_jacobians_consistently ... ok
+test invalid_custom_loss_block_metadata_is_rejected ... ok
+test heterogeneous_sigmas_produce_expected_weighted_estimate ... ok
+test invalid_noise_and_loss_registration_do_not_modify_the_graph ... ok
+test joint_huber_cost_is_not_a_sum_of_component_costs_or_applied_twice ... ok
+test joint_robust_solution_is_invariant_under_orthogonal_whitening ... ok
+test whitened_joint_loss_gradient_and_lm_gain_match_true_objective ... ok
+test mixed_squared_prior_and_huber_measurements_agree_across_backends ... ok
+test heterogeneous_outlier_ba_improves_inlier_fit_and_all_backends_agree ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.65s
+
+     Running tests/navigation.rs (target/debug/deps/navigation-58e55b793b257afe)
+
+running 8 tests
+test antenna_translation_and_right_body_jacobian_have_expected_signs ... ok
+test position_analytic_ad_and_numeric_match_with_correlated_covariance ... ok
+test identity_relative_log_jacobian_is_finite_and_quaternion_signs_are_invariant ... ok
+test sensor_factor_bad_inputs_are_errors_and_registration_remains_unchanged ... ok
+test world_frame_transform_preserves_whitened_energy_and_body_normal_equations ... ok
+test relative_se3_log_ad_matches_f64_and_central_tangent_derivatives ... ok
+test relative_log_factors_solve_the_anchored_se3_loop_with_both_backends ... ok
+test robust_gnss_reduces_all_timestamp_position_error_and_dense_sparse_agree ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.00s
+
+     Running tests/normal_structure.rs (target/debug/deps/normal_structure-54a950c8e25fa03b)
+
+running 2 tests
+test gapped_normal_graphs_match_dense_cholesky_with_all_orderings ... ok
+test normal_budget_boundaries_cover_duplicates_gaps_and_tree_promotion ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.23s
+
+     Running tests/optimization.rs (target/debug/deps/optimization-ff2b03572d56ef83)
+
+running 12 tests
+test derivatives_match_analytic_and_central_difference ... ok
+test analytic_residual_and_termination_reasons ... ok
+test elementary_jet_functions_match_difference ... ok
+test cauchy_loss_and_underconstrained_gn ... ok
+test evaluation_errors_propagate ... ok
+test iteration_limit_is_reported ... ok
+test gn_solves_linear_problem ... ok
+test parameter_blocks_are_stable_ranges ... ok
+test invalid_inputs_and_rank_deficiency_are_errors ... ok
+test rejected_trials_preserve_the_previous_state ... ok
+test lm_rosenbrock_converges_with_rejections ... ok
+test robust_loss_reduces_outlier_bias ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pose_graph_analytic.rs (target/debug/deps/pose_graph_analytic-6bc52fe86c4f52b8)
+
+running 3 tests
+test nonfinite_analytic_results_and_wrong_variable_kinds_are_rejected ... ok
+test exact_analytic_jacobians_match_ad_and_central_differences_after_correlated_whitening ... ok
+test analytic_g2o_graphs_match_ad_solutions_with_squared_and_joint_huber_losses ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/preconditioner.rs (target/debug/deps/preconditioner-a7a0dfe981d8e406)
+
+running 7 tests
+test block_factors_match_dense_principal_solves_without_discarding_operator_couplings ... ok
+test heterogeneous_graph_blocks_follow_fixed_layout_and_use_tangents ... ok
+test block_lm_preserves_rejected_states_and_reports_iteration_exhaustion ... ok
+test invalid_partitions_non_spd_blocks_and_overflow_are_errors ... ok
+test preconditioner_contract_failures_are_propagated_without_fallback ... ok
+test sparse_block_backend_requires_explicit_valid_layout_and_supports_no_dense_provider ... ok
+test correlated_independent_blocks_reduce_cg_iterations_and_check_the_true_residual ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/qr_aligned.rs (target/debug/deps/qr_aligned-f2aa93fe3a6f7c94)
+
+running 3 tests
+test overflow_after_cursor_advance_rolls_back_coefficients_and_rhs ... ok
+test cancellations_then_equal_width_different_columns_use_the_live_suffix ... ok
+test aligned_dense_suffixes_preserve_svd_objective_and_batch_boundaries ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/qr_inplace.rs (target/debug/deps/qr_inplace-e0c7469248be8a74)
+
+running 3 tests
+test prefix_compaction_does_not_hide_transient_fill_and_failure_rolls_back ... ok
+test coefficient_and_rhs_overflow_after_in_place_writes_restore_the_factor ... ok
+test existing_prefix_cancellation_interior_fill_and_trailing_growth_match_svd ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/qr_merge_buffers.rs (target/debug/deps/qr_merge_buffers-929d43059812b037)
+
+running 3 tests
+test zero_delta_cost_checks_overflow_signed_zero_and_nonzero_underflowed_norms ... ok
+test transient_fill_is_checked_before_later_cancellation_even_when_final_fill_fits ... ok
+test constant_rows_and_changing_widths_match_svd_and_preserve_the_entire_objective ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/qr_prefix.rs (target/debug/deps/qr_prefix-40d4aebabc67751e)
+
+running 3 tests
+test norm_overflow_after_reused_upper_and_lower_tails_restores_the_factor ... ok
+test prefix_cancellation_frees_a_slot_before_trailing_fill_and_later_failure_rolls_back ... ok
+test unequal_suffixes_and_divergence_after_cancellation_preserve_the_complete_objective ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/qr_reductions.rs (target/debug/deps/qr_reductions-6892d0655481856c)
+
+running 3 tests
+test extreme_scales_preserve_rank_solution_and_scaled_objective ... ok
+test first_middle_and_last_suffix_overflow_roll_back_at_exact_fill_limit ... ok
+test mixed_wide_cancellations_preserve_svd_objective_and_exact_split_reports ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/sparse.rs (target/debug/deps/sparse-5953229859a6e0be)
+
+running 12 tests
+test csr_combines_duplicates_and_matches_dense_products ... ok
+test csr_spd_operator_and_duplicate_cancellation ... ok
+test damping_overflow_is_an_error_for_dense_and_sparse ... ok
+test dense_schur_matches_full_system_and_rejects_invalid_input ... ok
+test matrix_free_damped_normal_operator_matches_dense ... ok
+test pcg_failure_modes_are_explicit ... ok
+test pcg_matches_cholesky_and_verifies_true_residual ... ok
+test sparse_backend_does_not_silently_use_dense_or_gn ... ok
+test sparse_rejections_and_iteration_limit_propagation ... ok
+test robust_losses_and_schur_backend_match_dense_lm ... ok
+test graph_sparse_assembly_and_lm_match_dense ... ok
+test larger_sparse_chain_converges_with_linear_storage ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
+
+     Running tests/sparse_direct.rs (target/debug/deps/sparse_direct-13dbe9a378439f04)
+
+running 14 tests
+test checked_solve_rejects_nonzero_true_residual_at_zero_tolerance ... ok
+test failed_refactor_cannot_expose_previous_numeric_factors_and_can_recover ... ok
+test block_ordering_keeps_coordinates_together_reduces_fill_and_matches_dense ... ok
+test invalid_input_options_and_arithmetic_fail_explicitly ... ok
+test optional_plan_budget_uses_searches_without_changing_numeric_results ... ok
+test minimum_degree_reduces_star_fill_and_checks_budgets ... ok
+test lm_reanalyzes_when_exact_zero_derivatives_appear_or_disappear ... ok
+test singular_and_uncovered_columns_fail_without_damping_and_solve_with_damping ... ok
+test rectangular_systems_match_dense_cholesky_with_both_orderings ... ok
+test sparse_lm_requires_no_dense_provider_and_propagates_options_and_fill_errors ... ok
+test refinement_corrects_original_normal_residual_without_relaxing_tolerance ... ok
+test symbolic_pattern_checks_shape_offsets_and_indices_not_only_nonzero_count ... ok
+test workspace_reuses_symbolic_analysis_for_changed_values_damping_and_rhs ... ok
+test correlated_joint_robust_graph_matches_dense_and_preserves_fixed_state ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sparse_qr.rs (target/debug/deps/sparse_qr-aa2467a34ea4abe1)
+
+running 5 tests
+test sparse_qr_keeps_rank_budget_dimension_and_finite_checks ... ok
+test one_uphill_batch_trial_cannot_commit_an_unconverged_smoother ... ok
+test explicit_nonmonotonic_gn_crosses_a_stiff_curve_without_claiming_uphill_convergence ... ok
+test sparse_qr_smoother_extends_order_and_preserves_committed_state_on_rank_failure ... ok
+test ordered_sparse_steps_match_independent_dense_qr_for_gn_and_scaled_lm ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stable_objective.rs (target/debug/deps/stable_objective-59ab08dfe80b9702)
+
+running 3 tests
+test gauss_newton_can_accept_a_decrease_hidden_by_a_constant_cost ... ok
+test increasing_true_loss_is_rejected_even_when_aggregate_cost_is_unchanged ... ok
+test constant_offsets_cannot_mask_scalar_or_joint_true_loss_improvements ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/symbolic_merge.rs (target/debug/deps/symbolic_merge-9ef4b76742040ce0)
+
+running 2 tests
+test repeated_support_plans_keep_all_numeric_rows_empty_boundaries_and_column_identities ... ok
+test ascending_clique_fill_promotes_long_columns_and_preserves_the_exact_budget ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/symbolic_pattern.rs (target/debug/deps/symbolic_pattern-fa169135fc98de50)
+
+running 2 tests
+test descending_high_degree_star_preserves_fill_order_limits_and_dense_solution ... ok
+test repeated_dense_rows_empty_rows_and_cancelled_triplets_keep_exact_pattern_budget ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests/update_cursor.rs (target/debug/deps/update_cursor-e85df67caa709c18)
+
+running 2 tests
+test exact_update_plan_budget_keeps_the_same_destinations_and_search_fallback ... ok
+test planned_and_search_updates_match_dense_cholesky_for_all_orders ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/whitening_buffers.rs (target/debug/deps/whitening_buffers-f204a3617b822006)
+
+running 1 test
+test mixed_factor_arity_dimensions_and_noise_preserve_dense_sparse_whitening ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_cached_isam_se2.rs (target/debug/examples/benchmark_cached_isam_se2-45df0743c509adef)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_isam.rs (target/debug/examples/benchmark_isam-b689e00f7358b142)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_isam_se2.rs (target/debug/examples/benchmark_isam_se2-f6717af7c77ede28)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_pose_graph.rs (target/debug/examples/benchmark_pose_graph-d6164d6501b25614)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_real_isam_se2.rs (target/debug/examples/benchmark_real_isam_se2-ee4b29f95dc7de82)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_restart_isam_se2.rs (target/debug/examples/benchmark_restart_isam_se2-4f09841a5eb93af3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_sparse_qr_isam_se2.rs (target/debug/examples/benchmark_sparse_qr_isam_se2-8627001d3970a358)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/benchmark_warm_isam_se2.rs (target/debug/examples/benchmark_warm_isam_se2-8c9b577b39bc821d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/block_jacobi.rs (target/debug/examples/block_jacobi-d31637cf16b7c721)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/bundle_adjustment.rs (target/debug/examples/bundle_adjustment-c473e3af6cc3138e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/calibration_bundle_adjustment.rs (target/debug/examples/calibration_bundle_adjustment-dc3d2977f1ceec43)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/diagnose_real_refresh.rs (target/debug/examples/diagnose_real_refresh-544cb66f5a1ea40a)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/dynamic_curve_fitting.rs (target/debug/examples/dynamic_curve_fitting-1d1eb65488f43fbd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/export_ba_trace.rs (target/debug/examples/export_ba_trace-45844279cadaad33)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/export_rosenbrock_trace.rs (target/debug/examples/export_rosenbrock_trace-da267d2550896138)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/fixed_lag_odometry.rs (target/debug/examples/fixed_lag_odometry-06bc625ceef65440)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/gnss_odometry.rs (target/debug/examples/gnss_odometry-3f7d7808d16fdf7c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/ill_conditioned_qr.rs (target/debug/examples/ill_conditioned_qr-340ea23c66623e4c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/isam_pose_graph.rs (target/debug/examples/isam_pose_graph-724a72bd97d987d7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/pose_graph_2d.rs (target/debug/examples/pose_graph_2d-959cd1f836ea7d88)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/pose_graph_3d.rs (target/debug/examples/pose_graph_3d-d80fb686abd786e2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/pose_graph_g2o.rs (target/debug/examples/pose_graph_g2o-8a9c345af1b77a59)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/profile_ldl.rs (target/debug/examples/profile_ldl-8331ae6e1b91d3d2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/profile_linear.rs (target/debug/examples/profile_linear-b6ea183d4306c976)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/profile_pose_graph.rs (target/debug/examples/profile_pose_graph-0d51a03a374abcc7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/profile_symbolic.rs (target/debug/examples/profile_symbolic-201b90f2faec9344)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/robust_bundle_adjustment.rs (target/debug/examples/robust_bundle_adjustment-165441316f5b56ea)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/rosenbrock.rs (target/debug/examples/rosenbrock-027ccd14fdd95bfe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/sparse_ldl.rs (target/debug/examples/sparse_ldl-b17bdbfe02a4a7a8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/trace_pose_graph.rs (target/debug/examples/trace_pose_graph-6f7c8dbf0f135d86)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/validate_isam_se2.rs (target/debug/examples/validate_isam_se2-4b78719c76837158)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

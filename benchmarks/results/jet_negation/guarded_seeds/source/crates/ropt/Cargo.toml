@@ -1,0 +1,9 @@
+[package]
+name = "ropt"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.87"
+description = "A Rust-native nonlinear optimization library for robotics"
+license = "MIT OR Apache-2.0"
+[dependencies]
+nalgebra = "=0.34.2"

@@ -1,0 +1,49 @@
+{
+  "source_sha256": "41c27190a3d4eed0dcb9a00c48886cdd60222df5f20e33c0759dc119911d64f4",
+  "before_source_sha256": "81722fe58b43addfedeae12d13a94c3062c5731627ff1b62285ffbeee305415d",
+  "executable_sha256": {
+    "before": "9d739e78ce7229678711c8ee3ad620e6d982e2c0a2f7dc2b1e55941c776ba465",
+    "after": "052456149940fbd3a345288f046a19df5d8db58bac83a65b00bb1eda96a51c6f"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_autodiff_probe.rs": "f8e7cea84e44f45195cbc77c2ae5c72fe5ea774d0e9e6aae7bdccb972e1527ec",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/paired_probe_cost_allocations.py": "f6ae5eb780ed08c44ef9c1a68f746074a602372c97d19cec8978655f2e8e1050"
+  },
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null
+    }
+  },
+  "cpu_affinity": [
+    0
+  ],
+  "thread_environment": {
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "RAYON_NUM_THREADS": "1"
+  },
+  "rounds": 2,
+  "queries_per_norm": 1,
+  "warmup_per_norm": 4,
+  "allocation_diagnostic": true,
+  "native_timing_measured": false,
+  "scope": "synthetic query only; initialization and independent validation excluded"
+}

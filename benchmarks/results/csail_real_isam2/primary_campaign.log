@@ -1,0 +1,77 @@
+round 0 ropt: 3.418106s; all 1044 prefixes pass
+round 0 native: 7.637829s; all 1044 prefixes pass
+round 1 native: 8.136872s; all 1044 prefixes pass
+round 1 ropt: 3.459041s; all 1044 prefixes pass
+round 2 ropt: 3.386939s; all 1044 prefixes pass
+round 2 native: 7.652831s; all 1044 prefixes pass
+round 3 native: 7.790928s; all 1044 prefixes pass
+round 3 ropt: 3.389543s; all 1044 prefixes pass
+round 4 ropt: 3.384103s; all 1044 prefixes pass
+round 4 native: 7.718992s; all 1044 prefixes pass
+round 5 native: 7.917578s; all 1044 prefixes pass
+round 5 ropt: 3.352400s; all 1044 prefixes pass
+{
+  "eligible": true,
+  "timed_updates": 12528,
+  "cases": {
+    "ropt": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 3388.240933,
+        "min_ms": 3352.399918,
+        "max_ms": 3459.041233,
+        "mean_ms": 3398.3553843333334,
+        "stdev_ms": 33.15593673858418
+      },
+      "max_normalized_gradient": 2.44234378981837e-08,
+      "max_raw_gradient": 3.1736683059335746e-06
+    },
+    "native": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 7754.9601920000005,
+        "min_ms": 7637.828685,
+        "max_ms": 8136.872133,
+        "mean_ms": 7809.171679666667,
+        "stdev_ms": 173.8800402806668
+      },
+      "max_normalized_gradient": 7.287964624451133e-08,
+      "max_raw_gradient": 0.00010953195784686558
+    }
+  },
+  "comparisons": [
+    {
+      "round": 0,
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    },
+    {
+      "round": 1,
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    },
+    {
+      "round": 2,
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    },
+    {
+      "round": 3,
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    },
+    {
+      "round": 4,
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    },
+    {
+      "round": 5,
+      "max_world_pose_norm": 3.7813986840670855e-07,
+      "max_cost_difference": 4.973799150320701e-13
+    }
+  ],
+  "ropt_faster_pairs": 6,
+  "median_speedup": 2.2887865253235224,
+  "beats_native_at_common_accuracy_in_this_case": true
+}

@@ -1,0 +1,27 @@
+{
+  "source_sha256": "31c01bc01ed53679b44fccb92bdaf46982010b8a2895b6bf926b84a42b350047",
+  "rust_unit_integration_tests": 271,
+  "rust_doctests": 18,
+  "python_tests": 18,
+  "native_ctest_suites": 1,
+  "native_chart_probe_passed": true,
+  "formatting_passed": true,
+  "clippy_warnings_denied": true,
+  "rustdoc_warnings_denied": true,
+  "source_only_rollback_stages": 30,
+  "older_stage_builds_skipped": true,
+  "official_primary_pairs": 6,
+  "official_confirmation_pairs": 6,
+  "all_common_accuracy_gates_pass": true,
+  "ropt_faster_pairs_total": 12,
+  "default_policies_complete_means_and_non_timing_reports_exact": true,
+  "rollback_patches_sha256": {
+    "cartesian_chart.patch": "5380a9c17b29f8428b613c9867d13bf6515b3456f5c4c17e74e2a69b67baeed7",
+    "qr_structure.patch": "63d08ca3ba0a0b6ad5ac15c8117f3695f11f9afd2278eb3893ea9370eaad576e"
+  },
+  "new_test_files_sha256": {
+    "crates/ropt/tests/se2_ambient.rs": "ddb78cae99d185eef2e4ace0762ba5673be8d024c80b4336bbdf293efb7de416",
+    "crates/ropt/tests/se2_cartesian.rs": "c57fcdb88ed770e92bd8bdd246c25aed75a908632ef45d7e74902ee19560b2b2",
+    "crates/ropt/tests/isam_cartesian.rs": "6c3b11a53a64ecbde82fa6ab6938fe5816bc87afebceab09eb4288e621764bc7"
+  }
+}

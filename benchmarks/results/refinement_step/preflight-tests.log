@@ -1,0 +1,18 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.20s
+     Running tests/isam_refinement.rs (target/debug/deps/isam_refinement-227bd6b410f10630)
+
+running 3 tests
+test refinement_rejects_invalid_limits_and_incompatible_ordering_backend ... ok
+test initially_converged_refresh_extends_an_ordered_cache_then_appends_in_external_coordinates ... ok
+test refined_estimates_keep_the_batch_anchor_for_cached_updates_and_rollback ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/isam_refinement_rollback.rs (target/debug/deps/isam_refinement_rollback-a0cabf985a537904)
+
+running 1 test
+test failed_refinement_preserves_state_and_schedule_then_retries_cleanly ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

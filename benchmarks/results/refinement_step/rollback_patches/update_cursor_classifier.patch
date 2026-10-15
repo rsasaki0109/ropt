@@ -1,0 +1,51 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -427,8 +427,12 @@
+             let mut targets = Vec::with_capacity(operations);
+             for k in 0..n {
+                 for i in symbolic.offsets[k] + 1..symbolic.offsets[k + 1] {
++                    let mut cursor=symbolic.offsets[symbolic.rows[i]];
+                     for q in i..symbolic.offsets[k + 1] {
+-                        targets.push(symbolic.entry(symbolic.rows[i], symbolic.rows[q]));
++                        let position=symbolic.entry(symbolic.rows[i],symbolic.rows[q]);
++                        crate::update_cursor_profile::record(position==cursor,q==i);
++                        targets.push(position);
++                        cursor=position+1;
+                     }
+                 }
+             }
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,6 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++#[doc(hidden)]
++pub mod update_cursor_profile;
+--- /dev/null
++++ b/crates/ropt/src/update_cursor_profile.rs
+@@ -0,0 +1,5 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static TOTAL:AtomicU64=AtomicU64::new(0); static NEXT:AtomicU64=AtomicU64::new(0); static DIAG:AtomicU64=AtomicU64::new(0);
++pub fn record(next:bool,diag:bool){TOTAL.fetch_add(1,Ordering::Relaxed);NEXT.fetch_add(next as u64,Ordering::Relaxed);DIAG.fetch_add(diag as u64,Ordering::Relaxed);}
++pub fn reset(){for c in [&TOTAL,&NEXT,&DIAG]{c.store(0,Ordering::Relaxed);}}
++pub fn dump(){eprintln!("operations,{}\nnext_entry,{}\ndiagonal,{}",TOTAL.load(Ordering::Relaxed),NEXT.load(Ordering::Relaxed),DIAG.load(Ordering::Relaxed));}
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup {ropt::update_cursor_profile::reset();}
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::update_cursor_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;

@@ -1,0 +1,6 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.52s
+     Running `target/debug/examples/selective_isam`
+selected variables: [0]; retained factors: 1023; passes: 2; factor callbacks: 5
+bounded selected estimate: 1.2919180062; threshold remaining: false; nonlinear gradient: 2.064e-2
+full batch estimate: 1.2896239033; nonlinear gradient: 1.666e-8

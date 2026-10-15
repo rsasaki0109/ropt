@@ -1,0 +1,37 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.66s
+     Running tests/factor_residual_count.rs (target/debug/deps/factor_residual_count-50941f3d0279b7a0)
+
+running 3 tests
+test residual_sum_and_csr_offset_overflow_leave_existing_metadata_unchanged ... FAILED
+test oversized_factor_counts_are_rejected_without_mutating_graph_or_calling_callbacks ... FAILED
+test overflow_rejection_preserves_fixed_lag_and_isam_state_then_retries_cleanly ... FAILED
+
+failures:
+
+---- residual_sum_and_csr_offset_overflow_leave_existing_metadata_unchanged stdout ----
+
+thread 'residual_sum_and_csr_offset_overflow_leave_existing_metadata_unchanged' (102900) panicked at crates/ropt/tests/factor_residual_count.rs:54:9:
+assertion failed: matches!(graph.add_analytic_factor(&[id],rows,|_|unreachable!()),Err(Error::InvalidDimensions))
+
+---- oversized_factor_counts_are_rejected_without_mutating_graph_or_calling_callbacks stdout ----
+
+thread 'oversized_factor_counts_are_rejected_without_mutating_graph_or_calling_callbacks' (102899) panicked at crates/ropt/tests/factor_residual_count.rs:35:13:
+assertion failed: matches!(register_bad(&mut
+    graph,id,mode,calls.clone()),Err(Error::InvalidDimensions))
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- overflow_rejection_preserves_fixed_lag_and_isam_state_then_retries_cleanly stdout ----
+
+thread 'overflow_rejection_preserves_fixed_lag_and_isam_state_then_retries_cleanly' (102898) panicked at crates/ropt/src/factor.rs:393:9:
+attempt to add with overflow
+
+
+failures:
+    overflow_rejection_preserves_fixed_lag_and_isam_state_then_retries_cleanly
+    oversized_factor_counts_are_rejected_without_mutating_graph_or_calling_callbacks
+    residual_sum_and_csr_offset_overflow_leave_existing_metadata_unchanged
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--test factor_residual_count`

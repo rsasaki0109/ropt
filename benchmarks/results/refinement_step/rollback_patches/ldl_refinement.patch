@@ -1,0 +1,213 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -506,6 +506,8 @@
+ pub struct SparseLdlReport {
+     pub x: DVector<f64>,
+     pub residual_norm: f64,
++    /// Corrections using the computed factors and original-operator residual (0..=3).
++    pub refinement_steps: usize,
+     pub normal_entries: usize,
+     pub factor_entries: usize,
+ }
+@@ -513,6 +515,7 @@
+ #[derive(Debug, Clone, Copy)]
+ pub struct SparseLdlStats {
+     pub residual_norm: f64,
++    pub refinement_steps: usize,
+     pub normal_entries: usize,
+     pub factor_entries: usize,
+ }
+@@ -591,32 +594,16 @@
+         if rhs.len() != s.dimension() || x.len() != s.dimension() {
+             return Err(Error::InvalidDimensions);
+         }
+-        finite_vector(rhs)?;
+-        for (k, &old) in s.permutation.iter().enumerate() {
+-            self.solution[k] = rhs[old];
+-        }
+-        for k in 0..s.dimension() {
+-            let v = self.solution[k];
+-            for i in s.offsets[k] + 1..s.offsets[k + 1] {
+-                self.solution[s.rows[i]] -= self.values[i] * v;
+-            }
+-        }
+-        for k in 0..s.dimension() {
+-            self.solution[k] /= self.values[s.offsets[k]];
+-        }
+-        for k in (0..s.dimension()).rev() {
+-            for i in s.offsets[k] + 1..s.offsets[k + 1] {
+-                self.solution[k] -= self.values[i] * self.solution[s.rows[i]];
+-            }
+-        }
+-        finite_vector(&self.solution)?;
++        factored_solution(s, &self.values, rhs, &mut self.solution)?;
+         for (k, &old) in s.permutation.iter().enumerate() {
+             x[old] = self.solution[k];
+         }
+         Ok(())
+     }
+     /// Refactor, solve and verify the true rhs-A*x residual with the original CSR
+-    /// operator. Numeric buffers are reused; constructing its diagonal still allocates.
++    /// operator. Up to three factor-based corrections are attempted only when this
++    /// residual exceeds the requested tolerance; failure still returns an error.
++    /// Numeric buffers are reused; constructing its diagonal still allocates.
+     pub fn solve_into(
+         &mut self,
+         j: &CsrMatrix,
+@@ -630,12 +617,9 @@
+         finite_vector(rhs)?;
+         self.refactor(j, damping)?;
+         self.solve_factored_into(rhs, x)?;
+-        NormalOperator::new(j, damping)?.apply_into(x, &mut self.residual)?;
+-        for k in 0..rhs.len() {
+-            self.residual[k] = rhs[k] - self.residual[k];
+-        }
+-        let (residual_norm, rhs_norm) = (self.residual.norm(), rhs.norm());
+-        if !residual_norm.is_finite() || !rhs_norm.is_finite() {
++        let operator = NormalOperator::new(j, damping)?;
++        let rhs_norm = rhs.norm();
++        if !rhs_norm.is_finite() {
+             return Err(Error::NonFinite);
+         }
+         let tolerance = self
+@@ -645,18 +629,37 @@
+         if !tolerance.is_finite() {
+             return Err(Error::InvalidOptions);
+         }
+-        if residual_norm > tolerance {
+-            return Err(Error::LinearResidualTooLarge {
+-                residual_norm,
+-                tolerance,
+-            });
+-        }
+         let s = self.symbolic.as_ref().ok_or(Error::LinearSolve)?;
+-        Ok(SparseLdlStats {
+-            residual_norm,
+-            normal_entries: s.normal_entries(),
+-            factor_entries: s.factor_entries(),
+-        })
++        for refinement_steps in 0..=3 {
++            operator.apply_into(x, &mut self.residual)?;
++            for k in 0..rhs.len() {
++                self.residual[k] = rhs[k] - self.residual[k];
++            }
++            let residual_norm = self.residual.norm();
++            if !residual_norm.is_finite() {
++                return Err(Error::NonFinite);
++            }
++            if residual_norm <= tolerance {
++                return Ok(SparseLdlStats {
++                    residual_norm,
++                    refinement_steps,
++                    normal_entries: s.normal_entries(),
++                    factor_entries: s.factor_entries(),
++                });
++            }
++            if refinement_steps == 3 {
++                return Err(Error::LinearResidualTooLarge {
++                    residual_norm,
++                    tolerance,
++                });
++            }
++            factored_solution(s, &self.values, &self.residual, &mut self.solution)?;
++            for (k, &old) in s.permutation.iter().enumerate() {
++                x[old] += self.solution[k];
++            }
++            finite_vector(x)?;
++        }
++        unreachable!("bounded refinement loop always returns")
+     }
+     pub fn solve(
+         &mut self,
+@@ -669,10 +672,37 @@
+         Ok(SparseLdlReport {
+             x,
+             residual_norm: stats.residual_norm,
++            refinement_steps: stats.refinement_steps,
+             normal_entries: stats.normal_entries,
+             factor_entries: stats.factor_entries,
+         })
+     }
++}
++fn factored_solution(
++    s: &SparseLdlSymbolic,
++    values: &[f64],
++    rhs: &DVector<f64>,
++    solution: &mut DVector<f64>,
++) -> Result<(), Error> {
++    finite_vector(rhs)?;
++    for (k, &old) in s.permutation.iter().enumerate() {
++        solution[k] = rhs[old];
++    }
++    for k in 0..s.dimension() {
++        let v = solution[k];
++        for i in s.offsets[k] + 1..s.offsets[k + 1] {
++            solution[s.rows[i]] -= values[i] * v;
++        }
++    }
++    for k in 0..s.dimension() {
++        solution[k] /= values[s.offsets[k]];
++    }
++    for k in (0..s.dimension()).rev() {
++        for i in s.offsets[k] + 1..s.offsets[k + 1] {
++            solution[k] -= values[i] * solution[s.rows[i]];
++        }
++    }
++    finite_vector(solution)
+ }
+ /// One-shot checked solve. For repeated numeric and symbolic reuse, keep a workspace.
+ pub fn solve_normal(
+--- a/crates/ropt/examples/benchmark_pose_graph.rs
++++ b/crates/ropt/examples/benchmark_pose_graph.rs
+@@ -21,6 +21,8 @@
+     let mut pose_jacobians = PoseJacobian::AutoDiff;
+     let mut cg_relative_tolerance = 1e-8_f64;
+     let mut cg_absolute_tolerance = 1e-10_f64;
++    let mut cost_tolerance = Options::default().cost_tolerance;
++    let mut max_iterations = Options::default().max_iterations;
+     let mut args = std::env::args().skip(1);
+     while let Some(arg) = args.next() {
+         match arg.as_str() {
+@@ -28,6 +30,12 @@
+             "--output" => output = Some(PathBuf::from(args.next().ok_or("missing output")?)),
+             "--repeats" => repeats = args.next().ok_or("missing repeats")?.parse()?,
+             "--warmup" => warmup = args.next().ok_or("missing warmup")?.parse()?,
++            "--cost-tolerance" => {
++                cost_tolerance = args.next().ok_or("missing cost tolerance")?.parse()?;
++            }
++            "--max-iterations" => {
++                max_iterations = args.next().ok_or("missing iteration limit")?.parse()?;
++            }
+             "--backends" => backends = args.next().ok_or("missing backend list")?,
+             "--pose-jacobians" => {
+                 pose_jacobians = match args.next().as_deref() {
+@@ -51,8 +59,8 @@
+             _ => return Err(format!("unknown argument {arg}").into()),
+         }
+     }
+-    if repeats == 0 {
+-        return Err("repeats must be positive".into());
++    if repeats == 0 || max_iterations == 0 {
++        return Err("repeats and iteration limit must be positive".into());
+     }
+     if !cg_relative_tolerance.is_finite()
+         || !cg_absolute_tolerance.is_finite()
+@@ -60,6 +68,9 @@
+         || cg_absolute_tolerance < 0.0
+     {
+         return Err("CG tolerances must be finite and nonnegative".into());
++    }
++    if !cost_tolerance.is_finite() || cost_tolerance < 0.0 {
++        return Err("cost tolerance must be finite and nonnegative".into());
+     }
+     let input = input.ok_or("--input file.g2o is required")?;
+     let output = output.ok_or("--output NEW_DIRECTORY is required")?;
+@@ -109,6 +120,8 @@
+     }
+     let options = |linear_solver| Options {
+         linear_solver,
++        cost_tolerance,
++        max_iterations,
+         ..Options::default()
+     };
+     // An extra untimed solve supplies a consistency reference, not a timing sample.

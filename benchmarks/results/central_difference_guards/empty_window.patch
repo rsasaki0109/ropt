@@ -1,0 +1,39 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -278,6 +278,9 @@
+     /// Optimize with new observations, then marginalize timestamps strictly older
+     /// than now-lag. On any error, owned estimates, factors and time are unchanged.
+     /// All factors must reference live or newly supplied keys, never expired keys.
++    /// An empty window with no factors accepts time-only updates without running
++    /// the solver, retaining carried constant cost and returning `Gradient` with
++    /// no iterations. Solver settings are checked when optimization is requested.
+     pub fn update(&mut self, now: f64, update: SmootherUpdate) -> Result<FixedLagReport, Error> {
+         self.update_impl(now, update, None)
+             .map(|(report, _)| report)
+@@ -381,6 +384,26 @@
+             options.validate()?;
+             self.validate_covariance_model(&factors, options)?;
+         }
++        if variables.is_empty() && factors.is_empty() && covariance_query.is_none() {
++            if !self.constant_cost.is_finite() {
++                return Err(Error::NonFinite);
++            }
++            self.last_time = Some(now);
++            return Ok((
++                FixedLagReport {
++                    estimates: BTreeMap::new(),
++                    marginalized: Vec::new(),
++                    marginalized_estimates: BTreeMap::new(),
++                    marginalized_timestamps: BTreeMap::new(),
++                    initial_cost: self.constant_cost,
++                    final_cost: self.constant_cost,
++                    termination: Termination::Gradient,
++                    iterations: Vec::new(),
++                    marginalization: MarginalizationSummary::default(),
++                },
++                None,
++            ));
++        }
+         let order = variables.keys().copied().collect::<Vec<_>>();
+         let (graph, ids) = build_graph(&variables, &factors, &order)?;
+         let covariance_indices = covariance_query

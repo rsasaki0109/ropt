@@ -1,0 +1,16 @@
+{
+  "dataset": "Intel Research Lab recorded SE2 pose graph",
+  "variant": "intel-mit1228",
+  "source_url": "https://raw.githubusercontent.com/JeffLIrion/python-graphslam/68a0d2419028d598f823c2b35f53b38eacfd0ca1/data/input_INTEL.g2o",
+  "source_commit": "68a0d2419028d598f823c2b35f53b38eacfd0ca1",
+  "source_sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be",
+  "total_source_poses": 1228,
+  "total_source_edges": 1483,
+  "used_arrivals": 1227,
+  "used_edges": 1483,
+  "complete_dataset": true,
+  "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+  "initialization": "provided original vertex values; angles normalized; no optimized/truth seeds",
+  "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+  "stream_sha256": "41bd2e1b0c6eb5df4dfc23fa469df39799e91b7f6acbad8c4d87c176eb611ca9"
+}

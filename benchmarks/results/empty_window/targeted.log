@@ -1,0 +1,26 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.25s
+     Running tests/fixed_lag_covariance_preflight.rs (target/debug/deps/fixed_lag_covariance_preflight-304678efe2e7fc9f)
+
+running 2 tests
+test invalid_covariance_keys_never_evaluate_old_or_proposed_factors ... ok
+test invalid_covariance_options_never_evaluate_and_retry_keeps_expiry_schedule ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_empty_window.rs (target/debug/deps/fixed_lag_empty_window-eb143110bb01a263)
+
+running 2 tests
+test fresh_empty_clock_validates_time_and_rejects_covariance_or_dangling_factors_transactionally ... ok
+test empty_window_ticks_preserve_gaussian_and_robust_cost_then_allow_key_reuse ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/fixed_lag_retired_times.rs (target/debug/deps/fixed_lag_retired_times-2dd9e3c8379a4f8d)
+
+running 2 tests
+test robust_retirement_keeps_timestamp_and_constant_cost_with_a_persistent_variable ... ok
+test retired_manifold_times_follow_refresh_and_survive_failed_updates_and_key_reuse ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

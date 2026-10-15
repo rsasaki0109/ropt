@@ -1,0 +1,10 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 6.94s
+     Running tests/numeric_factor_errors.rs (target/release/deps/numeric_factor_errors-b931c3fb3623cd8d)
+
+running 2 tests
+test invalid_positive_sample_is_reported_before_a_later_callback_error ... ok
+test overflowing_derivative_stops_before_evaluating_the_next_column ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

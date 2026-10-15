@@ -1,0 +1,11 @@
+{
+  "native_timing_measured": false,
+  "comparative_timing_measured": false,
+  "scope": "Allocation diagnostic and complete cold MIT functional regression only; no whole-stream speed claim.",
+  "tests": "334 Rust library/integration/docs plus 2 benchmark tests; Python 23; Clippy/fmt/Rustdoc pass; 47 source-only rollback stages.",
+  "files_sha256": {
+    "benchmarks/verify_cache_refresh.py": "a773e5226b7fe052872e1df7008583c881c65c265ba57987a0b27ddd313a5131",
+    "benchmarks/make_ldl_baseline.py": "bc22c3b205bcd2b15c2cd23b972aa5adba8c4fa7cd8691c1f296d61b6b267ce0",
+    "crates/ropt/tests/isam_selective.rs": "e4b19bdc70a7f4722f3c691defc206b6d5fb8db78dcd0fe459d2082b16d0245e"
+  }
+}

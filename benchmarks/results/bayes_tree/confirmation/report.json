@@ -1,0 +1,19 @@
+{
+  "all_original_quality_and_pair_agreement_gates_pass": true,
+  "median_ms": {
+    "qr": 5.229935,
+    "tree": 3.587484
+  },
+  "median_paired_qr_over_tree_ratio": 1.4538733772626846,
+  "tree_faster_pairs": 6,
+  "pairs": 6,
+  "max_estimate_difference_inf": 3.3306690738754696e-16,
+  "max_original_cost_difference": 1.7763568394002505e-15,
+  "tree_reeliminated_cliques": {
+    "min": 2,
+    "median": 6.0,
+    "max": 14
+  },
+  "total_cliques": 1028,
+  "scope": "synthetic scalar Gaussian forest; current-build QR baseline; no iSAM2 or nonlinear superiority claim"
+}

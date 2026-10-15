@@ -1,0 +1,38 @@
+{
+  "source_sha256": "0c171c75e64947bb8995b1b77be8d16fb7b9fb1eca3938c5c19f67906dc0c469",
+  "dataset": {
+    "dataset": "Intel Research Lab recorded SE2 pose graph",
+    "variant": "intel-mit1228",
+    "source_url": "https://raw.githubusercontent.com/JeffLIrion/python-graphslam/68a0d2419028d598f823c2b35f53b38eacfd0ca1/data/input_INTEL.g2o",
+    "source_commit": "68a0d2419028d598f823c2b35f53b38eacfd0ca1",
+    "source_sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be",
+    "total_source_poses": 1228,
+    "total_source_edges": 1483,
+    "used_arrivals": 1227,
+    "used_edges": 1483,
+    "complete_dataset": true,
+    "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+    "initialization": "provided original vertex values; angles normalized; no optimized/truth seeds",
+    "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+    "stream_sha256": "41bd2e1b0c6eb5df4dfc23fa469df39799e91b7f6acbad8c4d87c176eb611ca9"
+  },
+  "exact_complete_pose_bytes": true,
+  "exact_non_timing_update_fields": true,
+  "scope": "functional only; cold processes overlap; timers not comparative",
+  "ad_chunk": 6,
+  "ad_stride": 2,
+  "factors": 1483,
+  "ad_factors": 742,
+  "ill_conditioned_edge_160_161_uses_ad": true,
+  "archived_native_agreement": {
+    "max_world_pose_norm": 1.945092214966316e-07,
+    "max_cost_difference": 6.423306331271306e-12
+  },
+  "native_reference_sha256": {
+    "metadata.json": "c1da3abdbefed4fede5ca971f036b9f1cbe71c1a4bf317baff225226bade378d",
+    "report.json": "fd57254b2652af52d2c6b1355d751ac3d5b7d1f1d11d453ffd975fa278f475b9",
+    "quality.csv": "f2e1cb7f018aaa538782733cf01f652401db2258f66352bc5ad0b27c9c248808",
+    "native-poses.csv.gz": "2b3625ede18d33caf06048c94259ec0ee9729ebdf11d7a1cbbe0b8ca54601258"
+  },
+  "native_timing_measured": false
+}

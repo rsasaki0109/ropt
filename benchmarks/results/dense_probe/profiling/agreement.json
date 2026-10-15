@@ -1,0 +1,5 @@
+{
+  "exact_complete_pose_bytes": true,
+  "exact_non_timing_update_fields": true,
+  "scope": "sampled instrumented phase diagnostic only; no comparative latency"
+}

@@ -1,0 +1,257 @@
+{
+  "eligible": true,
+  "cases": [
+    {
+      "dimension": 1,
+      "ownership": "owned",
+      "before_seconds": 0.096358641,
+      "after_seconds": 0.0748231125,
+      "median_speedup": 1.2878192015869427,
+      "time_reduction_percent": 22.349348513539123,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dimension": 1,
+      "ownership": "borrowed",
+      "before_seconds": 0.072554916,
+      "after_seconds": 0.0723420015,
+      "median_speedup": 1.0029431657347772,
+      "time_reduction_percent": 0.29345289297832977,
+      "faster_pairs": 4,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          1,
+          8
+        ],
+        "after": [
+          1,
+          8
+        ]
+      }
+    },
+    {
+      "dimension": 2,
+      "ownership": "owned",
+      "before_seconds": 0.093539622,
+      "after_seconds": 0.072102218,
+      "median_speedup": 1.2973196192106047,
+      "time_reduction_percent": 22.91799297628122,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dimension": 2,
+      "ownership": "borrowed",
+      "before_seconds": 0.0947962195,
+      "after_seconds": 0.0826797575,
+      "median_speedup": 1.1465468981328348,
+      "time_reduction_percent": 12.781587772073543,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          1,
+          16
+        ],
+        "after": [
+          1,
+          16
+        ]
+      }
+    },
+    {
+      "dimension": 6,
+      "ownership": "owned",
+      "before_seconds": 0.1126327795,
+      "after_seconds": 0.0745027425,
+      "median_speedup": 1.5117937369889438,
+      "time_reduction_percent": 33.85341032092705,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dimension": 6,
+      "ownership": "borrowed",
+      "before_seconds": 0.0969891125,
+      "after_seconds": 0.0815835615,
+      "median_speedup": 1.1888315576906998,
+      "time_reduction_percent": 15.883794173289301,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          1,
+          48
+        ],
+        "after": [
+          1,
+          48
+        ]
+      }
+    },
+    {
+      "dimension": 16,
+      "ownership": "owned",
+      "before_seconds": 0.1107270965,
+      "after_seconds": 0.0726751135,
+      "median_speedup": 1.5235902796354077,
+      "time_reduction_percent": 34.36555658262023,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dimension": 16,
+      "ownership": "borrowed",
+      "before_seconds": 0.13428595,
+      "after_seconds": 0.0956581875,
+      "median_speedup": 1.403810311584672,
+      "time_reduction_percent": 28.765304560901562,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          1,
+          128
+        ],
+        "after": [
+          1,
+          128
+        ]
+      }
+    },
+    {
+      "dimension": 32,
+      "ownership": "owned",
+      "before_seconds": 0.1524640675,
+      "after_seconds": 0.072981326,
+      "median_speedup": 2.089083274535187,
+      "time_reduction_percent": 52.132114014339805,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dimension": 32,
+      "ownership": "borrowed",
+      "before_seconds": 0.14473188450000002,
+      "after_seconds": 0.0920715265,
+      "median_speedup": 1.571950525877292,
+      "time_reduction_percent": 36.384766343590314,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          1,
+          256
+        ],
+        "after": [
+          1,
+          256
+        ]
+      }
+    },
+    {
+      "dimension": 65,
+      "ownership": "owned",
+      "before_seconds": 0.232824552,
+      "after_seconds": 0.095651665,
+      "median_speedup": 2.4340878122717466,
+      "time_reduction_percent": 58.91684782453699,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          0,
+          0
+        ],
+        "after": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "dimension": 65,
+      "ownership": "borrowed",
+      "before_seconds": 0.25029617449999997,
+      "after_seconds": 0.106369726,
+      "median_speedup": 2.353077176301084,
+      "time_reduction_percent": 57.50245635496118,
+      "faster_pairs": 6,
+      "total_pairs": 6,
+      "before_after_bits_identical": true,
+      "allocations_per_operation": {
+        "before": [
+          1,
+          520
+        ],
+        "after": [
+          1,
+          520
+        ]
+      }
+    }
+  ]
+}

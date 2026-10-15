@@ -1,0 +1,111 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -224,6 +224,62 @@
+     /// than now-lag. On any error, owned estimates, factors and time are unchanged.
+     /// All factors must reference live or newly supplied keys, never expired keys.
+     pub fn update(&mut self, now: f64, update: SmootherUpdate) -> Result<FixedLagReport, Error> {
++        self.update_impl(now, update, None)
++            .map(|(report, _)| report)
++    }
++    /// Optimize and query covariance before removing expired variables.
++    ///
++    /// Keys may include variables that expire in this update. Matrix blocks follow
++    /// the requested key order in right-tangent coordinates; `indices` refer to
++    /// the pre-marginalization graph layout. Fixed, missing, duplicate or empty
++    /// queries are errors. The full window Jacobian must be observable.
++    ///
++    /// This explicitly opts into the covariance backend's dense SVD and cost.
++    /// Covariance or marginalization failure leaves all owned state unchanged.
++    /// The result describes the optimized window and its frozen priors, not an
++    /// exact nonlinear all-history posterior.
++    ///
++    /// ```
++    /// use ropt::{DMatrix, DVector, factor::VariableKind, fixed_lag::*};
++    /// let mut smoother = FixedLagSmoother::new(FixedLagOptions {
++    ///     lag: 1., ..Default::default()
++    /// })?;
++    /// smoother.update(0., SmootherUpdate {
++    ///     variables: vec![WindowVariable {
++    ///         key: 0, kind: VariableKind::Euclidean(1),
++    ///         value: DVector::from_element(1, 2.),
++    ///         timestamp: Some(0.), fixed: false,
++    ///     }],
++    ///     factors: vec![SmootherFactor::analytic(&[0], 1, Default::default(), |v| {
++    ///         Ok((DVector::from_element(1, v[0][0] - 2.),
++    ///             vec![DMatrix::identity(1, 1)]))
++    ///     })],
++    ///     ..Default::default()
++    /// })?;
++    /// let (report, covariance) = smoother.update_with_covariance(
++    ///     2., Default::default(), &[0], &Default::default(),
++    /// )?;
++    /// assert_eq!(report.marginalized_estimates[&0][0], 2.);
++    /// assert!((covariance.matrix[(0, 0)] - 1.).abs() < 1e-12);
++    /// assert!(smoother.estimate(0).is_none());
++    /// # Ok::<(), ropt::Error>(())
++    /// ```
++    pub fn update_with_covariance(
++        &mut self,
++        now: f64,
++        update: SmootherUpdate,
++        keys: &[Key],
++        options: &crate::covariance::CovarianceOptions,
++    ) -> Result<(FixedLagReport, crate::covariance::TangentCovariance), Error> {
++        self.update_impl(now, update, Some((keys, options)))
++            .map(|(report, covariance)| (report, covariance.unwrap()))
++    }
++    fn update_impl(
++        &mut self,
++        now: f64,
++        update: SmootherUpdate,
++        covariance_query: Option<(&[Key], &crate::covariance::CovarianceOptions)>,
++    ) -> Result<(FixedLagReport, Option<crate::covariance::TangentCovariance>), Error> {
+         if !now.is_finite() || self.last_time.is_some_and(|t| now < t) {
+             return Err(Error::InvalidOptions);
+         }
+@@ -278,6 +334,15 @@
+                 solved.termination
+             )));
+         }
++        let covariance = covariance_query
++            .map(|(keys, options)| {
++                let query = keys
++                    .iter()
++                    .map(|key| ids.get(key).copied().ok_or(Error::InvalidDimensions))
++                    .collect::<Result<Vec<_>, _>>()?;
++                graph.marginal_covariance(&solved.x, &query, options)
++            })
++            .transpose()?;
+         for (&key, &id) in &ids {
+             variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
+         }
+@@ -310,16 +375,19 @@
+         self.factors = factors;
+         self.last_time = Some(now);
+         self.constant_cost = constant_cost;
+-        Ok(FixedLagReport {
+-            estimates,
+-            marginalized: expired.into_iter().collect(),
+-            marginalized_estimates,
+-            initial_cost,
+-            final_cost,
+-            termination: solved.termination,
+-            iterations: solved.iterations,
+-            marginalization: summary,
+-        })
++        Ok((
++            FixedLagReport {
++                estimates,
++                marginalized: expired.into_iter().collect(),
++                marginalized_estimates,
++                initial_cost,
++                final_cost,
++                termination: solved.termination,
++                iterations: solved.iterations,
++                marginalization: summary,
++            },
++            covariance,
++        ))
+     }
+ }
+ pub(crate) fn build_graph(

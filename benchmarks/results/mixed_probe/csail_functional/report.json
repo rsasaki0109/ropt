@@ -1,0 +1,52 @@
+{
+  "dataset": {
+    "name": "csail-se-sync1045",
+    "poses": 1045,
+    "edges": 1172,
+    "commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+    "url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+    "recording": "CSAIL recorded SE2 pose graph",
+    "seed_policy": "odometry-chain",
+    "sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6"
+  },
+  "candidate": {
+    "complete_replay": true,
+    "arrivals": 1044,
+    "eligible_quality": true,
+    "failed_arrivals": {
+      "root_exact": [],
+      "gradient_pass": [],
+      "reported_cost_pass": []
+    },
+    "max_normalized_gradient": 5.636754354038671e-08,
+    "max_raw_gradient": 0.0001091962109267177,
+    "max_reported_cost_difference": 3.197442310920451e-13,
+    "timing_scope": "single diagnostic replay; no comparative speed claim"
+  },
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "reported_cost_relative": 1e-10,
+    "fixed_root": "exact",
+    "world_pose_norm_difference": 2e-06,
+    "original_cost_relative": 1e-09
+  },
+  "reference": {
+    "complete_replay": true,
+    "arrivals": 1044,
+    "eligible_quality": true,
+    "failed_arrivals": {
+      "root_exact": [],
+      "gradient_pass": [],
+      "reported_cost_pass": []
+    },
+    "max_normalized_gradient": 5.636754354038671e-08,
+    "max_raw_gradient": 0.0001091962109267177,
+    "max_reported_cost_difference": 3.197442310920451e-13,
+    "timing_scope": "single diagnostic replay; no comparative speed claim"
+  },
+  "agreement": {
+    "all_prefixes_pass": true,
+    "max_world_pose_norm": 0.0,
+    "max_original_cost_difference": 0.0
+  }
+}

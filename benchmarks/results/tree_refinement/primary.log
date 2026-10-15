@@ -1,0 +1,56 @@
+round 0 before: 4.800498s; all 1044 original-information prefixes and archived native agreement pass
+round 0 after: 4.707249s; all 1044 original-information prefixes and archived native agreement pass
+round 1 after: 4.838065s; all 1044 original-information prefixes and archived native agreement pass
+round 1 before: 5.012458s; all 1044 original-information prefixes and archived native agreement pass
+round 2 before: 4.859994s; all 1044 original-information prefixes and archived native agreement pass
+round 2 after: 4.953226s; all 1044 original-information prefixes and archived native agreement pass
+round 3 after: 4.834254s; all 1044 original-information prefixes and archived native agreement pass
+round 3 before: 5.092167s; all 1044 original-information prefixes and archived native agreement pass
+round 4 before: 5.076612s; all 1044 original-information prefixes and archived native agreement pass
+round 4 after: 4.795762s; all 1044 original-information prefixes and archived native agreement pass
+round 5 after: 4.769395s; all 1044 original-information prefixes and archived native agreement pass
+round 5 before: 5.018473s; all 1044 original-information prefixes and archived native agreement pass
+{
+  "eligible": true,
+  "before_after_means_byte_identical": false,
+  "before_after_non_timing_fields_identical": false,
+  "within_variant_replays_identical": true,
+  "timed_updates": 12528,
+  "native_timing_measured": false,
+  "cases": {
+    "before": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 5015.4654439999995,
+        "min_ms": 4800.497665,
+        "max_ms": 5092.167411,
+        "mean_ms": 4976.700189833334,
+        "stdev_ms": 108.78592746733905
+      },
+      "max_normalized_gradient": 4.6772858743494114e-08,
+      "forced_recoveries": 774,
+      "requested_calls": 0,
+      "queries": 7038,
+      "gaussian_reeliminated": 1788318
+    },
+    "after": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 4815.0081279999995,
+        "min_ms": 4707.248674,
+        "max_ms": 4953.225612,
+        "mean_ms": 4816.324970666667,
+        "stdev_ms": 75.34230311670402
+      },
+      "max_normalized_gradient": 2.516765743356827e-08,
+      "forced_recoveries": 774,
+      "requested_calls": 0,
+      "queries": 7038,
+      "gaussian_reeliminated": 1788318,
+      "speedup_over_before": 1.041631771052329,
+      "faster_pairs_over_before": 5,
+      "time_reduction_percent": 3.9967839124443905,
+      "beats_before_in_this_case": true
+    }
+  }
+}

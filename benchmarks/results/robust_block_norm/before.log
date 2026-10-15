@@ -1,0 +1,37 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.64s
+     Running tests/robust_block_norm.rs (target/debug/deps/robust_block_norm-8ce6232ece41c86c)
+
+running 4 tests
+test genuinely_unrepresentable_joint_norm_still_returns_nonfinite ... ok
+test large_joint_norms_have_representable_robust_costs ... FAILED
+test large_joint_norms_preserve_finite_frozen_covariance ... FAILED
+test tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights ... FAILED
+
+failures:
+
+---- large_joint_norms_have_representable_robust_costs stdout ----
+
+thread 'large_joint_norms_have_representable_robust_costs' (40968) panicked at crates/ropt/tests/robust_block_norm.rs:57:113:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- large_joint_norms_preserve_finite_frozen_covariance stdout ----
+
+thread 'large_joint_norms_preserve_finite_frozen_covariance' (40969) panicked at crates/ropt/tests/robust_block_norm.rs:24:12:
+called `Result::unwrap()` on an `Err` value: NonFinite
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights stdout ----
+
+thread 'tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights' (40970) panicked at crates/ropt/tests/robust_block_norm.rs:29:9:
+scale=0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001, loss=Huber(1e-200), input=Dense
+
+
+failures:
+    large_joint_norms_have_representable_robust_costs
+    large_joint_norms_preserve_finite_frozen_covariance
+    tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test robust_block_norm`

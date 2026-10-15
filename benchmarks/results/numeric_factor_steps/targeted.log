@@ -1,0 +1,43 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.45s
+     Running tests/central_difference_guards.rs (target/debug/deps/central_difference_guards-9c7bebd385c59d76)
+
+running 4 tests
+test invalid_perturbations_are_rejected_before_callbacks_or_output_changes ... ok
+test nonfinite_callback_values_and_derivative_overflow_are_errors ... ok
+test too_small_a_step_cannot_falsely_establish_solver_convergence ... ok
+test representable_subnormal_step_and_normal_solve_remain_valid ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/factor_graph.rs (target/debug/deps/factor_graph-f279f9a9b7e02fad)
+
+running 8 tests
+test all_fixed_graph_is_evaluated_without_a_solve ... ok
+test graph_rejects_bad_shapes_and_nonfinite_callbacks ... ok
+test analytic_blocks_assemble_and_fixed_variables_are_excluded ... ok
+test quaternion_sign_representation_and_se2_wrap_are_consistent ... ok
+test analytic_so3_tangent_jacobian_matches_numeric_and_converges ... ok
+test variable_ids_cannot_cross_graphs ... ok
+test quaternion_retraction_preserves_unit_norm_over_many_updates ... ok
+test se3_graph_solves_chain_and_loop_with_fixed_anchor ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/numeric_factor_errors.rs (target/debug/deps/numeric_factor_errors-3274487ab4b2904f)
+
+running 2 tests
+test invalid_positive_sample_is_reported_before_a_later_callback_error ... ok
+test overflowing_derivative_stops_before_evaluating_the_next_column ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/numeric_factor_steps.rs (target/debug/deps/numeric_factor_steps-195fcafbe9dfac25)
+
+running 3 tests
+test rounded_away_active_perturbations_cannot_establish_convergence ... ok
+test overflowing_denominator_is_rejected_without_registering_a_factor ... ok
+test fixed_blocks_and_representable_tiny_steps_remain_valid ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

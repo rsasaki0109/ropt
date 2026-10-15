@@ -1,0 +1,545 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -36,7 +36,7 @@
+ #[derive(Clone)]
+ pub struct SmootherFactor {
+     pub(crate) keys: Vec<Key>,
+-    residuals: usize,
++    pub(crate) residuals: usize,
+     pub(crate) options: FactorOptions,
+     evaluation: Evaluation,
+ }
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -1,7 +1,9 @@
+ //! Initial iSAM-style incremental square-root smoothing.
+-//! New Gaussian rows update cached sparse R using Givens rotations. Threshold or
+-//! periodic refresh runs batch LM and rebuilds the undamped model. An optional
+-//! Gaussian Bayes tree selectively re-eliminates cached conditional paths.
++//! New Gaussian rows update cached sparse R using Givens rotations. Default
++//! threshold and periodic refreshes run the batch solver. An explicit selective
++//! mode reevaluates incident factors, retaining unrelated rows, then rebuilds QR.
++//! An optional Gaussian Bayes tree selectively re-eliminates appended row paths.
++mod selective;
+ use crate::bayes_tree::{BayesTreeUpdate, GaussianBayesTree};
+ use crate::factor::{FactorGraph, VariableId};
+ use crate::fixed_lag::{Key, SmootherFactor, SmootherUpdate, WindowVariable, build_graph};
+@@ -10,12 +12,15 @@
+     Algorithm, DVector, Error, LinearSolver, LocalProblem, Loss, Options, QrOptions, Termination,
+     solver::{GaussianSolution, solve_local_gaussian_model},
+ };
++pub use selective::SelectiveRelinearizationReport;
++use selective::{FactorCache, SelectiveContext, threshold_keys};
+ use std::collections::BTreeMap;
+ 
+ #[derive(Debug, Clone)]
+ pub struct IsamOptions {
+     pub relinearization_threshold: f64,
+-    /// Full refresh at this update interval, or earlier when the chart delta is large.
++    /// Full refresh at this update interval. Earlier threshold refreshes use the
++    /// full batch solver unless selective relinearization was explicitly enabled.
+     pub relinearization_interval: usize,
+     pub qr: IncrementalQrOptions,
+     pub batch_solver: Options,
+@@ -36,9 +41,11 @@
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub enum IsamUpdateKind {
+     Incremental,
++    /// Full batch refresh or explicit threshold-selected factor evaluation.
++    /// selective_update distinguishes the bounded selective path.
+     Relinearized,
+ }
+-/// Why the complete nonlinear model was rebuilt. Explicit requests take
++/// Why nonlinear factors were relinearized. Explicit requests take
+ /// precedence over the interval; the threshold is checked only on cached solves.
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub enum IsamRelinearizationReason {
+@@ -51,13 +58,14 @@
+     pub estimates: BTreeMap<Key, DVector<f64>>,
+     pub kind: IsamUpdateKind,
+     pub relinearization_reason: Option<IsamRelinearizationReason>,
+-    /// Recipes installed in the final QR update (new factors or the entire graph).
+-    /// Excludes discarded preliminary updates and batch LM callback counts.
++    /// Distinct recipes evaluated for the installed update: new factors, selected
++    /// factors, or the whole graph. Excludes batch LM callback counts and repeated
++    /// selective passes; selective_update reports those separately.
+     pub factors_linearized: usize,
+     pub stored_entries: usize,
+     pub linearized_cost: f64,
+     pub max_anchor_delta: f64,
+-    /// LM/GN trials in a full batch refresh; zero on cached updates or initial convergence.
++    /// LM/GN trials in a full batch refresh; zero on cached/selected updates or initial convergence.
+     pub batch_trials: usize,
+     /// Effective initial/final LM damping; None on cached updates and Gauss-Newton.
+     pub batch_initial_damping: Option<f64>,
+@@ -67,6 +75,9 @@
+     /// Optional scalar-frontal Gaussian tree work. Full nonlinear refreshes still
+     /// rebuild every conditional; cached updates re-eliminate affected paths.
+     pub bayes_tree_update: Option<BayesTreeUpdate>,
++    /// Optional threshold-selected factor evaluation. This mode rebuilds the
++    /// complete Gaussian QR, while preserving unrelated nonlinear factor rows.
++    pub selective_update: Option<SelectiveRelinearizationReport>,
+ }
+ #[derive(Clone)]
+ enum GaussianCache {
+@@ -161,6 +172,7 @@
+     next_batch_damping: Option<f64>,
+     reuse_batch_ordering: bool,
+     max_refinement_steps: usize,
++    selective_cache: Option<FactorCache>,
+ }
+ impl IsamSmoother {
+     pub fn new(options: IsamOptions) -> Result<Self, Error> {
+@@ -184,18 +196,36 @@
+             next_batch_damping: None,
+             reuse_batch_ordering: false,
+             max_refinement_steps: 0,
++            selective_cache: None,
+         })
+     }
+     /// Opt into fixed-order Gaussian Bayes-tree re-elimination for cached rows.
+-    /// Existing unaffected conditional branches are shared. Threshold, interval
+-    /// and forced nonlinear refreshes remain full batch solves. Back-substitution
+-    /// and coordinate bookkeeping are still global; no iSAM2 performance
+-    /// equivalence or selective nonlinear relinearization is implied.
++    /// Existing unaffected conditional branches are shared on row append.
++    /// Nonlinear refreshes, including explicit selective factor evaluation,
++    /// rebuild the full tree. Back-substitution and bookkeeping remain global;
++    /// no iSAM2 performance equivalence or selective row replacement is implied.
+     pub fn with_bayes_tree(mut self) -> Result<Self, Error> {
+         self.qr = self.qr.into_tree()?;
+         self.use_bayes_tree = true;
+         Ok(self)
+     }
++    /// Opt into threshold-selected nonlinear factor relinearization, before the
++    /// first update. Factors incident on selected variables are evaluated at a
++    /// mixed anchor: selected variables move to their current estimates; all
++    /// other anchors stay fixed. The full Gaussian QR is then rebuilt.
++    ///
++    /// This performs bounded undamped Gaussian steps, not a converged batch
++    /// solve or selective Bayes-tree factor replacement. Check threshold_remaining
++    /// in the report; a small anchor delta does not imply nonlinear stationarity.
++    /// Forced and interval refreshes retain the full batch policy. Cached residual
++    /// and nonzero coefficient counts together are limited by qr.max_entries.
++    pub fn with_selective_relinearization(mut self, max_passes: usize) -> Result<Self, Error> {
++        if self.updates != 0 || max_passes == 0 || max_passes > 200 {
++            return Err(Error::InvalidOptions);
++        }
++        self.selective_cache = Some(FactorCache::new(max_passes));
++        Ok(self)
++    }
+     /// Opt into carrying adaptive LM damping between successful full refreshes.
+     /// The first refresh uses the configured initial value. Ordinary updates and
+     /// failed refreshes leave this state unchanged. The default restarts damping.
+@@ -260,6 +290,8 @@
+     /// Forced/interval refreshes start from committed estimates and new seeds,
+     /// without first evaluating new factors or solving at potentially stale anchors.
+     /// Threshold-triggered refreshes start from the successful cached solve.
++    /// In selective mode, unrelated factors keep their previous charts/rows,
++    /// while incident factors use the updated product of per-variable anchors.
+     pub fn update(
+         &mut self,
+         update: SmootherUpdate,
+@@ -281,6 +313,7 @@
+         let mut variables = self.variables.clone();
+         let mut anchors = self.anchors.clone();
+         let mut order = self.order.clone();
++        let mut selective_cache = self.selective_cache.clone();
+         for v in update.variables {
+             v.kind.validate(&v.value)?;
+             if variables.contains_key(&v.key) {
+@@ -308,9 +341,13 @@
+             self.qr.clone()
+         };
+         let mut cached_coordinates = None;
++        let mut selected_keys = None;
+         if reason.is_none() {
+             qr.extend_columns(n)?;
+             let (r, j) = new_graph.evaluate_sparse(&new_graph.initial())?;
++            if let Some(cache) = &mut selective_cache {
++                cache.append(&j, &r, &update.factors, self.options.qr.max_entries)?;
++            }
+             qr.append_in_place(&j, &r)?;
+             let delta = qr.solve()?;
+             let state = new_graph.retract(&new_graph.initial(), &delta)?;
+@@ -327,16 +364,52 @@
+             let max_delta = coordinates.1.max(raw_delta);
+             if max_delta > self.options.relinearization_threshold {
+                 reason = Some(IsamRelinearizationReason::Threshold);
++                if selective_cache.is_some() {
++                    selected_keys = Some(threshold_keys(
++                        &variables,
++                        &anchors,
++                        &new_graph,
++                        &new_ids,
++                        &delta,
++                        self.options.relinearization_threshold,
++                    )?);
++                }
+             } else {
+                 cached_coordinates = Some(coordinates);
+             }
+         }
+-        let refresh = reason.is_some();
++        let refresh = reason.is_some() && selected_keys.is_none();
++        let mut selective_update = None;
++        let mut selective_factors_linearized = 0;
+         let mut next_batch_damping = self.next_batch_damping;
+         let (mut batch_trials, mut batch_initial_damping, mut batch_final_damping) =
+             (0, None, None);
+         let mut refinement_steps = 0;
+-        if refresh {
++        if let Some(keys) = selected_keys {
++            let factors = self
++                .factors
++                .iter()
++                .chain(&update.factors)
++                .cloned()
++                .collect::<Vec<_>>();
++            let permutation = qr.column_permutation().map(<[usize]>::to_vec);
++            let result = selective_cache.as_mut().unwrap().relinearize(
++                &mut variables,
++                &mut anchors,
++                SelectiveContext {
++                    factors: &factors,
++                    order: &order,
++                    options: &self.options,
++                    new_count,
++                },
++                keys,
++                permutation,
++            )?;
++            qr = result.qr;
++            cached_coordinates = Some(result.coordinates);
++            selective_factors_linearized = result.distinct_factors;
++            selective_update = Some(result.report);
++        } else if refresh {
+             // Keep the committed recipes untouched until success; ordinary
+             // updates never clone or register the old factor history.
+             let factors = self
+@@ -418,6 +491,9 @@
+                 }
+             }
+             qr.rebuild_in_place(&j, &r)?;
++            if let Some(cache) = &mut selective_cache {
++                cache.reset(&j, &r, &factors, self.options.qr.max_entries)?;
++            }
+             // Require an observable undamped model even when batch LM used damping.
+             let mut step = qr.solve()?;
+             let mut gradient = if self.max_refinement_steps != 0 {
+@@ -542,9 +618,10 @@
+         self.qr = qr;
+         self.updates = updates;
+         self.next_batch_damping = next_batch_damping;
++        self.selective_cache = selective_cache;
+         Ok(IsamReport {
+             estimates,
+-            kind: if refresh {
++            kind: if reason.is_some() {
+                 IsamUpdateKind::Relinearized
+             } else {
+                 IsamUpdateKind::Incremental
+@@ -552,6 +629,8 @@
+             relinearization_reason: reason,
+             factors_linearized: if refresh {
+                 self.factors.len()
++            } else if selective_update.is_some() {
++                selective_factors_linearized
+             } else {
+                 new_count
+             },
+@@ -563,6 +642,7 @@
+             batch_final_damping,
+             refinement_steps,
+             bayes_tree_update,
++            selective_update,
+         })
+     }
+ }
+--- /dev/null
++++ b/crates/ropt/src/isam/selective.rs
+@@ -0,0 +1,284 @@
++//! Factor-owned Gaussian rows in one product of per-variable tangent charts.
++use super::{GaussianCache, IsamOptions, anchor_coordinates};
++use crate::{
++    DVector, Error, LocalProblem,
++    factor::{FactorGraph, VariableId},
++    fixed_lag::{Key, SmootherFactor, WindowVariable, build_graph},
++    incremental_qr::IncrementalQr,
++    sparse::CsrMatrix,
++};
++use std::{
++    collections::{BTreeMap, BTreeSet},
++    sync::Arc,
++};
++
++/// Work in a threshold-selected update. Counts describe factor linearizations,
++/// not individual AD chunk callbacks. Gaussian elimination and back-substitution
++/// are global; the report does not claim selective clique elimination.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct SelectiveRelinearizationReport {
++    pub passes: usize,
++    /// Distinct nonfixed keys whose anchors moved during this update.
++    pub variables_relinearized: Vec<Key>,
++    /// Selected factor evaluations summed over passes, including repeated factors.
++    /// Excludes the initial evaluation of newly appended factors.
++    pub factor_relinearizations: usize,
++    /// Factors neither newly added nor selected in any pass, with shared row data.
++    pub retained_factors: usize,
++    /// Local or raw Gaussian steps still exceed the configured threshold after
++    /// the pass cap. False is not a nonlinear convergence certificate.
++    pub threshold_remaining: bool,
++}
++
++#[derive(Debug)]
++struct FactorRows {
++    residual: Vec<f64>,
++    offsets: Vec<usize>,
++    columns: Vec<usize>,
++    values: Vec<f64>,
++}
++impl FactorRows {
++    fn entries(&self) -> usize {
++        self.residual.len() + self.values.len()
++    }
++}
++#[derive(Clone)]
++pub(super) struct FactorCache {
++    blocks: Vec<Arc<FactorRows>>,
++    entries: usize,
++    max_passes: usize,
++}
++pub(super) struct SelectiveContext<'a> {
++    pub factors: &'a [SmootherFactor],
++    pub order: &'a [Key],
++    pub options: &'a IsamOptions,
++    pub new_count: usize,
++}
++pub(super) struct SelectiveResult {
++    pub qr: GaussianCache,
++    pub coordinates: (DVector<f64>, f64),
++    pub report: SelectiveRelinearizationReport,
++    pub distinct_factors: usize,
++}
++fn capture(
++    j: &CsrMatrix,
++    r: &DVector<f64>,
++    factors: &[SmootherFactor],
++    limit: usize,
++) -> Result<Vec<Arc<FactorRows>>, Error> {
++    if j.shape().0 != r.len()
++        || factors
++            .iter()
++            .try_fold(0usize, |sum, f| sum.checked_add(f.residuals))
++            != Some(r.len())
++    {
++        return Err(Error::InvalidDimensions);
++    }
++    if r.len()
++        .checked_add(j.nnz())
++        .is_none_or(|entries| entries > limit)
++    {
++        return Err(Error::SparseFillLimit { limit });
++    }
++    let mut start = 0;
++    let mut blocks = Vec::with_capacity(factors.len());
++    for factor in factors {
++        let mut offsets = vec![0];
++        let mut columns = Vec::new();
++        let mut values = Vec::new();
++        for row in start..start + factor.residuals {
++            for (column, value) in j.row(row)? {
++                columns.push(column);
++                values.push(value);
++            }
++            offsets.push(values.len());
++        }
++        blocks.push(Arc::new(FactorRows {
++            residual: r.as_slice()[start..start + factor.residuals].to_vec(),
++            offsets,
++            columns,
++            values,
++        }));
++        start += factor.residuals;
++    }
++    Ok(blocks)
++}
++impl FactorCache {
++    pub fn new(max_passes: usize) -> Self {
++        Self {
++            blocks: Vec::new(),
++            entries: 0,
++            max_passes,
++        }
++    }
++    pub fn reset(
++        &mut self,
++        j: &CsrMatrix,
++        r: &DVector<f64>,
++        factors: &[SmootherFactor],
++        limit: usize,
++    ) -> Result<(), Error> {
++        let blocks = capture(j, r, factors, limit)?;
++        self.entries = r.len() + j.nnz();
++        self.blocks = blocks;
++        Ok(())
++    }
++    pub fn append(
++        &mut self,
++        j: &CsrMatrix,
++        r: &DVector<f64>,
++        factors: &[SmootherFactor],
++        limit: usize,
++    ) -> Result<(), Error> {
++        let blocks = capture(j, r, factors, limit)?;
++        let entries = self
++            .entries
++            .checked_add(r.len())
++            .and_then(|n| n.checked_add(j.nnz()))
++            .filter(|&n| n <= limit)
++            .ok_or(Error::SparseFillLimit { limit })?;
++        self.blocks.extend(blocks);
++        self.entries = entries;
++        Ok(())
++    }
++    fn assemble(&self, columns: usize) -> Result<(DVector<f64>, CsrMatrix), Error> {
++        let mut residual = Vec::new();
++        let mut offsets = vec![0];
++        let mut indices = Vec::new();
++        let mut values = Vec::new();
++        for block in &self.blocks {
++            residual.extend_from_slice(&block.residual);
++            let base = values.len();
++            offsets.extend(block.offsets.iter().skip(1).map(|&offset| base + offset));
++            indices.extend_from_slice(&block.columns);
++            values.extend_from_slice(&block.values);
++        }
++        let j = CsrMatrix::from_canonical(residual.len(), columns, offsets, indices, values)?;
++        Ok((DVector::from_vec(residual), j))
++    }
++    pub fn relinearize(
++        &mut self,
++        variables: &mut BTreeMap<Key, WindowVariable>,
++        anchors: &mut BTreeMap<Key, WindowVariable>,
++        context: SelectiveContext<'_>,
++        mut keys: BTreeSet<Key>,
++        permutation: Option<Vec<usize>>,
++    ) -> Result<SelectiveResult, Error> {
++        if self.blocks.len() != context.factors.len()
++            || context.new_count > self.blocks.len()
++            || keys.is_empty()
++        {
++            return Err(Error::InvalidDimensions);
++        }
++        let mut touched =
++            (self.blocks.len() - context.new_count..self.blocks.len()).collect::<BTreeSet<_>>();
++        let mut moved = BTreeSet::new();
++        let mut report = SelectiveRelinearizationReport {
++            passes: 0,
++            variables_relinearized: Vec::new(),
++            factor_relinearizations: 0,
++            retained_factors: 0,
++            threshold_remaining: false,
++        };
++        for _ in 0..self.max_passes {
++            for &key in &keys {
++                let variable = variables.get(&key).ok_or(Error::InvalidDimensions)?;
++                if variable.fixed {
++                    return Err(Error::InvalidDimensions);
++                }
++                anchors.insert(key, variable.clone());
++                moved.insert(key);
++            }
++            let indices = context
++                .factors
++                .iter()
++                .enumerate()
++                .filter(|(_, factor)| factor.keys.iter().any(|key| keys.contains(key)))
++                .map(|(index, _)| index)
++                .collect::<Vec<_>>();
++            let factors = indices
++                .iter()
++                .map(|&index| context.factors[index].clone())
++                .collect::<Vec<_>>();
++            let (graph, ids) = build_graph(anchors, &factors, context.order)?;
++            let (r, j) = graph.evaluate_sparse(&graph.initial())?;
++            let replacement = capture(&j, &r, &factors, context.options.qr.max_entries)?;
++            let removed = indices
++                .iter()
++                .map(|&index| self.blocks[index].entries())
++                .sum::<usize>();
++            let entries = (self.entries - removed)
++                .checked_add(r.len())
++                .and_then(|n| n.checked_add(j.nnz()))
++                .filter(|&n| n <= context.options.qr.max_entries)
++                .ok_or(Error::SparseFillLimit {
++                    limit: context.options.qr.max_entries,
++                })?;
++            for (&index, block) in indices.iter().zip(replacement) {
++                self.blocks[index] = block;
++                touched.insert(index);
++            }
++            self.entries = entries;
++            let (r, j) = self.assemble(graph.dimensions().1)?;
++            let mut qr = IncrementalQr::new(j.shape().1, context.options.qr)?;
++            if let Some(order) = &permutation {
++                qr.set_column_order(order.clone())?;
++            }
++            qr.rebuild_in_place(&j, &r)?;
++            let delta = qr.solve()?;
++            let state = graph.retract(&graph.initial(), &delta)?;
++            for (&key, &id) in &ids {
++                variables.get_mut(&key).unwrap().value = graph.value(&state, id)?;
++            }
++            keys = threshold_keys(
++                variables,
++                anchors,
++                &graph,
++                &ids,
++                &delta,
++                context.options.relinearization_threshold,
++            )?;
++            report.passes += 1;
++            report.factor_relinearizations += indices.len();
++            report.threshold_remaining = !keys.is_empty();
++            if keys.is_empty() || report.passes == self.max_passes {
++                report.retained_factors = self.blocks.len() - touched.len();
++                report.variables_relinearized = moved.into_iter().collect();
++                return Ok(SelectiveResult {
++                    qr: GaussianCache::Qr(qr),
++                    coordinates: anchor_coordinates(variables, anchors, &graph, &ids)?,
++                    report,
++                    distinct_factors: touched.len(),
++                });
++            }
++        }
++        Err(Error::InvalidOptions)
++    }
++}
++pub(super) fn threshold_keys(
++    variables: &BTreeMap<Key, WindowVariable>,
++    anchors: &BTreeMap<Key, WindowVariable>,
++    graph: &FactorGraph,
++    ids: &BTreeMap<Key, VariableId>,
++    delta: &DVector<f64>,
++    threshold: f64,
++) -> Result<BTreeSet<Key>, Error> {
++    let mut keys = BTreeSet::new();
++    for (&key, &id) in ids {
++        if let Some(range) = graph.tangent_range(id)? {
++            let variable = &variables[&key];
++            let local = variable
++                .kind
++                .local(&anchors[&key].value, &variable.value)?
++                .norm();
++            let raw = delta.rows(range.start, range.len()).norm();
++            if !local.is_finite() || !raw.is_finite() {
++                return Err(Error::NonFinite);
++            }
++            if local.max(raw) > threshold {
++                keys.insert(key);
++            }
++        }
++    }
++    Ok(keys)
++}

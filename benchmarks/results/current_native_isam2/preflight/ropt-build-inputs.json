@@ -1,0 +1,7 @@
+{
+  "source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+  "executable_sha256": "0f62822299ff9dfc92ec8ce74d5c64c8bee0e2c7c9d24047ceb1d51f5d638e9b",
+  "command": "cargo build --release --locked --offline --jobs 1 --example benchmark_ad_selective_se2_isam",
+  "rustflags": null,
+  "encoded_rustflags": null
+}

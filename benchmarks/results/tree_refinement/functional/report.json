@@ -1,0 +1,117 @@
+{
+  "source_sha256": "3f06e49705d9ca70512dc7ffd94e312a6e0420c3c7a1a1c9963b06e1290333d0",
+  "executable_sha256": "c25d84ae4e58e0c22cc79e09ecf615572f4c4ab47838739262e450b01c40e8b9",
+  "scope": "functional diagnostic only; timings not comparative",
+  "datasets": {
+    "csail": {
+      "dataset": {
+        "dataset": "CSAIL recorded SE2 pose graph",
+        "variant": "csail-se-sync1045",
+        "source_url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+        "source_commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+        "source_sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6",
+        "total_source_poses": 1045,
+        "total_source_edges": 1172,
+        "used_arrivals": 1044,
+        "used_edges": 1172,
+        "complete_dataset": true,
+        "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+        "initialization": "original consecutive odometry measurements composed once from root (0,0,0); no loop constraints or optimizer used for seeds",
+        "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+        "stream_sha256": "fe3ffed0fdae1d69d0e374a915f3364860602a7fe1ad34d19d6de7571e98718a"
+      },
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/workspace/ropt/target/release/examples/benchmark_ad_selective_se2_isam",
+        "/tmp/ropt-single-tree-prototype/csail/input.stream",
+        "/tmp/ropt-single-tree-prototype/csail/replay",
+        "1",
+        "0",
+        "editable",
+        "0"
+      ],
+      "returncode": 0,
+      "quality": {
+        "complete_replay": true,
+        "arrivals": 1044,
+        "eligible_quality": true,
+        "failed_arrivals": {
+          "root_exact": [],
+          "gradient_pass": [],
+          "reported_cost_pass": []
+        },
+        "max_normalized_gradient": 2.516765743356827e-08,
+        "max_raw_gradient": 3.6378388754698676e-06,
+        "max_reported_cost_difference": 3.8546943414985435e-13,
+        "timing_scope": "single diagnostic replay; no comparative speed claim"
+      },
+      "native_agreement": {
+        "max_world_pose_norm": 3.772476536257072e-07,
+        "max_cost_difference": 3.9968028886505635e-13
+      },
+      "native_reference_sha256": {
+        "metadata.json": "9ec33f492c144e78e82704343cc984b156af4963ed21648e291baebc10c8a9d0",
+        "report.json": "38900dbde496260c63e2ec109f45850c05ac7f8e62d414ad57655b6ae2eccf18",
+        "quality.csv": "7d890e4bad50691da80b252803b96f4ac3b11118624ad82115938a5fdf1bbd03",
+        "native-poses.csv.gz": "0611193adebbd92e2c286cbcefb73ea3390c69da12abbaff447df61d4439b121"
+      }
+    },
+    "mit": {
+      "dataset": {
+        "dataset": "Intel Research Lab recorded SE2 pose graph",
+        "variant": "intel-mit1228",
+        "source_url": "https://raw.githubusercontent.com/JeffLIrion/python-graphslam/68a0d2419028d598f823c2b35f53b38eacfd0ca1/data/input_INTEL.g2o",
+        "source_commit": "68a0d2419028d598f823c2b35f53b38eacfd0ca1",
+        "source_sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be",
+        "total_source_poses": 1228,
+        "total_source_edges": 1483,
+        "used_arrivals": 1227,
+        "used_edges": 1483,
+        "complete_dataset": true,
+        "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+        "initialization": "provided original vertex values; angles normalized; no optimized/truth seeds",
+        "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+        "stream_sha256": "41bd2e1b0c6eb5df4dfc23fa469df39799e91b7f6acbad8c4d87c176eb611ca9"
+      },
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/workspace/ropt/target/release/examples/benchmark_ad_selective_se2_isam",
+        "/tmp/ropt-single-tree-prototype/mit/input.stream",
+        "/tmp/ropt-single-tree-prototype/mit/replay",
+        "1",
+        "0",
+        "editable",
+        "0"
+      ],
+      "returncode": 0,
+      "quality": {
+        "complete_replay": true,
+        "arrivals": 1227,
+        "eligible_quality": true,
+        "failed_arrivals": {
+          "root_exact": [],
+          "gradient_pass": [],
+          "reported_cost_pass": []
+        },
+        "max_normalized_gradient": 7.793438497199398e-08,
+        "max_raw_gradient": 0.12790520846974165,
+        "max_reported_cost_difference": 4.888534022029489e-12,
+        "timing_scope": "single diagnostic replay; no comparative speed claim"
+      },
+      "native_agreement": {
+        "max_world_pose_norm": 2.0375466499172747e-07,
+        "max_cost_difference": 6.963318810448982e-12
+      },
+      "native_reference_sha256": {
+        "metadata.json": "c1da3abdbefed4fede5ca971f036b9f1cbe71c1a4bf317baff225226bade378d",
+        "report.json": "fd57254b2652af52d2c6b1355d751ac3d5b7d1f1d11d453ffd975fa278f475b9",
+        "quality.csv": "f2e1cb7f018aaa538782733cf01f652401db2258f66352bc5ad0b27c9c248808",
+        "native-poses.csv.gz": "2b3625ede18d33caf06048c94259ec0ee9729ebdf11d7a1cbbe0b8ca54601258"
+      }
+    }
+  }
+}

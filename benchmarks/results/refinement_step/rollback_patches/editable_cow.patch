@@ -1,0 +1,192 @@
+--- a/crates/ropt/src/bayes_tree/editable.rs
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -80,7 +80,7 @@
+ type Topology = (
+     Vec<Arc<[usize]>>,
+     Vec<Option<usize>>,
+-    BTreeMap<GaussianFactorId, Option<usize>>,
++    Arc<BTreeMap<GaussianFactorId, Option<usize>>>,
+     usize,
+ );
+ 
+@@ -97,8 +97,11 @@
+ pub struct EditableBayesTree {
+     tree: GaussianBayesTree,
+     messages: Vec<Arc<Message>>,
+-    factors: BTreeMap<GaussianFactorId, Arc<GaussianFactor>>,
+-    owners: BTreeMap<GaussianFactorId, Option<usize>>,
++    // Candidate/snapshot clones share metadata until a map is changed. In
++    // particular, column extension changes neither map, and same-support
++    // replacement keeps ownership shared. Detaching a changed map is still O(n).
++    factors: Arc<BTreeMap<GaussianFactorId, Arc<GaussianFactor>>>,
++    owners: Arc<BTreeMap<GaussianFactorId, Option<usize>>>,
+     factor_entries: usize,
+     message_entries: usize,
+     last_update: EditableBayesTreeUpdate,
+@@ -124,8 +127,8 @@
+         Ok(Self {
+             tree: GaussianBayesTree::from_qr(qr)?,
+             messages: vec![empty_message; n],
+-            factors: BTreeMap::new(),
+-            owners: BTreeMap::new(),
++            factors: Arc::new(BTreeMap::new()),
++            owners: Arc::new(BTreeMap::new()),
+             factor_entries: 0,
+             message_entries: 0,
+             last_update: EditableBayesTreeUpdate {
+@@ -220,7 +223,7 @@
+         let n = self.dimension();
+         let mut filled = vec![BTreeSet::new(); n];
+         let mut owners = BTreeMap::new();
+-        for (&id, factor) in &self.factors {
++        for (&id, factor) in self.factors.iter() {
+             // Whole-block support is conservative when rows are disconnected.
+             let support = factor
+                 .jacobian
+@@ -256,7 +259,7 @@
+             .iter()
+             .map(|separator| separator.first().copied())
+             .collect();
+-        Ok((separators, parents, owners, count))
++        Ok((separators, parents, Arc::new(owners), count))
+     }
+     fn factor_support(&self, factor: &GaussianFactor) -> BTreeSet<usize> {
+         factor
+@@ -294,7 +297,7 @@
+         let mut pending = BTreeMap::<usize, BTreeSet<usize>>::new();
+         for (id, support) in additions {
+             let owner = support.first().copied();
+-            owners.insert(id, owner);
++            Arc::make_mut(&mut owners).insert(id, owner);
+             if let Some(k) = owner {
+                 pending
+                     .entry(k)
+@@ -431,11 +434,14 @@
+             return Ok(());
+         }
+         let incremental_topology = self.added_topology(removed, &replacements)?;
+-        for &id in removed {
+-            self.factors.remove(&id);
+-        }
+-        for (id, factor) in replacements {
+-            self.factors.insert(id, factor);
++        {
++            let factors = Arc::make_mut(&mut self.factors);
++            for &id in removed {
++                factors.remove(&id);
++            }
++            for (id, factor) in replacements {
++                factors.insert(id, factor);
++            }
+         }
+         let entries = self.factors.values().try_fold(0usize, |count, factor| {
+             count
+@@ -473,7 +479,7 @@
+                 children[*parent].push(child);
+             }
+         }
+-        for (&id, &owner) in &owners {
++        for (&id, &owner) in owners.iter() {
+             if let Some(owner) = owner {
+                 buckets[owner].push(id);
+             }
+@@ -574,7 +580,7 @@
+         // Only current roots contribute marginalized constants. Adding every
+         // orphan's original rows or every message constant would double-count.
+         let mut constant = 0.;
+-        for (&id, &owner) in &owners {
++        for (&id, &owner) in owners.iter() {
+             if owner.is_none() {
+                 for &value in self.factors[&id].residual.iter() {
+                     constant += 0.5 * value * value;
+@@ -603,6 +609,81 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    #[test]
++    fn shared_metadata_detaches_only_on_change_and_failed_updates_preserve_snapshots() {
++        let prior = |n: usize, column: usize, target: f64| {
++            GaussianFactor::new(
++                CsrMatrix::from_triplets(1, n, vec![(0, column, 1.)]).unwrap(),
++                DVector::from_element(1, -target),
++            )
++            .unwrap()
++        };
++        let mut tree = EditableBayesTree::new(2, Default::default()).unwrap();
++        tree.update(
++            &[],
++            vec![
++                (0, prior(2, 0, 1.)),
++                (1, prior(2, 1, 2.)),
++                (
++                    10,
++                    GaussianFactor::new(
++                        CsrMatrix::from_triplets(1, 2, vec![(0, 0, 1.), (0, 1, -1.)]).unwrap(),
++                        DVector::from_element(1, -0.5),
++                    )
++                    .unwrap(),
++                ),
++            ],
++        )
++        .unwrap();
++        let mut snapshot = tree.clone();
++        let old_mean = snapshot.solve().unwrap();
++        assert!((&old_mean - DVector::from_vec(vec![1.5, 1.5])).norm() < 1e-14);
++        assert!(Arc::ptr_eq(&tree.factors, &snapshot.factors));
++        assert!(Arc::ptr_eq(&tree.owners, &snapshot.owners));
++        tree.extend_columns(3).unwrap();
++        assert!(Arc::ptr_eq(&tree.factors, &snapshot.factors));
++        assert!(Arc::ptr_eq(&tree.owners, &snapshot.owners));
++        assert_eq!(snapshot.dimension(), 2);
++        assert!(matches!(tree.solve(), Err(Error::RankDeficient { .. })));
++        tree.update(&[], vec![(0, prior(3, 0, 4.))]).unwrap();
++        assert!(!Arc::ptr_eq(&tree.factors, &snapshot.factors));
++        assert!(Arc::ptr_eq(&tree.owners, &snapshot.owners));
++        assert_eq!(snapshot.factor(0).unwrap().residual()[0], -1.);
++        assert_eq!(snapshot.solve().unwrap(), old_mean);
++        tree.update(&[], vec![(2, prior(3, 2, -1.))]).unwrap();
++        assert!(!Arc::ptr_eq(&tree.owners, &snapshot.owners));
++        assert!((tree.solve().unwrap() - DVector::from_vec(vec![3.5, 2.5, -1.])).norm() < 1e-14);
++        let retained = tree.clone();
++        // This reaches mutation of both private candidate maps before the
++        // unowned constant factor overflows. Neither public map may detach.
++        let overflow = GaussianFactor::new(
++            CsrMatrix::from_triplets(1, 3, vec![]).unwrap(),
++            DVector::from_element(1, 1e308),
++        )
++        .unwrap();
++        assert!(matches!(
++            tree.update(&[], vec![(0, overflow)]),
++            Err(Error::NonFinite)
++        ));
++        assert!(Arc::ptr_eq(&tree.factors, &retained.factors));
++        assert!(Arc::ptr_eq(&tree.owners, &retained.owners));
++        assert_eq!(tree.solve().unwrap(), retained.solve().unwrap());
++        assert_eq!(tree.last_update(), retained.last_update());
++        let old_owners = tree.owners.clone();
++        tree.update(&[10], vec![]).unwrap();
++        assert!(!Arc::ptr_eq(&tree.owners, &old_owners));
++        assert!((tree.solve().unwrap() - DVector::from_vec(vec![4., 2., -1.])).norm() < 1e-14);
++        assert_eq!(retained.factor_count(), 4);
++        assert_eq!(snapshot.solve().unwrap(), old_mean);
++        // An independent mutation of the original clone cannot affect either
++        // already diverged model.
++        snapshot.update(&[], vec![(1, prior(2, 1, 5.))]).unwrap();
++        assert!((snapshot.solve().unwrap() - DVector::from_vec(vec![2.5, 3.5])).norm() < 1e-14);
++        assert!((tree.solve().unwrap() - DVector::from_vec(vec![4., 2., -1.])).norm() < 1e-14);
++        assert!(
++            (retained.solve().unwrap() - DVector::from_vec(vec![3.5, 2.5, -1.])).norm() < 1e-14
++        );
++    }
+     #[test]
+     fn canonical_gather_matches_triplets_for_permuted_rows_and_boundary_messages() {
+         let mut tree =
+@@ -630,7 +711,7 @@
+                 .unwrap(),
+             ),
+         ] {
+-            tree.factors.insert(id, Arc::new(factor));
++            Arc::make_mut(&mut tree.factors).insert(id, Arc::new(factor));
+         }
+         tree.messages[0] = Arc::new(Message {
+             rows: vec![vec![(2, 4.), (4, -2.)], vec![(4, 8.), (5, 1.)]],

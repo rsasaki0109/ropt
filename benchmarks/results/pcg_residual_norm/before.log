@@ -1,0 +1,43 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.64s
+     Running tests/pcg_extreme_scale.rs (target/debug/deps/pcg_extreme_scale-c74da824c0e381e7)
+
+running 4 tests
+test accepted_initial_residual_is_reported_at_its_actual_scale ... FAILED
+test inner_product_underflow_is_breakdown_instead_of_false_convergence ... FAILED
+test large_well_conditioned_system_does_not_overflow_its_norm ... FAILED
+test tiny_well_conditioned_system_does_not_converge_at_zero ... FAILED
+
+failures:
+
+---- accepted_initial_residual_is_reported_at_its_actual_scale stdout ----
+
+thread 'accepted_initial_residual_is_reported_at_its_actual_scale' (136324) panicked at crates/ropt/tests/pcg_extreme_scale.rs:60:9:
+assertion failed: (report.residual_norm / scale - 5.).abs() < 1e-14
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- inner_product_underflow_is_breakdown_instead_of_false_convergence stdout ----
+
+thread 'inner_product_underflow_is_breakdown_instead_of_false_convergence' (136325) panicked at crates/ropt/tests/pcg_extreme_scale.rs:70:62:
+called `Result::unwrap_err()` on an `Ok` value: CgReport { x: VecStorage { data: [0.0], nrows: Dyn(1), ncols: Const }, iterations: 0, residual_norm: 0.0 }
+
+---- large_well_conditioned_system_does_not_overflow_its_norm stdout ----
+
+thread 'large_well_conditioned_system_does_not_overflow_its_norm' (136326) panicked at crates/ropt/tests/pcg_extreme_scale.rs:21:62:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- tiny_well_conditioned_system_does_not_converge_at_zero stdout ----
+
+thread 'tiny_well_conditioned_system_does_not_converge_at_zero' (136327) panicked at crates/ropt/tests/pcg_extreme_scale.rs:22:5:
+assertion failed: (report.x[0] - 1. / 11.).abs() < 1e-12
+
+
+failures:
+    accepted_initial_residual_is_reported_at_its_actual_scale
+    inner_product_underflow_is_breakdown_instead_of_false_convergence
+    large_well_conditioned_system_does_not_overflow_its_norm
+    tiny_well_conditioned_system_does_not_converge_at_zero
+
+test result: FAILED. 0 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--test pcg_extreme_scale`

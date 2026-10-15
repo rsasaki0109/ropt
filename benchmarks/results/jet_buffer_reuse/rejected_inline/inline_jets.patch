@@ -1,0 +1,237 @@
+--- a/crates/ropt/src/dynamic_autodiff.rs
++++ b/crates/ropt/src/dynamic_autodiff.rs
+@@ -3,6 +3,8 @@
+ //! errors are carried to the adapter rather than panicking or truncating vectors.
+ use crate::{DMatrix, DVector, Error, Residual};
+ use std::ops::{Add, Div, Mul, Neg, Sub};
++mod derivatives;
++use derivatives::Derivatives;
+ #[derive(Debug, Clone, Copy, PartialEq)]
+ enum Failure {
+     Dimension,
+@@ -11,12 +13,12 @@
+ #[derive(Debug, Clone, PartialEq)]
+ pub struct DynamicJet {
+     value: f64,
+-    derivative: Vec<f64>,
++    derivative: Derivatives,
+     failure: Option<Failure>,
+ }
+ impl DynamicJet {
+     pub fn constant(value: f64) -> Self {
+-        Self::from_parts(value, Vec::new())
++        Self::from_parts(value, Derivatives::empty())
+     }
+     pub fn variable(value: f64, index: usize, dimension: usize) -> Result<Self, Error> {
+         if dimension == 0 || index >= dimension {
+@@ -25,8 +27,7 @@
+         if !value.is_finite() {
+             return Err(Error::NonFinite);
+         }
+-        let mut derivative = vec![0.0; dimension];
+-        derivative[index] = 1.0;
++        let derivative = Derivatives::from_fn(dimension, |i| if i == index { 1.0 } else { 0.0 });
+         Ok(Self::from_parts(value, derivative))
+     }
+     pub fn value(&self) -> f64 {
+@@ -40,7 +41,7 @@
+             None => Ok(&self.derivative),
+         }
+     }
+-    fn from_parts(value: f64, derivative: Vec<f64>) -> Self {
++    fn from_parts(value: f64, derivative: Derivatives) -> Self {
+         let failure = if !value.is_finite() || !derivative.iter().all(|d| d.is_finite()) {
+             Some(Failure::NonFinite)
+         } else {
+@@ -55,7 +56,7 @@
+     fn invalid(failure: Failure) -> Self {
+         Self {
+             value: f64::NAN,
+-            derivative: Vec::new(),
++            derivative: Derivatives::empty(),
+             failure: Some(failure),
+         }
+     }
+@@ -63,7 +64,10 @@
+         if let Some(failure) = self.failure {
+             return Self::invalid(failure);
+         }
+-        Self::from_parts(value, self.derivative.iter().map(|d| d * slope).collect())
++        Self::from_parts(
++            value,
++            Derivatives::from_fn(self.derivative.len(), |i| self.derivative[i] * slope),
++        )
+     }
+     fn binary(&self, b: &Self, value: f64, left: f64, right: f64) -> Self {
+         if let Some(failure) = self.failure.or(b.failure) {
+@@ -75,12 +79,10 @@
+             return Self::invalid(Failure::Dimension);
+         }
+         let dimension = a_len.max(b_len);
+-        let derivative = (0..dimension)
+-            .map(|i| {
+-                self.derivative.get(i).copied().unwrap_or(0.0) * left
+-                    + b.derivative.get(i).copied().unwrap_or(0.0) * right
+-            })
+-            .collect();
++        let derivative = Derivatives::from_fn(dimension, |i| {
++            self.derivative.get(i).copied().unwrap_or(0.0) * left
++                + b.derivative.get(i).copied().unwrap_or(0.0) * right
++        });
+         Self::from_parts(value, derivative)
+     }
+     fn add_jet(&self, b: &Self) -> Self {
+@@ -294,3 +296,94 @@
+         Ok(())
+     }
+ }
++
++#[cfg(test)]
++mod storage_tests {
++    use super::*;
++
++    #[test]
++    fn boundary_widths_preserve_vec_arithmetic_bits_and_error_precedence() {
++        for a_len in [0, 1, 2, 6, 7, 12, 32, 65] {
++            for b_len in [0, a_len, 3, 7] {
++                let a_values: Vec<_> = (0..a_len)
++                    .map(|i| match i % 4 {
++                        0 => -0.,
++                        1 => 0.,
++                        2 => 1e-150,
++                        _ => -1e150,
++                    })
++                    .collect();
++                let b_values: Vec<_> = (0..b_len)
++                    .map(|i| if i % 2 == 0 { -0. } else { 0.75 })
++                    .collect();
++                let a = DynamicJet::from_parts(0.7, Derivatives::from_fn(a_len, |i| a_values[i]));
++                let b = DynamicJet::from_parts(1.2, Derivatives::from_fn(b_len, |i| b_values[i]));
++                for (left, right) in [
++                    (1., 1.),
++                    (1., -1.),
++                    (1.2, 0.7),
++                    (-0., 0.),
++                    (1e150, -1e150),
++                    (f64::INFINITY, 0.),
++                    (f64::NAN, 1.),
++                ] {
++                    let actual = a.binary(&b, 0.8, left, right);
++                    if a_len != 0 && b_len != 0 && a_len != b_len {
++                        assert_eq!(actual.partials(), Err(Error::InvalidDimensions));
++                        continue;
++                    }
++                    // Frozen Vec implementation, including explicit zero products.
++                    let expected: Vec<_> = (0..a_len.max(b_len))
++                        .map(|i| {
++                            a_values.get(i).copied().unwrap_or(0.) * left
++                                + b_values.get(i).copied().unwrap_or(0.) * right
++                        })
++                        .collect();
++                    if expected.iter().any(|v| !v.is_finite()) {
++                        assert_eq!(actual.partials(), Err(Error::NonFinite));
++                    } else {
++                        assert_eq!(actual.value().to_bits(), 0.8_f64.to_bits());
++                        assert_eq!(
++                            actual
++                                .partials()
++                                .unwrap()
++                                .iter()
++                                .map(|v| v.to_bits())
++                                .collect::<Vec<_>>(),
++                            expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
++                        );
++                    }
++                }
++            }
++        }
++        let invalid = DynamicJet::constant(f64::NAN);
++        let x = DynamicJet::variable(1., 0, 6).unwrap();
++        assert_eq!((&invalid + &x).partials(), Err(Error::NonFinite));
++        assert_eq!((&x + &invalid).partials(), Err(Error::NonFinite));
++    }
++
++    #[test]
++    fn cloning_equality_and_debug_preserve_public_values_across_storage_widths() {
++        for dimension in [1, 2, 6, 7, 12, 32, 65] {
++            let jet = DynamicJet::variable(2., dimension - 1, dimension).unwrap();
++            let cloned = jet.clone();
++            assert_eq!(jet, cloned);
++            let mut expected = vec![0.; dimension];
++            expected[dimension - 1] = 1.;
++            assert_eq!(
++                format!("{jet:?}"),
++                format!("DynamicJet {{ value: 2.0, derivative: {expected:?}, failure: None }}")
++            );
++            assert_eq!(cloned.partials().unwrap(), expected);
++            let negative = -&jet;
++            assert_eq!(negative.value().to_bits(), (-2_f64).to_bits());
++            for (actual, original) in negative.partials().unwrap().iter().zip(&expected) {
++                assert_eq!(actual.to_bits(), (original * -1.).to_bits());
++            }
++        }
++        assert_eq!(
++            format!("{:?}", DynamicJet::constant(3.)),
++            "DynamicJet { value: 3.0, derivative: [], failure: None }"
++        );
++    }
++}
+--- /dev/null
++++ b/crates/ropt/src/dynamic_autodiff/derivatives.rs
+@@ -0,0 +1,56 @@
++//! Common robotics tangent widths avoid a heap allocation per Jet operation.
++use std::{fmt, ops::Deref};
++
++const INLINE_CAPACITY: usize = 6;
++
++#[derive(Clone)]
++pub(super) enum Derivatives {
++    Inline {
++        values: [f64; INLINE_CAPACITY],
++        len: usize,
++    },
++    Heap(Vec<f64>),
++}
++
++impl Derivatives {
++    pub(super) fn from_fn(len: usize, mut value: impl FnMut(usize) -> f64) -> Self {
++        if len <= INLINE_CAPACITY {
++            let mut values = [0.; INLINE_CAPACITY];
++            for (i, slot) in values[..len].iter_mut().enumerate() {
++                *slot = value(i);
++            }
++            Self::Inline { values, len }
++        } else {
++            Self::Heap((0..len).map(value).collect())
++        }
++    }
++    pub(super) fn empty() -> Self {
++        Self::Inline {
++            values: [0.; INLINE_CAPACITY],
++            len: 0,
++        }
++    }
++}
++
++impl Deref for Derivatives {
++    type Target = [f64];
++    fn deref(&self) -> &[f64] {
++        match self {
++            Self::Inline { values, len } => &values[..*len],
++            Self::Heap(values) => values,
++        }
++    }
++}
++
++impl PartialEq for Derivatives {
++    fn eq(&self, other: &Self) -> bool {
++        **self == **other
++    }
++}
++
++// Keep DynamicJet's existing Debug representation independent of storage.
++impl fmt::Debug for Derivatives {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        self.deref().fmt(f)
++    }
++}

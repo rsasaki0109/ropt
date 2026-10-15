@@ -1,0 +1,29 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.13s
+     Running tests/fixed_lag_empty_window.rs (target/debug/deps/fixed_lag_empty_window-eb143110bb01a263)
+
+running 2 tests
+test empty_window_ticks_preserve_gaussian_and_robust_cost_then_allow_key_reuse ... FAILED
+test fresh_empty_clock_validates_time_and_rejects_covariance_or_dangling_factors_transactionally ... FAILED
+
+failures:
+
+---- empty_window_ticks_preserve_gaussian_and_robust_cost_then_allow_key_reuse stdout ----
+
+thread 'empty_window_ticks_preserve_gaussian_and_robust_cost_then_allow_key_reuse' (89699) panicked at crates/ropt/tests/fixed_lag_empty_window.rs:36:66:
+called `Result::unwrap()` on an `Err` value: InvalidDimensions
+
+---- fresh_empty_clock_validates_time_and_rejects_covariance_or_dangling_factors_transactionally stdout ----
+
+thread 'fresh_empty_clock_validates_time_and_rejects_covariance_or_dangling_factors_transactionally' (89700) panicked at crates/ropt/tests/fixed_lag_empty_window.rs:51:50:
+called `Result::unwrap()` on an `Err` value: InvalidDimensions
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    empty_window_ticks_preserve_gaussian_and_robust_cost_then_allow_key_reuse
+    fresh_empty_clock_validates_time_and_rejects_covariance_or_dangling_factors_transactionally
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test fixed_lag_empty_window`

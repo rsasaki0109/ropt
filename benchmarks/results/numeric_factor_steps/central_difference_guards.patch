@@ -1,0 +1,57 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -89,6 +89,10 @@
+     }
+ }
+ /// Explicit debug/verification adapter; never selected implicitly.
++/// Every coordinate must admit distinct finite `x +/- h`, with finite `2*h`,
++/// where `h = step * max(abs(x), 1)`. A step rounded away at either side returns
++/// `InvalidOptions`; nonfinite inputs, perturbations or outputs return `NonFinite`.
++/// Perturbations are validated before callbacks or output buffers are modified.
+ pub struct CentralDifference<F> {
+     pub parameters: usize,
+     pub residuals: usize,
+@@ -111,10 +115,22 @@
+         if x.len() != self.parameters || j.shape() != (self.residuals, self.parameters) {
+             return Err(Error::InvalidDimensions);
+         }
++        crate::sparse::finite_vector(x)?;
++        for &value in x.iter() {
++            let h = self.step * value.abs().max(1.0);
++            let (plus, minus) = (value + h, value - h);
++            if !h.is_finite() || !(2.0 * h).is_finite() || !plus.is_finite() || !minus.is_finite() {
++                return Err(Error::NonFinite);
++            }
++            if plus == value || minus == value {
++                return Err(Error::InvalidOptions);
++            }
++        }
+         *r = (self.function)(x)?;
+         if r.len() != self.residuals {
+             return Err(Error::InvalidDimensions);
+         }
++        crate::sparse::finite_vector(r)?;
+         for k in 0..x.len() {
+             let h = self.step * x[k].abs().max(1.0);
+             let mut plus = x.clone();
+@@ -122,11 +138,18 @@
+             plus[k] += h;
+             minus[k] -= h;
+             let a = (self.function)(&plus)?;
++            if a.len() != self.residuals {
++                return Err(Error::InvalidDimensions);
++            }
++            crate::sparse::finite_vector(&a)?;
+             let b = (self.function)(&minus)?;
+-            if a.len() != self.residuals || b.len() != self.residuals {
++            if b.len() != self.residuals {
+                 return Err(Error::InvalidDimensions);
+             }
+-            j.set_column(k, &((a - b) / (2.0 * h)));
++            crate::sparse::finite_vector(&b)?;
++            let column = (a - b) / (2.0 * h);
++            crate::sparse::finite_vector(&column)?;
++            j.set_column(k, &column);
+         }
+         Ok(())
+     }

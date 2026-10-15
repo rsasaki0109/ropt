@@ -1,0 +1,11 @@
+patching file crates/ropt/src/bayes_tree/editable.rs
+patching file crates/ropt/src/factor.rs
+patching file crates/ropt/src/fixed_lag.rs
+patching file crates/ropt/src/incremental_qr.rs
+patching file crates/ropt/src/isam/selective.rs
+patching file crates/ropt/src/isam.rs
+patching file crates/ropt/src/lib.rs
+patching file crates/ropt/src/solver.rs
+patching file crates/ropt/src/sparse_qr.rs
+patching file crates/ropt/src/stream_profile.rs
+patching file crates/ropt/examples/support/real_selective_se2.rs

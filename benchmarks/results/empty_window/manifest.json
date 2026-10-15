@@ -1,0 +1,32 @@
+{
+  "before_source_sha256": "6531c33f26a77ba2dea2fe180a44973fd832a8fef4123b58414ea90606d055fb",
+  "source_sha256": "b37a271f9dabaf18f7de5f3e85d561cc8ceb8f434075209de216213b55b327c1",
+  "scope": "empty fixed-lag clock updates; carried Gaussian/FrozenIrls constants, restart and transactional invalid-input checks; no new comparative timing",
+  "validation": {
+    "rust_tests": 361,
+    "python_checks": 27,
+    "source_only_rollback_stages": 56,
+    "before_failures": 2,
+    "zero_fuzz_source_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "before.log": "082ab445ac83ee4e524b0a5a2cb415cef6bd58cea6fc4d0643ebc8aaf1d85c71",
+    "benchmark-tests.log": "cd9273da32fe43e5003b9a121748922841cb175dad1f8146f61d050e1787aaa9",
+    "check_rollbacks.py": "935db59b7ae264faf3e68f1c13d7f1eca9c0c2ad44218f04408dc4e6ee0fabfb",
+    "clippy.log": "394a54386229796e086ca2a6f1c37c5b2273d44e2b29172c705a02c15c474ec7",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "empty_window.patch": "63eca993cb5228342b8781806f8d2710f6953ecbc1c915fb6f063d55a19b56fd",
+    "fixed_lag.rs": "fb862f8f9c29f97df1f4bc466e369d93efd46021e99cb46c98e42b7a526b83d9",
+    "fixed_lag.rs.before": "349e675b4221f3d435d2b8f5a87541124995f874d5201ca0a6a4c94b3d39fe7b",
+    "fixed_lag_empty_window.rs": "9b41df1293596143e76ce82f9b84d7c2f8ea62ebe41441bd259589eec0a48c42",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "88e1aa0c01a3cf2b861e739131ad022c569dc6fe0a7971ccfb969e10b7cf4fec",
+    "python-tests.log": "089e851e4b3bed62c2c7f890aaf2c835571e7652e3d219cedadb54416e125675",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "e38b0364b3f5f57309dc020b8e95b45bb1a6dcbcf16139268b47ce223a38e107",
+    "rollback/report.json": "e6a667953143b8caec16acfa068f9f0aa98b1202d2cc64c46d945a276d7580c4",
+    "targeted.log": "b697858643d014ebc5f0923ba90a20dabc576b5f1d3dc1b67062ab8b9700c769",
+    "workspace-tests.log": "5a6d2e54ce3bd198b496461bc0c1c6732a2770bb7491caede2338d8826a8f8ca"
+  }
+}

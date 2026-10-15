@@ -1,0 +1,137 @@
+{
+  "source_only": true,
+  "older_builds_skipped": true,
+  "builder_sha256": "3266956c7e6e6f33c1d05f687beba2c12451da2b303800cea21dd86d5fde3bfe",
+  "stages": [
+    {
+      "stage": "before-sparse-qr",
+      "source_sha256": "6f3670ec8c608eb12bee16b2031aab5835a241e735285d6772adb0a172ba3c5c",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-real-isam",
+      "source_sha256": "eb6a9a576b921200f82bb3e474382919c1427258a9e324c0ca0561072b2521b0",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-rebuild",
+      "source_sha256": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-anchor-coordinates",
+      "source_sha256": "5d3a5de1a11c1aa1bdbbcf4c44859d54c7127d987cb24ac67d2e96ab6d16d289",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-columns",
+      "source_sha256": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-reductions",
+      "source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-update-cursor",
+      "source_sha256": "ca68bf2894fb27e4c1498ed3fd7c71990fb62772b9fb153ceb5952f11bd689fd",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-norm",
+      "source_sha256": "4cdcea1a4e4476218884a61185aa986717589355fd133806c56d1d1591c9e1cc",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-symbolic-merge",
+      "source_sha256": "63ad08ae135e85d51df51cb2fa13bb35d51371295b0c1c07b327af4557646ac5",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-aligned",
+      "source_sha256": "a0448407832c4c7f9f61ae02c52f86533f9b99d9dc52bdfddc3e91a36c099909",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-normal-rebind",
+      "source_sha256": "4ac6c808eef27dd66f6b6461c9092cf07f1083f29e16853c62d05c88dd32d68f",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-ordering-adjacency",
+      "source_sha256": "f9d5a34d25424400b89c31ec8726e8aec95e5cad37ed2a471679e63291ed5105",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-whitening-buffers",
+      "source_sha256": "23ac190ae27e83972cf5e84c21ed948a42768210f00d95e75f9612b2582c72ef",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-inplace",
+      "source_sha256": "54aa16cb8687c670088e9513d422f081983f76d8446587ecbc52ba0d2b1d7c6b",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-graph-retraction",
+      "source_sha256": "bbffa896b6c6edb2a49b1ad1a89d673e8ae407ad5757d26523accb30db96aa48",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-canonical-csr",
+      "source_sha256": "3fa2c64823b6f2749c4211f6ecd883d9e8f1af8bca089d0e8ecf97b8b4d3b5dd",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-buffers",
+      "source_sha256": "591d0b1d9b0d392550cca9f1e8725c1b7711cc51b02a8ed8a8b164392d386a19",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-symbolic-pattern",
+      "source_sha256": "e8735c009834aad576680b9a329be720f3ba3ceed7ed2475bd814debf5717c38",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-damping-reuse",
+      "source_sha256": "e6e08a58d37556e23efd146969b11f0edd746907c87e03e0e056454537cd5fd4",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-model-reuse",
+      "source_sha256": "029ea57cb829ddba94a4d85f39051999a30e8bdda7267e941e5d8177cfd3aeab",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-qr-merge",
+      "source_sha256": "688ae1c80275448108cbb771343f2b633affb7566e327718cda1f5b9667ea7ff",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-scheduled-refresh",
+      "source_sha256": "11d6160e152d661673d9fbeee35fafe8b8b58cd2d8025ff4beca6be4a9ffd729",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-isam",
+      "source_sha256": "a0adf3e1b40b8c13d70f5eefd8a40960e3c8bf78701caf73e2ecdc5124d0ecac",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-objective",
+      "source_sha256": "6a77f7827cd50db5ddfce106bcb51ae0628f63bec9ada95dd28454cc69fd965d",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "before-refinement",
+      "source_sha256": "ae86a4746e860279c1ec5baf9483bb11b119595d560b2139e322372c1f5a9e4a",
+      "matches_archived_kernel": true
+    },
+    {
+      "stage": "default",
+      "source_sha256": "808f8136a1567293d271c1269b5516148d1afed6963322acfcedb8e792f0c1f4",
+      "matches_archived_kernel": true
+    }
+  ]
+}

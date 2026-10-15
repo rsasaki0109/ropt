@@ -1,0 +1,31 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -161,6 +161,9 @@
+     /// Live estimates after marginalization. Expired keys are absent.
+     pub estimates: BTreeMap<Key, DVector<f64>>,
+     pub marginalized: Vec<Key>,
++    /// Last optimized ambient values of the variables removed by this update.
++    /// Keys match `marginalized`; later updates do not revise this owned snapshot.
++    pub marginalized_estimates: BTreeMap<Key, DVector<f64>>,
+     /// Costs of the optimized window before expiry, including carried constants.
+     /// After nonlinear marginalization this is a surrogate, not all-history cost.
+     pub initial_cost: f64,
+@@ -282,6 +285,10 @@
+             .iter()
+             .filter_map(|(&key, v)| v.timestamp.filter(|&t| t < cutoff).map(|_| key))
+             .collect::<BTreeSet<_>>();
++        let marginalized_estimates = expired
++            .iter()
++            .map(|&key| (key, variables[&key].value.clone()))
++            .collect();
+         let mut constant_cost = self.constant_cost;
+         let summary = marginalize(
+             &mut variables,
+@@ -306,6 +313,7 @@
+         Ok(FixedLagReport {
+             estimates,
+             marginalized: expired.into_iter().collect(),
++            marginalized_estimates,
+             initial_cost,
+             final_cost,
+             termination: solved.termination,

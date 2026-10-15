@@ -1,0 +1,172 @@
+{
+  "linked_libraries_sha256": {
+    "/workspace/.ropt-native/reference-build-v2/prefix/lib/libgtsam.so.4": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89",
+    "/lib/x86_64-linux-gnu/libstdc++.so.6": "972bb2a18b71140dab0240f8a1f68ab3fb1d56bcd4c4f824a91b70888faf5a00",
+    "/lib/x86_64-linux-gnu/libm.so.6": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+    "/lib/x86_64-linux-gnu/libgcc_s.so.1": "30c61ab012a4241bed033725a09b61f5fdd3bb7df95ee852d0b096520524c7af",
+    "/lib/x86_64-linux-gnu/libc.so.6": "9792e3cbb541c8f44c7acf5f14f4022ea62998ecc787d326bed4d8b6547dfd92",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.83.0": "d9ac464397973b3d89821e85740c4f59762dd6d7ac91c6f887339ae2af41fee6",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.83.0": "2c7b57a0b57199accc88c1882db981a2181f313b2ad15e5a40a0e28914bf78fd",
+    "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu/libboost_timer.so.1.83.0": "08ea77556b4eb2a5f0c5006db63591126c6babf4a158a78369186312f7fc93aa",
+    "/workspace/.ropt-native/reference-build-v2/prefix/lib/libmetis-gtsam.so": "79623aa7faf610e0767348b078ac8c9ccd322fee10c9b2282d6e2e1b6ff7c812"
+  },
+  "inputs": {
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "cmake": "cmake version 3.31.6",
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "flags": [
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+      "-DGTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR=ON",
+      "-DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF",
+      "-DGTSAM_WITH_TBB=OFF",
+      "-DGTSAM_WITH_EIGEN_MKL=OFF",
+      "-DGTSAM_USE_SYSTEM_EIGEN=OFF",
+      "-DGTSAM_DEFAULT_ALLOCATOR=STL",
+      "-DGTSAM_BUILD_TESTS=OFF",
+      "-DGTSAM_BUILD_UNSTABLE=OFF",
+      "-DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF",
+      "-DGTSAM_BUILD_PYTHON=OFF",
+      "-DBOOST_ROOT=/workspace/.ropt-native/sysroot/usr",
+      "-DBoost_NO_SYSTEM_PATHS=ON",
+      "-DBoost_NO_BOOST_CMAKE=ON",
+      "-DCMAKE_POLICY_DEFAULT_CMP0167=OLD",
+      "-DBOOST_LIBRARYDIR=/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu"
+    ],
+    "reference_sources_sha256": {
+      "benchmark.cpp": "cbb6762f3c9f3ffb6d99fce3d697863c8349a08be263c47b1e706813c737c543",
+      "CMakeLists.txt": "dd9d782f3b905bbc2c8ed80258a31aa32f13ce04038bdb00488b7d505875a321",
+      "precision.hpp": "47dc3ded9146f6dc59484b9f81a7e471c8a0a5ad13c6f37586ce4d3523180294",
+      "factors.hpp": "4f14cbdd0c5624307cf228a3e621fad7fd424101dcd6c37f43e1c63e0b3ccad3",
+      "test_precision.cpp": "bec65331d99ee7038cbe85bb390af7d01b3e42159d9f75268d45db253d7659ac"
+    },
+    "dependency_manifest_sha256": "b9a0c73be08c4ff26c9530f01fadcb31a738a3909bd378aecb10b1bfca395b93"
+  },
+  "commands": [
+    {
+      "log": "configure.log",
+      "command": [
+        "/workspace/.ropt-native/sysroot/usr/bin/cmake",
+        "-S",
+        "/workspace/.ropt-native/reference-build-v2/source/gtsam-4.2.1",
+        "-B",
+        "/workspace/.ropt-native/reference-build-v2/gtsam-build",
+        "-DCMAKE_INSTALL_PREFIX=/workspace/.ropt-native/reference-build-v2/prefix",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+        "-DGTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR=ON",
+        "-DGTSAM_BUILD_WITH_MARCH_NATIVE=OFF",
+        "-DGTSAM_WITH_TBB=OFF",
+        "-DGTSAM_WITH_EIGEN_MKL=OFF",
+        "-DGTSAM_USE_SYSTEM_EIGEN=OFF",
+        "-DGTSAM_DEFAULT_ALLOCATOR=STL",
+        "-DGTSAM_BUILD_TESTS=OFF",
+        "-DGTSAM_BUILD_UNSTABLE=OFF",
+        "-DGTSAM_BUILD_EXAMPLES_ALWAYS=OFF",
+        "-DGTSAM_BUILD_PYTHON=OFF",
+        "-DBOOST_ROOT=/workspace/.ropt-native/sysroot/usr",
+        "-DBoost_NO_SYSTEM_PATHS=ON",
+        "-DBoost_NO_BOOST_CMAKE=ON",
+        "-DCMAKE_POLICY_DEFAULT_CMP0167=OLD",
+        "-DBOOST_LIBRARYDIR=/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu"
+      ]
+    },
+    {
+      "log": "library-build.log",
+      "command": [
+        "/workspace/.ropt-native/sysroot/usr/bin/cmake",
+        "--build",
+        "/workspace/.ropt-native/reference-build-v2/gtsam-build",
+        "--target",
+        "gtsam",
+        "CppUnitLite",
+        "--parallel",
+        "2"
+      ]
+    },
+    {
+      "log": "install.log",
+      "command": [
+        "/workspace/.ropt-native/sysroot/usr/bin/cmake",
+        "--install",
+        "/workspace/.ropt-native/reference-build-v2/gtsam-build"
+      ]
+    },
+    {
+      "log": "adapter-configure.log",
+      "command": [
+        "/workspace/.ropt-native/sysroot/usr/bin/cmake",
+        "-S",
+        "/workspace/ropt/benchmarks/gtsam_precise_isam2",
+        "-B",
+        "/workspace/.ropt-native/reference-build-v2/adapter-build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/c++",
+        "-DGTSAM_DIR=/workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM",
+        "-DBOOST_ROOT=/workspace/.ropt-native/sysroot/usr",
+        "-DBoost_NO_SYSTEM_PATHS=ON",
+        "-DBoost_NO_BOOST_CMAKE=ON",
+        "-DCMAKE_POLICY_DEFAULT_CMP0167=OLD",
+        "-DBOOST_LIBRARYDIR=/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu"
+      ]
+    },
+    {
+      "log": "adapter-build.log",
+      "command": [
+        "/workspace/.ropt-native/sysroot/usr/bin/cmake",
+        "--build",
+        "/workspace/.ropt-native/reference-build-v2/adapter-build",
+        "--parallel",
+        "2"
+      ]
+    },
+    {
+      "log": "precision-tests.log",
+      "command": [
+        "/workspace/.ropt-native/sysroot/usr/bin/ctest",
+        "--test-dir",
+        "/workspace/.ropt-native/reference-build-v2/adapter-build",
+        "--output-on-failure"
+      ]
+    },
+    {
+      "log": "library-manifest.log",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/ropt/benchmarks/gtsam_exact/write_manifest.py",
+        "--archive",
+        "/workspace/.ropt-native/gtsam-4.2.1.tar.gz",
+        "--cache",
+        "/workspace/.ropt-native/reference-build-v2/gtsam-build/CMakeCache.txt",
+        "--library",
+        "/workspace/.ropt-native/reference-build-v2/prefix/lib/libgtsam.so.4.2.1",
+        "--executable",
+        "/workspace/.ropt-native/reference-build-v2/adapter-build/gtsam_isam2",
+        "--reference-directory",
+        "/workspace/ropt/benchmarks/gtsam_precise_isam2",
+        "--reference-cache",
+        "/workspace/.ropt-native/reference-build-v2/adapter-build/CMakeCache.txt",
+        "--verify-linked-library",
+        "--output",
+        "/workspace/.ropt-native/reference-build-v2/library-manifest.generated.json"
+      ]
+    },
+    {
+      "log": "native-manifest.log",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "/workspace/ropt/benchmarks/gtsam_precise_isam2/write_manifest.py",
+        "--library-manifest",
+        "/workspace/.ropt-native/reference-build-v2/library-manifest.json",
+        "--build",
+        "/workspace/.ropt-native/reference-build-v2/adapter-build",
+        "--output",
+        "/workspace/.ropt-native/reference-build-v2/native-manifest.json"
+      ]
+    }
+  ],
+  "builder_sha256": "ea254b8c9bcc372bfb81a3c5f36a944e1dbc5149dee9f980bb67f2c4a7dd8595",
+  "native_manifest_sha256": "c428c0dcdc0735c820765432c0c6fd01d7f59c4e5e6a24748a63484e6d2551c7",
+  "runtime_library_path": "/workspace/.ropt-native/sysroot/usr/lib/x86_64-linux-gnu",
+  "scope": "reproducible build and native precision test; no comparative timing"
+}

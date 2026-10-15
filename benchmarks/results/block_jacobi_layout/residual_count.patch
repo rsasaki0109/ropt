@@ -1,0 +1,24 @@
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -271,6 +271,7 @@
+     evaluation: Evaluation,
+ }
+ /// Dense and CSR assembly. Factors own callbacks; registration validates connectivity.
++/// Residual-count overflow is rejected before changing the graph.
+ pub struct FactorGraph {
+     identity: u64,
+     variables: Vec<Variable>,
+@@ -345,6 +346,13 @@
+     fn check_factor(&self, ids: &[VariableId], m: usize) -> Result<(), Error> {
+         if ids.is_empty()
+             || m == 0
++            // CSR also needs a terminal row offset. Validate before registering
++            // callbacks or modifying the factor list and residual count.
++            || self
++                .residual_size
++                .checked_add(m)
++                .and_then(|rows| rows.checked_add(1))
++                .is_none()
+             || ids
+                 .iter()
+                 .any(|id| id.graph != self.identity || id.index >= self.variables.len())

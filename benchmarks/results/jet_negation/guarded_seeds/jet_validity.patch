@@ -1,0 +1,121 @@
+--- a/crates/ropt/src/dynamic_autodiff.rs
++++ b/crates/ropt/src/dynamic_autodiff.rs
+@@ -35,7 +35,17 @@
+         }
+         let mut derivative = vec![0.0; dimension];
+         derivative[index] = 1.0;
+-        Ok(Self::from_parts(value, derivative))
++        // Short seeded vectors are known finite without a second pass. Retain
++        // the existing wide-vector path, whose scan measured faster in practice.
++        Ok(if dimension <= INDEXED_WIDTH_LIMIT {
++            Self {
++                value,
++                derivative,
++                failure: None,
++            }
++        } else {
++            Self::from_parts(value, derivative)
++        })
+     }
+     pub fn value(&self) -> f64 {
+         self.value
+@@ -170,14 +180,27 @@
+             self.binary_right_owned(b, operation)
+         }
+     }
+-    fn unary_owned(mut self, value: f64, slope: f64) -> Self {
++    fn neg_owned(mut self) -> Self {
+         if let Some(failure) = self.failure {
+             return Self::invalid(failure);
+         }
++        // Negating a validated finite jet cannot overflow. Keep the original
++        // multiplication so signed-zero and derivative bits remain unchanged.
++        self.value = -self.value;
+         for d in &mut self.derivative {
+-            *d *= slope;
+-        }
+-        Self::from_parts(value, self.derivative)
++            *d *= -1.;
++        }
++        self
++    }
++    fn neg_borrowed(&self) -> Self {
++        if let Some(failure) = self.failure {
++            return Self::invalid(failure);
++        }
++        Self {
++            value: -self.value,
++            derivative: self.derivative.iter().map(|d| d * -1.).collect(),
++            failure: None,
++        }
+     }
+     fn add_jet(&self, b: &Self) -> Self {
+         self.binary(b, self.value + b.value, 1.0, 1.0)
+@@ -289,14 +312,13 @@
+ impl Neg for DynamicJet {
+     type Output = Self;
+     fn neg(self) -> Self {
+-        let value = -self.value;
+-        self.unary_owned(value, -1.0)
++        self.neg_owned()
+     }
+ }
+ impl Neg for &DynamicJet {
+     type Output = DynamicJet;
+     fn neg(self) -> DynamicJet {
+-        self.unary(-self.value, -1.0)
++        self.neg_borrowed()
+     }
+ }
+ impl From<f64> for DynamicJet {
+@@ -415,7 +437,14 @@
+     fn owned_forms_match_allocating_reference_bits_errors_and_borrowed_inputs() {
+         for a_len in [0, 1, 2, 6, 7, 12, 13, 16, 17, 32, 65] {
+             for b_len in [0, a_len, 3, 7] {
+-                for (a_value, b_value) in [(0.7, 1.2), (-0., 0.), (1e308, 1e308), (f64::NAN, 1.)] {
++                for (a_value, b_value) in [
++                    (0.7, 1.2),
++                    (-0., 0.),
++                    (1e308, 1e308),
++                    (1e308, 1.),
++                    (1e-308, 1e-308),
++                    (f64::NAN, 1.),
++                ] {
+                     let a = DynamicJet::from_parts(
+                         a_value,
+                         (0..a_len)
+@@ -454,6 +483,34 @@
+     }
+ 
+     #[test]
++    fn negation_preserves_extreme_finite_bits_and_carried_failures() {
++        for width in [0, 1, 6, 16, 17, 32, 65] {
++            for value in [-f64::MAX, -0., 0., f64::MIN_POSITIVE, f64::MAX] {
++                let jet = DynamicJet::from_parts(
++                    value,
++                    (0..width)
++                        .map(|i| [-f64::MAX, -0., 0., f64::from_bits(1), f64::MAX][i % 5])
++                        .collect(),
++                );
++                let before = bits(&jet);
++                let expected = bits(&jet.unary(-value, -1.));
++                assert_eq!(bits(&(-jet.clone())), expected);
++                assert_eq!(bits(&(-&jet)), expected);
++                assert_eq!(bits(&jet), before);
++            }
++        }
++        for jet in [
++            DynamicJet::invalid(Failure::Dimension),
++            DynamicJet::from_parts(f64::NAN, vec![1.]),
++            DynamicJet::from_parts(0., vec![f64::INFINITY]),
++        ] {
++            let expected = bits(&jet.unary(-jet.value, -1.));
++            assert_eq!(bits(&(-jet.clone())), expected);
++            assert_eq!(bits(&(-&jet)), expected);
++        }
++    }
++
++    #[test]
+     fn consumed_active_buffer_is_reused_for_either_operand_and_negation() {
+         for width in [1, 2, 6, 7, 12, 16, 17, 32, 65] {
+             let a = DynamicJet::variable(2., width - 1, width).unwrap();

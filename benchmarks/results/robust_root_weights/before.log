@@ -1,0 +1,51 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+     Running tests/robust_root_weights.rs (target/debug/deps/robust_root_weights-969c80cdd2cd63d8)
+
+running 6 tests
+test huber_lm_moves_when_only_the_square_root_weight_is_representable ... FAILED
+test cauchy_lm_moves_when_only_the_square_root_weight_is_representable ... FAILED
+test increasing_trials_with_tiny_weights_leave_the_accepted_state_intact ... FAILED
+test unrepresentable_square_root_weight_still_has_zero_frozen_rank ... ok
+test fixed_lag_freezes_tiny_weights_without_losing_separator_information ... FAILED
+test tiny_robust_weights_keep_representable_frozen_information ... FAILED
+
+failures:
+
+---- huber_lm_moves_when_only_the_square_root_weight_is_representable stdout ----
+
+thread 'huber_lm_moves_when_only_the_square_root_weight_is_representable' (68504) panicked at crates/ropt/tests/robust_root_weights.rs:110:13:
+Report { x: VecStorage { data: [0.0], nrows: Dyn(1), ncols: Const }, initial_cost: 1.0, cost: 1.0, termination: Gradient, iterations: [] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- cauchy_lm_moves_when_only_the_square_root_weight_is_representable stdout ----
+
+thread 'cauchy_lm_moves_when_only_the_square_root_weight_is_representable' (68502) panicked at crates/ropt/tests/robust_root_weights.rs:110:13:
+Report { x: VecStorage { data: [0.0], nrows: Dyn(1), ncols: Const }, initial_cost: 460.51701859880916, cost: 460.51701859880916, termination: Gradient, iterations: [] }
+
+---- increasing_trials_with_tiny_weights_leave_the_accepted_state_intact stdout ----
+
+thread 'increasing_trials_with_tiny_weights_leave_the_accepted_state_intact' (68505) panicked at crates/ropt/tests/robust_root_weights.rs:169:51:
+index out of bounds: the len is 0 but the index is 0
+
+---- fixed_lag_freezes_tiny_weights_without_losing_separator_information stdout ----
+
+thread 'fixed_lag_freezes_tiny_weights_without_losing_separator_information' (68503) panicked at crates/ropt/tests/robust_root_weights.rs:253:18:
+called `Result::unwrap()` on an `Err` value: RankDeficient { rank: 1, parameters: 2 }
+
+---- tiny_robust_weights_keep_representable_frozen_information stdout ----
+
+thread 'tiny_robust_weights_keep_representable_frozen_information' (68506) panicked at crates/ropt/tests/robust_root_weights.rs:84:17:
+r=10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, J=10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, loss=Cauchy(1.0), joint=false: TangentCovariance { indices: [0], matrix: VecStorage { data: [1.0000111329412582], nrows: Dyn(1), ncols: Dyn(1) }, model: FrozenIrls { fallback_loss: Cauchy(1.0) }, rank: 1, condition_number: 1.0 }
+
+
+failures:
+    cauchy_lm_moves_when_only_the_square_root_weight_is_representable
+    fixed_lag_freezes_tiny_weights_without_losing_separator_information
+    huber_lm_moves_when_only_the_square_root_weight_is_representable
+    increasing_trials_with_tiny_weights_leave_the_accepted_state_intact
+    tiny_robust_weights_keep_representable_frozen_information
+
+test result: FAILED. 1 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test robust_root_weights`

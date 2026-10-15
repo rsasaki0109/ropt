@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    "builder fingerprint",
+    "native manifest fingerprint",
+    "build inputs",
+    "dependency manifest fingerprint",
+    "library and adapter CMake caches",
+    "native manifest generator",
+    "both campaigns linked-library and executable identities",
+    "all adapter sources"
+  ],
+  "native_executable_sha256": "e731889b772b32ea8a9cc3f91575560a4f7449e9978ebd95b6b454059fc85db9",
+  "native_library_sha256": "8adc3c9d4aa58480f2440507c2424e872fd7f5cd010e47fe69134bc5d4471c89"
+}

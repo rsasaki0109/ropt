@@ -1,0 +1,39 @@
+{
+  "before_source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288",
+  "source_sha256": "ee9385ac5faef90c00f825ced8a9de02872030a6a892dbdebbe8bcfb108e77a6",
+  "validation": {
+    "rust_tests": 357,
+    "python_checks": 27,
+    "source_only_rollback_stages": 54,
+    "before_regressions_fail": 2,
+    "no_callbacks_for_invalid_queries": true,
+    "clippy_warnings_denied": true,
+    "formatting": true,
+    "zero_fuzz_forward_patch_verified": true
+  },
+  "scope": "input validation before factor callbacks; no new comparative timing or memory claim",
+  "before_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "after/covariance.rs": "b9f65cd1522f0e167fae84eada05320623964555f734ee9632792849d94cd6f2",
+    "after/factor.rs": "f04fec8c01c3a717d7f897169b2ba85806ce7a4f268bd845b38cc19da5729018",
+    "after/fixed_lag.rs": "dff046a5dd69e109e6e27d06d1168fc28499e08a3eafae086d753b649fe7644e",
+    "before/covariance.rs": "09d215a552ecaf99f992b37d181e95b4e3122bdff30091cf6d0607bcc608e425",
+    "before/factor.rs": "429d14d85e7cd1b1014e3dbf693251620259ea6ae4a749cdf13e3f583b71f880",
+    "before/fixed_lag.rs": "1465c6a03cc9440e8b11282b302f9584c0bcf0615e3651b79eecb7bcd9e9aab3",
+    "before.log": "52a275525fcb000f904edde8a10bc701e996b4a7245418727eee0ef8e4dbd4a1",
+    "benchmark-tests.log": "7cf42ad9d0afa60f1b985b2101e5e5d3827c5e8902e25612b83bf2022cf33da1",
+    "check_rollbacks.py": "02b7fe16a838618399455dc5c8af73172018e2da379698606f78a56b3f096e48",
+    "clippy.log": "d975aa9365e4a0877b982ebed848e0b11fb36374ad69afe0d6fb0f027d5ab097",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "fixed_lag_covariance_preflight.rs": "223ea30f7830e4719d2ae179d4da2bf57f672b977cc1d5c4631b32d48012183f",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "e3a514862d3676d7817c79ae3152b65e15ad9db1daddc4bff03b9da4622c8f30",
+    "make_ldl_baseline.py.before": "12a2e26480d6da3333dad777f960b7d6c50dd476ac0ab1624aca730ebb98d72f",
+    "python-tests.log": "9bfc8ef1907b2f3b0c639af8d5b71741258823dfbb9c6363db7175cf33b5310a",
+    "rollback/checks.log": "cfd22d5598547147c48a36d22ffcb449e032a8a5ec04a31ef7b7a88557d11102",
+    "rollback/default.log": "01a371b12872017fa87373a7459b75d9d55fbfcf65553e3ed670589d3a64586d",
+    "rollback/report.json": "b5ac4ed3062d595368a8748fd5cd5e86c3b88656c4f83b6d06123c13fcec6210",
+    "targeted.log": "ceaba1fd7bee1cbe47e1007dd3e960acf93babdf34d307c03f8a2f410e8ad3b2",
+    "workspace-tests.log": "71256bd88196f89121d5e73540fc4247854e5dd78ca58b9e6d2b7ad98991c733"
+  }
+}

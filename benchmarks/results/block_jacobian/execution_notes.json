@@ -1,0 +1,6 @@
+{
+  "initial_allocation_launch": "Stopped before any sample or metadata was produced: rustc was absent from that command PATH; corrected prepared toolchain PATH before the retained diagnostic and timing campaigns.",
+  "timing_restarts": 0,
+  "slower_timing_rounds_retained": true,
+  "acceptance": "Retained for measured allocation/storage reduction; no repeatable complete-update latency improvement established."
+}

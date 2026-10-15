@@ -1,0 +1,40 @@
+{
+  "source_sha256": "5ed015a439306d7e2527f5f226220a6324a418469d79798389a9d4298fdc4b38",
+  "predecessor_source_sha256": "7b04bda5bcfc14549c7fa0361da1994aece1c2091087118f2dfc09c927e3d669",
+  "rust_unit_integration_tests": 289,
+  "rust_doctests": 18,
+  "new_tests": 10,
+  "python_tests": 20,
+  "formatting_passed": true,
+  "clippy_warnings_denied": true,
+  "rustdoc_warnings_denied": true,
+  "complete_default_regression_arrivals": 2271,
+  "default_poses_and_non_timing_reports_exact": true,
+  "source_only_rollback_stages": 32,
+  "older_builds_skipped": true,
+  "new_native_speed_claim": false,
+  "synthetic_nonlinear_example": {
+    "variables": 1025,
+    "scalar_cliques_reeliminated": 2,
+    "scalar_cliques_reused": 1023,
+    "boundary_messages_reused": 1023,
+    "nonlinear_factors_retained": 2047,
+    "passes": 1,
+    "callbacks": 5
+  },
+  "global_symbolic_analysis_and_back_substitution": true,
+  "historical_figures_unchanged": 6,
+  "rollback_patch_sha256": "20cce71eae849688c46d2c764e0875e20f1d832dc2e89f32b2f34c168a6922ce",
+  "executable_sha256": "30281eb6ace46fc96b7db3f449eb6102808071880d59f3a962270a0917b809d3",
+  "files_sha256": {
+    "crates/ropt/src/bayes_tree.rs": "e6b2fde197dbed4865c094268133ec7eb2395fdc5e3a8ff0323161fc81f163ff",
+    "crates/ropt/src/bayes_tree/editable.rs": "3492cee27b90848457da8a6eca3d0adee625933b4698b21f5baa88267c0e9880",
+    "crates/ropt/src/isam.rs": "e8ad808bfd494f1c5b35fd07c989078255d3407ae118f44c5f742c878d911cb9",
+    "crates/ropt/src/isam/selective.rs": "0c7b569c1c271e8f88ef9af60948eabd709ea3151b4caa5d04745f4cabcc93f1",
+    "crates/ropt/tests/editable_bayes_tree.rs": "d43dd574cc0eeb0ae205e8b1a0fed19bfbe9d8dd9c46535c8b59fe037c5cb732",
+    "crates/ropt/tests/isam_editable.rs": "b6e9f126a51b995bc77ff38e7771369742b06dfd23560aa6be2d9bb7cd71410c",
+    "crates/ropt/tests/isam_selective.rs": "32bf336121a075580fd427a2ec635e562f4097194d63b3f3ec97c238f3780be7",
+    "crates/ropt/examples/selective_bayes_tree.rs": "3ec773e1e4685536eb1cc76b661f020277a1a14ba364a971dfb3d336d40caed6",
+    "benchmarks/make_ldl_baseline.py": "9dfc3a707d0ff5b22590d54a245ec075e637deb1460740a00a7d75f49180ce8a"
+  }
+}

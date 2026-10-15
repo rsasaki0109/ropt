@@ -1,0 +1,29 @@
+{
+  "source_sha256": "7b04bda5bcfc14549c7fa0361da1994aece1c2091087118f2dfc09c927e3d669",
+  "predecessor_source_sha256": "31c01bc01ed53679b44fccb92bdaf46982010b8a2895b6bf926b84a42b350047",
+  "rust_unit_integration_tests": 279,
+  "rust_doctests": 18,
+  "new_integration_tests": 8,
+  "python_tests": 20,
+  "formatting_passed": true,
+  "clippy_warnings_denied": true,
+  "rustdoc_warnings_denied": true,
+  "complete_default_regression_arrivals": 2271,
+  "default_poses_and_non_timing_reports_exact": true,
+  "source_only_rollback_stages": 31,
+  "older_builds_skipped": true,
+  "new_native_timing_campaign": false,
+  "synthetic_example_retained_factors": 1023,
+  "synthetic_example_factor_callbacks": 5,
+  "gaussian_replacement_rebuilds_full_qr": true,
+  "nonlinear_threshold_clearance_is_not_stationarity": true,
+  "rollback_patch_sha256": "e301281a831e688a377c2a5181e1dd2cf22414e8f8b537d3181bd8a7e0cd690a",
+  "files_sha256": {
+    "crates/ropt/src/isam.rs": "703a6a7d70fd61624aa51c7eb4ec841f932370c8cd5fefad0b639d73416a6105",
+    "crates/ropt/src/isam/selective.rs": "b490edc289816e99a86ee6c62550fafdd3ac23ec8c9e2bffdcddc879084a7449",
+    "crates/ropt/src/fixed_lag.rs": "688ad44e05e5e3f4ff05cac68b004e344a6e99ebf14305397c61ec3ed9296b94",
+    "crates/ropt/tests/isam_selective.rs": "e5ee3830e7d712afd5178cbcbd5fdfe3f02eb2f4fb1409d210ea07a25a82e4aa",
+    "crates/ropt/examples/selective_isam.rs": "d641daadb7f97edfba72419ce91ac2ad54d737d4267309e5656357d95153b1bc",
+    "benchmarks/make_ldl_baseline.py": "58d2cb61ff2bdeb28e8a704cc836688318faeaa14bbab657ce01037d7ca39342"
+  }
+}

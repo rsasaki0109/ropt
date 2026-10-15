@@ -1,0 +1,80 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling autocfg v1.5.1
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling paste v1.0.15
+   Compiling bytemuck v1.25.2
+   Compiling num-traits v0.2.19
+   Compiling matrixmultiply v0.3.11
+   Compiling safe_arch v0.7.4
+   Compiling wide v0.7.33
+   Compiling rawpointer v0.2.1
+   Compiling approx v0.5.1
+   Compiling syn v2.0.119
+   Compiling num-complex v0.4.6
+   Compiling num-integer v0.1.47
+   Compiling num-rational v0.4.2
+   Compiling simba v0.9.1
+   Compiling typenum v1.20.1
+   Compiling nalgebra-macros v0.3.0
+   Compiling nalgebra v0.34.2
+   Compiling ropt v0.1.0 (/tmp/ropt-trial-inline-ad-inputs/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.44s
+     Running unittests src/lib.rs (target/debug/deps/ropt-337b91254b11f4f4)
+
+running 49 tests
+test bayes_tree::editable::tests::orphan_conditionals_and_nonzero_separator_messages_share_identity ... ok
+test bayes_tree::editable::tests::shared_metadata_detaches_only_on_change_and_failed_updates_preserve_snapshots ... ok
+test bayes_tree::tests::cancelled_fill_preserves_running_intersection_and_orphan_identity ... ok
+test bayes_tree::tests::permuted_factor_and_new_columns_use_original_coordinates ... ok
+test bayes_tree::editable::tests::canonical_gather_matches_triplets_for_permuted_rows_and_boundary_messages ... ok
+test bayes_tree::editable::tests::incremental_symbolic_tails_match_full_pruning_and_reuse_unchanged_supports ... ok
+test dynamic_autodiff::reuse_tests::consumed_active_buffer_is_reused_for_either_operand_and_negation ... ok
+test bayes_tree::editable::tests::incidence_deltas_match_complete_sorted_enumeration_and_share_unchanged_rows ... ok
+test dynamic_autodiff::block_jacobian_tests::block_chunks_match_flat_jacobian_bits_across_empty_and_crossed_blocks ... ok
+test dynamic_autodiff::block_jacobian_tests::block_chunks_preserve_callback_errors_dimensions_and_primal_consistency ... ok
+test incremental_qr::column_tests::wide_contiguous_and_gapped_suffixes_check_endpoints_and_interior ... ok
+test dynamic_autodiff::reuse_tests::negation_preserves_extreme_finite_bits_and_carried_failures ... ok
+test dynamic_autodiff::reuse_tests::owned_forms_match_allocating_reference_bits_errors_and_borrowed_inputs ... ok
+test incremental_qr::rebuild_order_tests::cached_row_mapping_matches_uncached_factors_and_rejects_stale_patterns_and_orders ... ok
+test incremental_qr::norm_tests::extreme_scales_boundaries_zeros_and_nonfinite_inputs_keep_hypot_behavior ... ok
+test incremental_qr::norm_tests::squared_norm_matches_hypot_within_two_ulps_across_exponents_and_signs ... ok
+test incremental_qr::rebuild_order_tests::ordered_rebuild_rejects_dimensions_before_indexing_permutation ... ok
+test incremental_qr::column_tests::sorted_subset_masks_exhaustively_check_gaps_widths_and_max_indices ... ok
+test incremental_qr::rebuild_tests::invalid_column_orders_leave_a_fresh_order_unchanged ... ok
+test incremental_qr::rebuild_tests::rebuild_keeps_exact_extreme_power_of_two_models_finite ... ok
+test incremental_qr::rebuild_tests::rebuild_rejects_existing_models_bad_inputs_rank_loss_and_fill_overflow ... ok
+test incremental_qr::rebuild_order_tests::counted_groups_preserve_triangular_factor_bits_and_constant_energy ... ok
+test isam::probe::tests::autodiff_failures_match_csr_without_changing_callback_counts ... ok
+test isam::probe::tests::dense_offset_and_sparse_layouts_match_csr_for_nonchronological_fixed_slots ... ok
+test isam::probe::tests::direct_reductions_match_csr_bits_for_mixed_manifolds_fixed_slots_and_noise ... ok
+test isam::probe::tests::incomplete_and_duplicate_dense_order_preserves_tree_binding_semantics ... ok
+test isam::probe::tests::mixed_autodiff_keeps_graph_callback_semantics_and_current_energy ... ok
+test isam::probe::tests::output_errors_and_overflow_match_csr_including_fixed_blocks ... ok
+test isam::probe::tests::overflowing_cost_does_not_skip_later_callbacks_or_replace_their_errors ... ok
+test noise::workspace_tests::compensated_whitening_reuses_scratch_after_residual_and_jacobian_overflow ... ok
+test noise::workspace_tests::overflow_errors_do_not_poison_a_later_whitening_call ... ok
+test noise::workspace_tests::poisoned_scratch_and_changing_shapes_match_owned_products_bit_for_bit ... ok
+test solver::stable_loss_tests::cauchy_differences_handle_close_norms_and_extreme_ratio_in_both_directions ... ok
+test solver::stable_loss_tests::compensated_summation_retains_small_terms_and_rejects_nonfinite_totals ... ok
+test solver::stable_loss_tests::normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients ... ok
+test solver::stable_loss_tests::squared_and_huber_differences_preserve_small_changes_and_transition_signs ... ok
+test solver::stable_loss_tests::streamed_gaussian_cost_preserves_compensation_bits_and_errors_across_blocks ... ok
+test sparse::canonical_tests::canonical_handoff_checks_storage_and_matches_independent_products ... ok
+test incremental_qr::rebuild_tests::arbitrary_column_orders_keep_external_coordinates_through_append_and_extension ... ok
+test sparse_direct::adjacency_tests::sorted_neighbors_preserve_membership_through_promotion_removal_and_clear ... ok
+test isam::probe::tests::autodiff_chunks_match_csr_for_every_manifold_and_fixed_layout ... ok
+test sparse_direct::normal_rebind_tests::equal_counts_with_different_normal_edges_require_full_analysis ... ok
+test sparse_direct::normal_rebind_tests::equal_normal_graph_rebinds_rows_and_plan_budget_without_changing_arithmetic ... ok
+test sparse_direct::normal_rebind_tests::failed_numeric_factor_after_rebinding_cannot_expose_old_solution_and_recovers ... ok
+test sparse_direct::coarse_ordering_tests::direct_coarse_graph_matches_scalar_projection_orders_and_budget_failures ... ok
+test sparse_qr::reuse_tests::repeated_numeric_rebuilds_match_fresh_factors_after_overflow_and_shape_changes ... ok
+test incremental_qr::rebuild_tests::grouped_rebuild_and_later_extension_match_refined_dense_reference_and_original_energy ... ok
+test sparse_direct::update_cursor_tests::destination_cursor_matches_binary_lookup_for_cliques_gaps_and_all_orders ... ok
+test sparse_direct::adjacency_tests::greedy_order_and_cumulative_fill_limits_match_independent_dense_graph ... ok
+
+test result: ok. 49 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+

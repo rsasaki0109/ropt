@@ -1,0 +1,72 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -91,6 +91,8 @@
+         let mut lower_row = Vec::new();
+         let mut row = Vec::new();
+         let max_entries = self.options.max_entries;
++        let (mut cache64,mut cache256,mut cache1024)=([None;64],[None;256],[None;1024]);
++        let mut counts=[0_u64;5];
+         for (r, &residual) in residual.iter().enumerate() {
+             row.clear();
+             row.extend(j.row(r)?);
+@@ -103,6 +105,17 @@
+                 }
+                 let old = &mut self.rows[k];
+                 let diagonal = old.first().map_or(0., |&(_, value)| value);
++                counts[0]+=1;
++                if diagonal==0. { counts[1]+=1; } else {
++                    let key=(diagonal.to_bits(),below.to_bits());
++                    let hash=key.0.wrapping_mul(0x9e3779b97f4a7c15)^key.1.rotate_left(23);
++                    let hash=hash^(hash>>32);
++                    for (index,cache) in [&mut cache64[..],&mut cache256[..],&mut cache1024[..]].iter_mut().enumerate() {
++                        let slot=hash as usize&(cache.len()-1);
++                        if cache[slot]==Some(key) { counts[2+index]+=1; }
++                        cache[slot]=Some(key);
++                    }
++                }
+                 let norm = diagonal.hypot(below);
+                 if !norm.is_finite() || norm == 0. {
+                     return Err(Error::NonFinite);
+@@ -300,6 +313,7 @@
+                 return Err(Error::NonFinite);
+             }
+         }
++        crate::givens_profile::record(counts);
+         Ok(())
+     }
+     /// Solve the full-column-rank cached model. No damping or pseudoinverse.
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,6 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++#[doc(hidden)]
++pub mod givens_profile;
+--- /dev/null
++++ b/crates/ropt/src/givens_profile.rs
+@@ -0,0 +1,5 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static COUNTS:[AtomicU64;5]=[const {AtomicU64::new(0)};5];
++pub fn record(values:[u64;5]){for(c,v)in COUNTS.iter().zip(values){c.fetch_add(v,Ordering::Relaxed);}}
++pub fn reset(){for c in &COUNTS{c.store(0,Ordering::Relaxed);}}
++pub fn dump(){for(name,c)in ["rotations","zero_diagonal","hits64","hits256","hits1024"].iter().zip(&COUNTS){eprintln!("{name},{}",c.load(Ordering::Relaxed));}}
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup {ropt::givens_profile::reset();}
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::givens_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;

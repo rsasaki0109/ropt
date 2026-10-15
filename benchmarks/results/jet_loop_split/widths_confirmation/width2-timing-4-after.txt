@@ -1,0 +1,4 @@
+dimension,iterations,jet_bytes,seconds,allocations,requested_bytes
+2,262144,40,0.11913182999999999,0,0
+residual_bits=3fbccccccccccccc,3fec89382d115d42,3fe59f54c61ef4cc
+jacobian_bits=3fc0000000000000,3ffd6f751b06bb46,3fee766ee6b47224,3fd0000000000000,40042832fa82a952,3ff44eb1114b05d4

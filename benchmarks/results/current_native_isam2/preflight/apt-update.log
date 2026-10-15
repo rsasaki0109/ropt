@@ -1,0 +1,6 @@
+Get:1 https://deb.debian.org/debian trixie InRelease [140 kB]
+Get:2 https://deb.debian.org/debian trixie/main amd64 Packages [9678 kB]
+Get:3 https://deb.debian.org/debian trixie/main Translation-en [6486 kB]
+Fetched 16.3 MB in 56s (292 kB/s)
+Reading package lists...
+W: Unable to read /etc/apt/-/ - DirectoryExists (2: No such file or directory)

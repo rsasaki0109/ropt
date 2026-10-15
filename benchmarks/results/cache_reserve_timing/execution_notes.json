@@ -1,0 +1,7 @@
+{
+  "execution": "Two sequential six-pair campaigns, with no overlapping build, test, profiling, or separate archival/audit work by this agent. Runner checking/compression occurs between timed processes.",
+  "decision": "Reject default adoption after both observed stream medians increase about 2%; restore preceding source 10a41ce417d42667132cd2ceaab6c916a88855b8e83aaaf0920ce421141667e3. Allocation savings remain verified in the retained candidate.",
+  "native_timing_measured": false,
+  "candidate_source_sha256": "939279f7aa51cd59af04323230a1433620751c75df1625fbf3c62d26243bc1de",
+  "auditor_sha256": "12dd35777c5b4d61b27ce0c0c4ff12487b380b42f22ae2d7e6bc4ef669fa7788"
+}

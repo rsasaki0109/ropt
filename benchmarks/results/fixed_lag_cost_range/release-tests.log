@@ -1,0 +1,13 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 7.18s
+     Running tests/fixed_lag_cost_range.rs (target/release/deps/fixed_lag_cost_range-d29718bafe4ace62)
+
+running 5 tests
+test carried_cost_overflow_rolls_back_new_variables_and_allows_a_valid_retry ... ok
+test finite_large_gaussian_cost_survives_full_retirement_and_idle_updates ... ok
+test frozen_robust_offsets_preserve_finite_costs_beyond_squared_norm_range ... ok
+test carried_prior_keeps_updates_covariance_and_cost_through_repeated_retirement ... ok
+test unrepresentable_objective_is_rejected_before_marginalization ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

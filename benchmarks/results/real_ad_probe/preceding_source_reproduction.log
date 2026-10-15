@@ -1,0 +1,6 @@
+patching file crates/ropt/src/factor.rs
+patching file crates/ropt/src/factor/autodiff.rs
+patching file crates/ropt/src/fixed_lag.rs
+patching file crates/ropt/src/isam.rs
+patching file crates/ropt/src/isam/probe.rs
+Baseline source saved under /tmp/ropt-real-ad-reproduction; compilation skipped

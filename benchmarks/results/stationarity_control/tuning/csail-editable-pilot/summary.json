@@ -1,0 +1,16 @@
+{
+  "name": "csail-editable-pilot",
+  "policy": "editable",
+  "selected_cap": 8,
+  "complete_arrivals": 1044,
+  "all_original_information_gates_pass": true,
+  "elapsed_seconds": 10.670332147,
+  "forced_recoveries": 94,
+  "requested_calls": 817,
+  "max_normalized_gradient": 7.528208009807232e-08,
+  "archived_native_agreement": {
+    "max_world_pose_norm": 3.7715762048163825e-07,
+    "max_cost_difference": 4.156675004196586e-13
+  },
+  "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+}

@@ -1,0 +1,6 @@
+{
+  "before_source_sha256": "41c27190a3d4eed0dcb9a00c48886cdd60222df5f20e33c0759dc119911d64f4",
+  "profile_source_sha256": "6f0c20f3f67debef045b861ec0a8b2c7ede0635961fe6651c2c585a4aedcb261",
+  "sample_every": 17,
+  "scope": "instrumented phase diagnosis only; clock overhead and sampling bias; not comparative latency"
+}

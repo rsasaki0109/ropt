@@ -1,0 +1,42 @@
+{
+  "source_sha256": "b37a271f9dabaf18f7de5f3e85d561cc8ceb8f434075209de216213b55b327c1",
+  "production_source_unchanged": true,
+  "scope": "linear-Gaussian delayed-factor regression, analytic covariance and independent full-history batch oracle; no new timing claim",
+  "validation": {
+    "fixed_lag_tests": 27,
+    "new_regression_tests": 1,
+    "solver_covariance_configurations": 4,
+    "clippy_new_test_warnings_denied": true,
+    "formatting": true,
+    "whole_workspace_suite_rerun": false
+  },
+  "expected_pre_expiry_key_order": [
+    3,
+    1,
+    2
+  ],
+  "expected_pre_expiry_covariance": [
+    [
+      2.3333333333333335,
+      0.3333333333333333,
+      1.3333333333333333
+    ],
+    [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ],
+    [
+      1.3333333333333333,
+      0.3333333333333333,
+      1.3333333333333333
+    ]
+  ],
+  "files_sha256": {
+    "clippy.log": "8df7a6ae3f04a3eb704b35c55013674dfc90481499bb172f4ae0e56c5f6c627b",
+    "fixed-lag-tests.log": "55b80f1a53ed8e79025d922ac45681b84abbb75907956029d6b2ec96b68d2825",
+    "fixed_lag_delayed.rs": "8096a3d7c28a70157a5192d9ce00ab8847ff1503c4f75e7802e4864920999355",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "new-test.log": "244d78419c2a1ba3ef2665f9d22054b81c9e512dab38c432b9bd373673a1dd48"
+  }
+}

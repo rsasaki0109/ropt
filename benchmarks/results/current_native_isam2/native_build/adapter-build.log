@@ -1,0 +1,6 @@
+[ 25%] Building CXX object CMakeFiles/test_precision.dir/test_precision.cpp.o
+[ 50%] Building CXX object CMakeFiles/gtsam_isam2.dir/benchmark.cpp.o
+[ 75%] Linking CXX executable gtsam_isam2
+[ 75%] Built target gtsam_isam2
+[100%] Linking CXX executable test_precision
+[100%] Built target test_precision

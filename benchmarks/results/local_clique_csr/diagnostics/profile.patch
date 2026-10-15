@@ -1,0 +1,89 @@
+--- a/crates/ropt/src/bayes_tree/editable.rs
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -10,6 +10,8 @@
+     sync::Arc,
+ };
+ 
++static PROFILE: [std::sync::atomic::AtomicU64; 6] = [const { std::sync::atomic::AtomicU64::new(0) }; 6];
++fn tick(stage: usize, start: std::time::Instant) { PROFILE[stage].fetch_add(start.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed); }
+ pub type GaussianFactorId = u64;
+ 
+ /// An owned Gaussian observation block: cost = 0.5 * ||J*x+residual||².
+@@ -103,6 +105,7 @@
+     last_update: EditableBayesTreeUpdate,
+ }
+ impl EditableBayesTree {
++    pub fn profile_timings() -> [u64; 6] { std::array::from_fn(|i| PROFILE[i].load(std::sync::atomic::Ordering::Relaxed)) }
+     pub fn new(columns: usize, options: IncrementalQrOptions) -> Result<Self, Error> {
+         if columns > options.max_entries {
+             return Err(Error::SparseFillLimit {
+@@ -334,6 +337,7 @@
+         removed: &[GaussianFactorId],
+         replacements: Vec<(GaussianFactorId, Arc<GaussianFactor>)>,
+     ) -> Result<(), Error> {
++        let profile_start = std::time::Instant::now();
+         let n = self.dimension();
+         let limit = self.tree.options.max_entries;
+         let mut changed = BTreeSet::new();
+@@ -421,7 +425,9 @@
+             reused_cliques: n - affected.len(),
+             ..Default::default()
+         };
++        tick(0, profile_start);
+         for &k in &affected {
++            let profile_start = std::time::Instant::now();
+             let mut columns = Vec::with_capacity(separators[k].len() + 1);
+             columns.push(k);
+             columns.extend(separators[k].iter().copied());
+@@ -464,6 +470,8 @@
+             if workspace_entries > limit {
+                 return Err(Error::SparseFillLimit { limit });
+             }
++            tick(1, profile_start);
++            let profile_start = std::time::Instant::now();
+             let mut triplets = Vec::with_capacity(workspace_entries - rows);
+             let mut r = DVector::zeros(rows);
+             let mut start = 0;
+@@ -499,8 +507,12 @@
+                 return Err(Error::NonFinite);
+             }
+             let j = CsrMatrix::from_triplets(rows, columns.len(), triplets)?;
++            tick(2, profile_start);
++            let profile_start = std::time::Instant::now();
+             let mut qr = IncrementalQr::new(columns.len(), self.tree.options)?;
+             qr.rebuild_in_place(&j, &r)?;
++            tick(3, profile_start);
++            let profile_start = std::time::Instant::now();
+             let factor = qr.into_factor();
+             let mut eliminated = factor.rows.into_iter().enumerate();
+             let (_, frontal) = eliminated.next().ok_or(Error::InvalidDimensions)?;
+@@ -546,7 +558,9 @@
+             }
+             self.tree.conditionals[k] = Arc::new(conditional);
+             self.messages[k] = Arc::new(message);
+-        }
++            tick(4, profile_start);
++        }
++        let profile_start = std::time::Instant::now();
+         // Only current roots contribute marginalized constants. Adding every
+         // orphan's original rows or every message constant would double-count.
+         let mut constant = 0.;
+@@ -572,6 +586,7 @@
+         self.owners = owners;
+         self.factor_entries = entries;
+         self.last_update = report;
++        tick(5, profile_start);
+         Ok(())
+     }
+ }
+--- a/crates/ropt/examples/benchmark_selective_se2_isam.rs
++++ b/crates/ropt/examples/benchmark_selective_se2_isam.rs
+@@ -4,5 +4,7 @@
+ #[global_allocator]
+ static ALLOCATOR: benchmark::Counter = benchmark::Counter;
+ fn main() -> Result<(), Box<dyn std::error::Error>> {
+-    benchmark::run()
++    let result = benchmark::run();
++    eprintln!("profile_ns={:?}", ropt::bayes_tree::EditableBayesTree::profile_timings());
++    result
+ }

@@ -1,0 +1,26 @@
+{
+  "purpose": "functional validation of explicit sparse QR / nonmonotonic GN; one cold complete replay, no comparative speed claim",
+  "source_sha256": "678e5ab66a91392fb6b8849e155ceb6bcbc18ce44e892a7628a6b2202de06a6c",
+  "source_base_commit": "66465e6c3bf5995b78a64d9d9e705b20f1d8c138",
+  "executable_sha256": {
+    "ropt": "19353c4c684e65dd7e96bd6041a7a80225fc05edd36b3a51792d3a6021a100f3",
+    "native": "d30d107f04c7670c231a09769ff34a061f93e5ba7b63193b32a41840eb5f9da9"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_sparse_qr_isam_se2.rs": "f7b93f1dc0e857aa04b6d4f24f634bf91daecb30c90c7c25bde79866cfb1382a",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "801034479b8b8f294d0d0453c718b348b8662308fa947f5962b02cffef8d0139",
+    "benchmarks/check_real_replay.py": "bee637ed54ac0a8a4b48c9e0bb13fd1dca4f5aa2d9977aa42bf774b6f3ef8abe",
+    "benchmarks/real_se2_stream.py": "602e1d7ac1cce119046a1a915044be342ccfab024a6952b81ef0a27d620e49eb"
+  },
+  "input_stream_sha256": "41bd2e1b0c6eb5df4dfc23fa469df39799e91b7f6acbad8c4d87c176eb611ca9",
+  "original_dataset_sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be",
+  "cpu_affinity": [
+    0
+  ],
+  "thread_count": 1,
+  "warmup_streams": 0,
+  "paired_timing_campaign": false,
+  "initialization": "all provided original vertex seeds; committed estimates carried between arrivals",
+  "policy": "GN allows finite uphill steps with positive predicted reduction; no fallback or changed information/gates; sparse QR block minimum degree three; four final frozen-QR refinements; gradient 8e-8, maximum 200 trials",
+  "lightweight_ordering_preserves_complete_means_and_all_non_timing_reports": true
+}

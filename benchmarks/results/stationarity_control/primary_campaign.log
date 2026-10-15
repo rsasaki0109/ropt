@@ -1,0 +1,76 @@
+round 0 full: 3.978174s; all 1044 original-information prefixes and archived native agreement pass
+round 0 global: 3.419984s; all 1044 original-information prefixes and archived native agreement pass
+round 0 editable: 4.871691s; all 1044 original-information prefixes and archived native agreement pass
+round 1 full: 3.863904s; all 1044 original-information prefixes and archived native agreement pass
+round 1 editable: 5.108084s; all 1044 original-information prefixes and archived native agreement pass
+round 1 global: 3.579431s; all 1044 original-information prefixes and archived native agreement pass
+round 2 global: 3.643941s; all 1044 original-information prefixes and archived native agreement pass
+round 2 full: 3.858923s; all 1044 original-information prefixes and archived native agreement pass
+round 2 editable: 4.861103s; all 1044 original-information prefixes and archived native agreement pass
+round 3 global: 3.386715s; all 1044 original-information prefixes and archived native agreement pass
+round 3 editable: 5.056489s; all 1044 original-information prefixes and archived native agreement pass
+round 3 full: 3.723388s; all 1044 original-information prefixes and archived native agreement pass
+round 4 editable: 5.292700s; all 1044 original-information prefixes and archived native agreement pass
+round 4 full: 4.077263s; all 1044 original-information prefixes and archived native agreement pass
+round 4 global: 3.422992s; all 1044 original-information prefixes and archived native agreement pass
+round 5 editable: 4.807659s; all 1044 original-information prefixes and archived native agreement pass
+round 5 global: 3.449815s; all 1044 original-information prefixes and archived native agreement pass
+round 5 full: 3.796176s; all 1044 original-information prefixes and archived native agreement pass
+{
+  "eligible": true,
+  "timed_updates": 18792,
+  "native_timing_measured": false,
+  "cases": {
+    "full": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 3861.4131964999997,
+        "min_ms": 3723.388486,
+        "max_ms": 4077.263331,
+        "mean_ms": 3882.9713468333334,
+        "stdev_ms": 116.01370964420293
+      },
+      "max_normalized_gradient": 2.44234378981837e-08,
+      "forced_recoveries": 0,
+      "requested_calls": 0,
+      "queries": 6264,
+      "gaussian_reeliminated": 0
+    },
+    "global": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 3436.4032865,
+        "min_ms": 3386.714707,
+        "max_ms": 3643.94076,
+        "mean_ms": 3483.812909,
+        "stdev_ms": 94.11084099165332
+      },
+      "max_normalized_gradient": 5.6367517821743734e-08,
+      "forced_recoveries": 618,
+      "requested_calls": 780,
+      "queries": 7662,
+      "gaussian_reeliminated": 0,
+      "speedup_over_current_full": 1.1236787054853725,
+      "faster_pairs_over_full": 6,
+      "beats_full_in_this_case": true
+    },
+    "editable": {
+      "timing": {
+        "samples": 6,
+        "median_ms": 4964.0901775,
+        "min_ms": 4807.659317,
+        "max_ms": 5292.700144,
+        "mean_ms": 4999.621261833334,
+        "stdev_ms": 169.9491059253317
+      },
+      "max_normalized_gradient": 5.636754354038671e-08,
+      "forced_recoveries": 618,
+      "requested_calls": 780,
+      "queries": 7662,
+      "gaussian_reeliminated": 2425338,
+      "speedup_over_current_full": 0.7778692687739756,
+      "faster_pairs_over_full": 0,
+      "beats_full_in_this_case": false
+    }
+  }
+}

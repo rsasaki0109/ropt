@@ -1,0 +1,7 @@
+[ 27%] Built target metis-gtsam
+[100%] Built target gtsam
+[  0%] Building CXX object CppUnitLite/CMakeFiles/CppUnitLite.dir/TestRegistry.cpp.o
+[  0%] Building CXX object CppUnitLite/CMakeFiles/CppUnitLite.dir/Test.cpp.o
+[  0%] Building CXX object CppUnitLite/CMakeFiles/CppUnitLite.dir/TestResult.cpp.o
+[100%] Linking CXX static library libCppUnitLite.a
+[100%] Built target CppUnitLite

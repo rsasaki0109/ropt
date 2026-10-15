@@ -1,0 +1,53 @@
+{
+  "source_sha256": "c8ae1ce654073e8408f7e470c77415a1147e5d4f96ed5bf29e9182aae460c4e3",
+  "executable_sha256": "5d94eb49c59d9de101a65570c7105174a5b45fb6bf1cd060391804d98e6807ab",
+  "scope": "single cold functional regression; historical paired timings unchanged",
+  "full_means_identical_to_archived_primary": true,
+  "full_means_sha256": "e6c1e5681f5f876bdb8e821395ff39ef44cbd73a54a64be7e4fe4988867bf252",
+  "all_non_timing_report_fields_identical": [
+    "sample",
+    "frame",
+    "iterations",
+    "cost",
+    "entries",
+    "allocations",
+    "requested_bytes",
+    "batch_trials",
+    "initial_damping",
+    "final_damping",
+    "refinement_steps"
+  ],
+  "quality": {
+    "dataset": {
+      "name": "intel-vertigo943",
+      "poses": 943,
+      "edges": 1837,
+      "commit": "5587024b17fd812c66d91740716fbf0bf5824fbc",
+      "url": "https://raw.githubusercontent.com/uoip/g2opy/5587024b17fd812c66d91740716fbf0bf5824fbc/contrib/vertigo/datasets/intel/originalDataset/intel.g2o",
+      "sha256": "4d87aaf96e1e04e47c723c371386b15358c71e98c05dad16b786d585f9fd70ff"
+    },
+    "candidate": {
+      "complete_replay": true,
+      "arrivals": 942,
+      "eligible_quality": true,
+      "failed_arrivals": {
+        "root_exact": [],
+        "gradient_pass": [],
+        "reported_cost_pass": []
+      },
+      "max_normalized_gradient": 2.6263960744916177e-08,
+      "max_raw_gradient": 1.4692565368790156e-06,
+      "max_reported_cost_difference": 1.0231815394945443e-12,
+      "timing_scope": "single diagnostic replay; no comparative speed claim"
+    },
+    "gates": {
+      "original_column_normalized_gradient_inf": 1e-07,
+      "reported_cost_relative": 1e-10,
+      "fixed_root": "exact",
+      "world_pose_norm_difference": 2e-06,
+      "original_cost_relative": 1e-09
+    }
+  },
+  "checker_sha256": "bee637ed54ac0a8a4b48c9e0bb13fd1dca4f5aa2d9977aa42bf774b6f3ef8abe",
+  "arithmetic_helper_sha256": "40999a95f896eb45ced9cbad3e0525eff64c8151b649593debea4b8b4f437cf1"
+}

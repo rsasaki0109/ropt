@@ -1,0 +1,27 @@
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -12,11 +12,15 @@
+ }
+ impl CsrMatrix {
+     /// Sort entries and sum duplicates. Exact zero entries are removed.
++    /// Returns `InvalidDimensions` if the row-offset array cannot be represented.
++    /// This checks allocation layout limits, not available memory.
+     pub fn from_triplets(
+         rows: usize,
+         columns: usize,
+         mut entries: Vec<(usize, usize, f64)>,
+     ) -> Result<Self, Error> {
++        let offset_count = rows.checked_add(1).ok_or(Error::InvalidDimensions)?;
++        std::alloc::Layout::array::<usize>(offset_count).map_err(|_| Error::InvalidDimensions)?;
+         if entries.iter().any(|&(r, c, _)| r >= rows || c >= columns) {
+             return Err(Error::InvalidDimensions);
+         }
+@@ -36,7 +40,7 @@
+                 _ => combined.push((r, c, v)),
+             }
+         }
+-        let mut offsets = vec![0; rows + 1];
++        let mut offsets = vec![0; offset_count];
+         let mut indices = Vec::new();
+         let mut values = Vec::new();
+         for (r, c, v) in combined {

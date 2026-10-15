@@ -1,0 +1,40 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.76s
+     Running tests/pcg_iteration_limit.rs (target/debug/deps/pcg_iteration_limit-04dc0235943a1732)
+
+running 3 tests
+test final_true_residual_can_establish_convergence_despite_recursive_roundoff ... FAILED
+test final_residual_evaluation_error_is_propagated ... FAILED
+test unmet_final_tolerance_returns_limit_without_preparing_another_iteration ... FAILED
+
+failures:
+
+---- final_true_residual_can_establish_convergence_despite_recursive_roundoff stdout ----
+
+thread 'final_true_residual_can_establish_convergence_despite_recursive_roundoff' (148920) panicked at crates/ropt/tests/pcg_iteration_limit.rs:46:86:
+called `Result::unwrap()` on an `Err` value: LinearIterationLimit { iterations: 1 }
+
+---- final_residual_evaluation_error_is_propagated stdout ----
+
+thread 'final_residual_evaluation_error_is_propagated' (148919) panicked at crates/ropt/tests/pcg_iteration_limit.rs:80:5:
+assertion `left == right` failed
+  left: LinearIterationLimit { iterations: 1 }
+ right: Evaluation("final residual probe failed")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- unmet_final_tolerance_returns_limit_without_preparing_another_iteration stdout ----
+
+thread 'unmet_final_tolerance_returns_limit_without_preparing_another_iteration' (148921) panicked at crates/ropt/tests/pcg_iteration_limit.rs:67:5:
+assertion `left == right` failed
+  left: 2
+ right: 3
+
+
+failures:
+    final_residual_evaluation_error_is_propagated
+    final_true_residual_can_establish_convergence_despite_recursive_roundoff
+    unmet_final_tolerance_returns_limit_without_preparing_another_iteration
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test pcg_iteration_limit`

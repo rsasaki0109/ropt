@@ -1,0 +1,8 @@
+{
+  "purpose": "untimed diagnosis of arrival166; a subset is not an eligible real-data benchmark",
+  "initialization": "original seed for pose166; previous committed LDL/LM frame165 means for poses0..165; fixed root0",
+  "measurement_policy": "all original directed constraints with later endpoint<=166; original full information retained",
+  "source_dataset_sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be",
+  "input_sha256": "160d41f80ae376c65be006410454bc108d63641b3b006e7638460801f6f3e795",
+  "options_and_iteration_logs": "see each variant subdirectory"
+}

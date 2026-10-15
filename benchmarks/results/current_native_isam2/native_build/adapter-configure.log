@@ -1,0 +1,27 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Warning (dev) at /workspace/.ropt-native/sysroot/usr/share/cmake-3.31/Modules/CMakeFindDependencyMacro.cmake:76 (find_package):
+  Policy CMP0144 is not set: find_package uses upper-case <PACKAGENAME>_ROOT
+  variables.  Run "cmake --help-policy CMP0144" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  CMake variable BOOST_ROOT is set to:
+
+    /workspace/.ropt-native/sysroot/usr
+
+  For compatibility, find_package is ignoring the variable, but code in a
+  .cmake module might still use it.
+Call Stack (most recent call first):
+  /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/GTSAMConfig.cmake:21 (find_dependency)
+  CMakeLists.txt:3 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Found Boost: /workspace/.ropt-native/sysroot/usr/include (found suitable version "1.83.0", minimum required is "1.65") found components: serialization filesystem program_options timer chrono
+-- GTSAM include directory:  /workspace/.ropt-native/reference-build-v2/prefix/lib/cmake/GTSAM/../../../include
+-- Configuring done (0.4s)
+-- Generating done (0.0s)
+-- Build files have been written to: /workspace/.ropt-native/reference-build-v2/adapter-build

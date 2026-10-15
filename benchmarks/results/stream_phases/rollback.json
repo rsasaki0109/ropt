@@ -1,0 +1,6 @@
+{
+  "source_only": true,
+  "before_source_sha256": "408cdc1c2b4394120a8172592e4a20fd74b61188a5496ee826af733f331ee413",
+  "matches_frozen_kernel": true,
+  "instrumentation_patch_sha256": "0f3b0d299eb7f3dc6cb8d01647d6527cd1ee6dea3ee670c96e645c4f032a1a33"
+}

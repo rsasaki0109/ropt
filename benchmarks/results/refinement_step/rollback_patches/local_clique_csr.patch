@@ -1,0 +1,226 @@
+--- a/crates/ropt/src/bayes_tree/editable.rs
++++ b/crates/ropt/src/bayes_tree/editable.rs
+@@ -89,8 +89,9 @@
+ /// only affected original factors and child messages; unchanged cliques share
+ /// immutable conditionals/messages. No QR downdate or normal matrix is used.
+ ///
+-/// Symbolic topology/factor ownership are analyzed globally on each nonempty
+-/// update. Solve performs full rank checking and back-substitution. This is a
++/// Symbolic topology is reused for same-support replacements and extended for
++/// additions; deletion or changed support requires complete analysis. Metadata
++/// bookkeeping and solve still visit global state. This is a
+ /// Gaussian backend used by IsamSmoother's explicit selective Bayes-tree policy.
+ #[derive(Debug, Clone)]
+ pub struct EditableBayesTree {
+@@ -329,6 +330,67 @@
+         }
+         Ok(Some((separators, parents, owners, count)))
+     }
++    fn gather_clique(
++        &self,
++        columns: &[usize],
++        factors: &[GaussianFactorId],
++        children: &[usize],
++        rows: usize,
++        workspace_entries: usize,
++    ) -> Result<(CsrMatrix, DVector<f64>, f64), Error> {
++        // The projection is injective. Original CSR rows may need a small
++        // per-row sort after permutation, but never duplicate reduction.
++        // Child messages already use sorted internal coordinates, so their
++        // projection preserves order. Keep factor/child/residual order exactly.
++        let coefficients = workspace_entries
++            .checked_sub(rows)
++            .ok_or(Error::InvalidDimensions)?;
++        let mut offsets = Vec::with_capacity(rows.checked_add(1).ok_or(Error::InvalidDimensions)?);
++        let mut indices = Vec::with_capacity(coefficients);
++        let mut values = Vec::with_capacity(coefficients);
++        let mut residual = Vec::with_capacity(rows);
++        let mut projected = Vec::new();
++        offsets.push(0);
++        for &id in factors {
++            let factor = &self.factors[&id];
++            for (row, &r) in factor.residual.iter().enumerate() {
++                projected.clear();
++                for (column, value) in factor.jacobian.row(row)? {
++                    let column = columns
++                        .binary_search(&self.tree.to_internal[column])
++                        .map_err(|_| Error::InvalidDimensions)?;
++                    projected.push((column, value));
++                }
++                projected.sort_unstable_by_key(|&(column, _)| column);
++                indices.extend(projected.iter().map(|&(column, _)| column));
++                values.extend(projected.iter().map(|&(_, value)| value));
++                offsets.push(values.len());
++                residual.push(r);
++            }
++        }
++        let mut constant = 0.;
++        for &child in children {
++            let message = &self.messages[child];
++            constant += message.constant_cost;
++            for (row, &rhs) in message.rows.iter().zip(&message.rhs) {
++                for &(column, value) in row {
++                    indices.push(
++                        columns
++                            .binary_search(&column)
++                            .map_err(|_| Error::InvalidDimensions)?,
++                    );
++                    values.push(value);
++                }
++                offsets.push(values.len());
++                residual.push(-rhs);
++            }
++        }
++        if !constant.is_finite() {
++            return Err(Error::NonFinite);
++        }
++        let j = CsrMatrix::from_canonical(rows, columns.len(), offsets, indices, values)?;
++        Ok((j, DVector::from_vec(residual), constant))
++    }
+     fn update_in_place(
+         &mut self,
+         removed: &[GaussianFactorId],
+@@ -425,11 +487,6 @@
+             let mut columns = Vec::with_capacity(separators[k].len() + 1);
+             columns.push(k);
+             columns.extend(separators[k].iter().copied());
+-            let local = columns
+-                .iter()
+-                .enumerate()
+-                .map(|(i, &column)| (column, i))
+-                .collect::<BTreeMap<_, _>>();
+             let mut rows = 0usize;
+             let mut workspace_entries = 0usize;
+             for &id in &buckets[k] {
+@@ -464,41 +521,8 @@
+             if workspace_entries > limit {
+                 return Err(Error::SparseFillLimit { limit });
+             }
+-            let mut triplets = Vec::with_capacity(workspace_entries - rows);
+-            let mut r = DVector::zeros(rows);
+-            let mut start = 0;
+-            let mut carried_constant = 0.;
+-            for &id in &buckets[k] {
+-                let factor = &self.factors[&id];
+-                for (row, column, value) in factor.jacobian.entries() {
+-                    let column = *local
+-                        .get(&self.tree.to_internal[column])
+-                        .ok_or(Error::InvalidDimensions)?;
+-                    triplets.push((start + row, column, value));
+-                }
+-                r.rows_mut(start, factor.residual.len())
+-                    .copy_from(&factor.residual);
+-                start += factor.residual.len();
+-            }
+-            for &child in &children[k] {
+-                let message = &self.messages[child];
+-                carried_constant += message.constant_cost;
+-                for (row, &rhs) in message.rows.iter().zip(&message.rhs) {
+-                    r[start] = -rhs;
+-                    for &(column, value) in row {
+-                        triplets.push((
+-                            start,
+-                            *local.get(&column).ok_or(Error::InvalidDimensions)?,
+-                            value,
+-                        ));
+-                    }
+-                    start += 1;
+-                }
+-            }
+-            if !carried_constant.is_finite() {
+-                return Err(Error::NonFinite);
+-            }
+-            let j = CsrMatrix::from_triplets(rows, columns.len(), triplets)?;
++            let (j, r, carried_constant) =
++                self.gather_clique(&columns, &buckets[k], &children[k], rows, workspace_entries)?;
+             let mut qr = IncrementalQr::new(columns.len(), self.tree.options)?;
+             qr.rebuild_in_place(&j, &r)?;
+             let factor = qr.into_factor();
+@@ -579,6 +603,87 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++    #[test]
++    fn canonical_gather_matches_triplets_for_permuted_rows_and_boundary_messages() {
++        let mut tree =
++            EditableBayesTree::new_ordered(vec![3, 0, 5, 2, 1, 4], Default::default()).unwrap();
++        for (id, factor) in [
++            (
++                7,
++                GaussianFactor::new(
++                    CsrMatrix::from_triplets(
++                        3,
++                        6,
++                        vec![(0, 0, 2.), (0, 1, 3.), (0, 5, -1.), (2, 4, 1e-150)],
++                    )
++                    .unwrap(),
++                    DVector::from_vec(vec![0.4, -0., 3.]),
++                )
++                .unwrap(),
++            ),
++            (
++                8,
++                GaussianFactor::new(
++                    CsrMatrix::from_triplets(1, 6, vec![(0, 1, 1e150), (0, 5, -4.)]).unwrap(),
++                    DVector::from_vec(vec![-7.]),
++                )
++                .unwrap(),
++            ),
++        ] {
++            tree.factors.insert(id, Arc::new(factor));
++        }
++        tree.messages[0] = Arc::new(Message {
++            rows: vec![vec![(2, 4.), (4, -2.)], vec![(4, 8.), (5, 1.)]],
++            rhs: vec![0., 2.],
++            constant_cost: 0.75,
++        });
++        let columns = [1, 2, 4, 5];
++        let local = columns
++            .iter()
++            .enumerate()
++            .map(|(index, &column)| (column, index))
++            .collect::<BTreeMap<_, _>>();
++        let mut triplets = Vec::new();
++        let mut residual = Vec::new();
++        for id in [7, 8] {
++            let factor = &tree.factors[&id];
++            let start = residual.len();
++            for (row, column, value) in factor.jacobian.entries() {
++                triplets.push((start + row, local[&tree.tree.to_internal[column]], value));
++            }
++            residual.extend_from_slice(factor.residual.as_slice());
++        }
++        for (row, rhs) in tree.messages[0].rows.iter().zip(&tree.messages[0].rhs) {
++            for &(column, value) in row {
++                triplets.push((residual.len(), local[&column], value));
++            }
++            residual.push(-rhs);
++        }
++        let rows = residual.len();
++        let entries = triplets.len() + rows;
++        let expected = CsrMatrix::from_triplets(rows, columns.len(), triplets).unwrap();
++        let (actual, r, constant) = tree
++            .gather_clique(&columns, &[7, 8], &[0], rows, entries)
++            .unwrap();
++        assert_eq!(actual.pattern(), expected.pattern());
++        assert_eq!(actual.values(), expected.values());
++        assert_eq!(
++            r.iter().map(|value| value.to_bits()).collect::<Vec<_>>(),
++            residual
++                .iter()
++                .map(|value| value.to_bits())
++                .collect::<Vec<_>>()
++        );
++        assert_eq!(constant, 0.75);
++        assert!(matches!(
++            tree.gather_clique(&columns[..3], &[7, 8], &[0], rows, entries),
++            Err(Error::InvalidDimensions)
++        ));
++        let (empty, residual, constant) = tree.gather_clique(&[], &[], &[], 0, 0).unwrap();
++        assert_eq!(empty.shape(), (0, 0));
++        assert!(residual.is_empty());
++        assert_eq!(constant, 0.);
++    }
+     #[test]
+     fn orphan_conditionals_and_nonzero_separator_messages_share_identity() {
+         let leaf = |column: usize, target: f64| {

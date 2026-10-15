@@ -1,0 +1,38 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -436,7 +436,6 @@
+         let mut variables = self.variables.clone();
+         let mut anchors = self.anchors.clone();
+         let mut order = self.order.clone();
+-        let mut selective_cache = self.selective_cache.clone();
+         let editable_mode = matches!(self.qr, GaussianCache::Editable(_));
+         for v in update.variables {
+             v.kind.validate(&v.value)?;
+@@ -457,6 +456,15 @@
+         } else {
+             None
+         };
++        // Forced/interval refreshes replace every factor block on success.
++        // Keep the committed cache intact, but do not clone its discarded rows.
++        let mut selective_cache = self.selective_cache.as_ref().map(|cache| {
++            if reason.is_some() {
++                cache.empty_like()
++            } else {
++                cache.clone()
++            }
++        });
+         // A scheduled rebuild does not depend on observability or residual
+         // validity at obsolete anchors. Do not copy/solve the discarded cache.
+         let mut qr = if reason.is_some() {
+--- a/crates/ropt/src/isam/selective.rs
++++ b/crates/ropt/src/isam/selective.rs
+@@ -98,6 +98,9 @@
+     Ok(blocks)
+ }
+ impl FactorCache {
++    pub fn empty_like(&self) -> Self {
++        Self::new(self.max_passes)
++    }
+     pub fn new(max_passes: usize) -> Self {
+         Self {
+             blocks: Vec::new(),

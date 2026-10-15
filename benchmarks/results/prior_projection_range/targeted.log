@@ -1,0 +1,82 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.44s
+     Running tests/fixed_lag.rs (target/debug/deps/fixed_lag-bf4f427e8166ef2c)
+
+running 10 tests
+test failed_updates_leave_state_time_and_factors_unchanged ... ok
+test expired_snapshots_capture_current_optimized_values_and_remain_owned ... ok
+test expired_snapshots_follow_refreshed_times_and_distinguish_reused_keys ... ok
+test rank_failure_during_marginalization_rolls_back_and_gauge_is_not_invented ... ok
+test coupled_separator_prior_preserves_cross_covariance_after_new_observations ... ok
+test robust_marginalization_requires_explicit_frozen_irls ... ok
+test timestamps_are_strict_at_cutoff_and_refresh_does_not_change_estimates ... ok
+test fixed_anchor_information_survives_expiry_and_persistent_variables_stay_live ... ok
+test linear_stream_matches_full_history_estimates_and_covariance_without_double_counting ... ok
+test se2_and_se3_streams_keep_manifold_priors_and_anchor_information ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests/fixed_lag_covariance_snapshot.rs (target/debug/deps/fixed_lag_covariance_snapshot-8827d3b13f5bb2a2)
+
+running 5 tests
+test covariance_rejects_unobservable_unqueried_variables ... ok
+test invalid_queries_do_not_register_new_variables_or_refresh_existing_timestamps ... ok
+test covariance_failures_roll_back_optimization_expiry_and_new_factors ... ok
+test covariance_uses_optimized_nonlinear_point_before_all_variables_expire ... ok
+test pre_expiry_covariance_keeps_cross_blocks_query_order_and_variance_scale ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_robust_covariance.rs (target/debug/deps/fixed_lag_robust_covariance-55cb3adda4bd02cd)
+
+running 2 tests
+test successful_covariance_then_rejected_marginalization_rolls_back_everything ... ok
+test inherited_robust_loss_requires_matching_explicit_covariance_model ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/marginalization.rs (target/debug/deps/marginalization-18228af8148ffe26)
+
+running 4 tests
+test unobservable_eliminated_directions_and_bad_inputs_fail ... ok
+test compression_preserves_information_at_large_and_small_scales ... ok
+test exact_and_underdetermined_retained_systems_work ... ok
+test qr_prior_preserves_profile_objective_and_constant_without_normal_equations ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/marginalization_column_scales.rs (target/debug/deps/marginalization_column_scales-197988a4bf46a78e)
+
+running 5 tests
+test compression_still_rejects_an_unrepresentable_output ... ok
+test compression_keeps_independently_scaled_columns_and_constant_residual ... ok
+test rotated_elimination_preserves_dependent_retained_information ... ok
+test fixed_lag_keeps_tiny_separator_information_beside_a_large_constant ... ok
+test marginalization_failure_rolls_back_and_a_retry_preserves_information ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/marginalization_projection_range.rs (target/debug/deps/marginalization_projection_range-ea56bf1b32ec6ba0)
+
+running 6 tests
+test multiple_eliminated_directions_restore_only_the_retained_rows ... ok
+test rotated_projection_keeps_finite_information_after_intermediate_overflow ... ok
+test small_elimination_coefficients_can_project_large_columns_to_finite_values ... ok
+test unrepresentable_retained_projection_still_returns_nonfinite ... ok
+test projection_preserves_tiny_tails_beside_large_eliminable_components ... ok
+test fixed_lag_rolls_back_unrepresentable_output_then_retries_large_projection ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/robust_root_weights.rs (target/debug/deps/robust_root_weights-969c80cdd2cd63d8)
+
+running 6 tests
+test huber_lm_moves_when_only_the_square_root_weight_is_representable ... ok
+test increasing_trials_with_tiny_weights_leave_the_accepted_state_intact ... ok
+test cauchy_lm_moves_when_only_the_square_root_weight_is_representable ... ok
+test unrepresentable_square_root_weight_still_has_zero_frozen_rank ... ok
+test fixed_lag_freezes_tiny_weights_without_losing_separator_information ... ok
+test tiny_robust_weights_keep_representable_frozen_information ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

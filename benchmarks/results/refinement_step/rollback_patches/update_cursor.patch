@@ -1,0 +1,85 @@
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -427,8 +427,23 @@
+             let mut targets = Vec::with_capacity(operations);
+             for k in 0..n {
+                 for i in symbolic.offsets[k] + 1..symbolic.offsets[k + 1] {
+-                    for q in i..symbolic.offsets[k + 1] {
+-                        targets.push(symbolic.entry(symbolic.rows[i], symbolic.rows[q]));
++                    let column = symbolic.rows[i];
++                    let start = symbolic.offsets[column];
++                    let destinations = &symbolic.rows[start..symbolic.offsets[column + 1]];
++                    // The first Schur destination is this column's diagonal.
++                    debug_assert_eq!(destinations.first(), Some(&column));
++                    targets.push(start);
++                    let mut position = 1;
++                    for &row in &symbolic.rows[i + 1..symbolic.offsets[k + 1]] {
++                        // Common clique suffixes are contiguous. When another
++                        // row intervenes, search only the remaining suffix.
++                        if destinations.get(position) != Some(&row) {
++                            position += destinations[position..]
++                                .binary_search(&row)
++                                .expect("symbolic fill contains every Schur entry");
++                        }
++                        targets.push(start + position);
++                        position += 1;
+                     }
+                 }
+             }
+@@ -1204,3 +1219,56 @@
+         assert_eq!(workspace.analyses(), 3);
+     }
+ }
++
++#[cfg(test)]
++mod update_cursor_tests {
++    use super::*;
++
++    #[test]
++    fn destination_cursor_matches_binary_lookup_for_cliques_gaps_and_all_orders() {
++        for n in [6, 9, 72] {
++            for dense in [false, true] {
++                let mut entries = (0..n).map(|k| (k, k, 2.)).collect::<Vec<_>>();
++                let mut row = n;
++                let mut supports = vec![vec![0, 2, n - 1], vec![1, 3, n - 2], vec![0, 1, n - 3]];
++                if dense {
++                    supports.push((0..n).collect());
++                }
++                for support in supports {
++                    for col in support {
++                        entries.push((row, col, 1.));
++                    }
++                    row += 1;
++                }
++                let j = CsrMatrix::from_triplets(row, n, entries).unwrap();
++                for ordering in [
++                    SparseOrdering::Natural,
++                    SparseOrdering::MinimumDegree,
++                    SparseOrdering::BlockMinimumDegree { block_size: 3 },
++                ] {
++                    let s = SparseLdlSymbolic::analyze(
++                        &j,
++                        &SparseLdlOptions {
++                            ordering,
++                            ..Default::default()
++                        },
++                    )
++                    .unwrap();
++                    let mut expected = Vec::new();
++                    for k in 0..n {
++                        for i in s.offsets[k] + 1..s.offsets[k + 1] {
++                            for q in i..s.offsets[k + 1] {
++                                expected.push(s.entry(s.rows[i], s.rows[q]));
++                            }
++                        }
++                    }
++                    assert_eq!(s.update_targets.as_ref().unwrap(), &expected);
++                }
++            }
++        }
++        let j = CsrMatrix::from_triplets(6, 6, (0..6).map(|k| (k, k, 1.)).collect()).unwrap();
++        let s = SparseLdlSymbolic::analyze(&j, &Default::default()).unwrap();
++        assert!(s.has_update_plan());
++        assert_eq!(s.update_entries(), 0);
++    }
++}

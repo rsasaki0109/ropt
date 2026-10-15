@@ -1,0 +1,14 @@
+{
+  "scope": "clone-only successful allocation/reallocation traffic; no live/peak memory or latency measurement",
+  "columns": 2048,
+  "copies": 64,
+  "allocator_counting": true,
+  "before_source_sha256": "cae5cfa485723513f5799fb7722043b2d39c0299639535c1bd78775d424c9323",
+  "after_source_sha256": "cdc6d2113705f42d7cf26e2379b4913507b53e4d4b5e6fe62843c84312bdb2f3",
+  "files_sha256": {
+    "benchmarks/profile_editable_clone.rs": "1bacf945dd344182e8e16350414716fd3ce5c772b69eb001cbc357678b13b511",
+    "benchmarks/profile_editable_metadata.py": "cb62c58f0863671c812c5e4e03bb1d73e0530da10142758d006a725da094d1c8",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45"
+  },
+  "variants": {}
+}

@@ -1,0 +1,73 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -91,6 +91,7 @@
+         let mut lower_row = Vec::new();
+         let mut row = Vec::new();
+         let max_entries = self.options.max_entries;
++        let mut counts=[0_u64;6];
+         for (r, &residual) in residual.iter().enumerate() {
+             row.clear();
+             row.extend(j.row(r)?);
+@@ -111,6 +112,19 @@
+                 upper_row.clear();
+                 lower_row.clear();
+                 let has_diagonal = !old.is_empty();
++                counts[0]+=1;
++                if has_diagonal {
++                    let pairs=old[1..].iter().zip(&row[row_start+1..]).take_while(|(a,b)|a.0==b.0).count();
++                    counts[1]+=pairs as u64;
++                    if pairs==old.len()-1 || pairs==row.len()-row_start-1 {
++                        counts[2]+=1;
++                        counts[3]+=pairs as u64;
++                    } else {
++                        counts[4]+=1;
++                        counts[5]+=pairs as u64;
++                    }
++                }
++
+                 let (mut i, mut j, mut write) = (
+                     usize::from(has_diagonal),
+                     row_start + 1,
+@@ -300,6 +314,7 @@
+                 return Err(Error::NonFinite);
+             }
+         }
++        crate::qr_prefix_profile::record(counts);
+         Ok(())
+     }
+     /// Solve the full-column-rank cached model. No damping or pseudoinverse.
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,6 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++#[doc(hidden)]
++pub mod qr_prefix_profile;
+--- /dev/null
++++ b/crates/ropt/src/qr_prefix_profile.rs
+@@ -0,0 +1,5 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static COUNTS:[AtomicU64;6]=[const {AtomicU64::new(0)};6];
++pub fn record(values:[u64;6]) { for(c,v)in COUNTS.iter().zip(values){c.fetch_add(v,Ordering::Relaxed);} }
++pub fn reset(){for c in &COUNTS{c.store(0,Ordering::Relaxed);}}
++pub fn dump(){for(name,c)in ["rotations","matched_prefix_entries","one_sided_rotations","one_sided_prefix_entries","divergent_rotations","divergent_prefix_entries"].iter().zip(&COUNTS){eprintln!("{name},{}",c.load(Ordering::Relaxed));}}
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup {ropt::qr_prefix_profile::reset();}
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::qr_prefix_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;

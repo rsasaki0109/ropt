@@ -1,0 +1,107 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -120,17 +120,15 @@
+                 if has_diagonal {
+                     old[0].1 = norm;
+                 }
+-                // Equal live suffixes need no union merge or lower-row copy.
+-                // Compare every column first; equal lengths alone are insufficient.
+-                let aligned = has_diagonal
+-                    && old.len() - 1 == row.len() - row_start - 1
+-                    && old[1..]
+-                        .iter()
+-                        .zip(&row[row_start + 1..])
+-                        .all(|(upper, lower)| upper.0 == lower.0);
+-                if aligned {
+-                    let (mut upper_zero, mut lower_zero) = (false, false);
++                // Verify and rotate a common prefix in one traversal. At the
++                // first different column, the sorted merge resumes after that
++                // already rotated prefix; no coefficient is processed twice.
++                let (mut upper_zero, mut lower_zero) = (false, false);
++                if has_diagonal {
+                     for (upper, lower) in old[1..].iter_mut().zip(&mut row[row_start + 1..]) {
++                        if upper.0 != lower.0 {
++                            break;
++                        }
+                         let a = c * upper.1 + s * lower.1;
+                         let v = -s * upper.1 + c * lower.1;
+                         if !a.is_finite() || !v.is_finite() {
+@@ -143,6 +141,52 @@
+                         lower_zero |= v == 0.;
+                         upper.1 = a;
+                         lower.1 = v;
++                        i += 1;
++                        j += 1;
++                    }
++                }
++                if has_diagonal && (i == old.len() || j == row.len()) {
++                    if j == row.len() {
++                        // The input is exhausted. Its prefix is now output
++                        // storage, so upper-only contributions can append to it.
++                        for upper in &mut old[i..] {
++                            let a = c * upper.1 + s * 0.;
++                            let v = -s * upper.1 + c * 0.;
++                            if !a.is_finite() || !v.is_finite() {
++                                return Err(Error::NonFinite);
++                            }
++                            if a == 0. {
++                                entries -= 1;
++                                upper_zero = true;
++                            }
++                            upper.1 = a;
++                            if v != 0. {
++                                row.push((upper.0, v));
++                            }
++                        }
++                    } else {
++                        // No upper suffix remains unread. Remove cancelled
++                        // entries before growing the row with trailing fill.
++                        if upper_zero {
++                            old.retain(|&(_, value)| value != 0.);
++                            upper_zero = false;
++                        }
++                        for lower in &mut row[j..] {
++                            let a = c * 0. + s * lower.1;
++                            let v = -s * 0. + c * lower.1;
++                            if !a.is_finite() || !v.is_finite() {
++                                return Err(Error::NonFinite);
++                            }
++                            if a != 0. {
++                                if entries >= max_entries {
++                                    return Err(Error::SparseFillLimit { limit: max_entries });
++                                }
++                                entries += 1;
++                                old.push((lower.0, a));
++                            }
++                            lower_zero |= v == 0.;
++                            lower.1 = v;
++                        }
+                     }
+                     if upper_zero {
+                         old.retain(|&(_, value)| value != 0.);
+@@ -162,6 +206,25 @@
+                     }
+                     self.entries = entries;
+                 } else {
++                    // Preserve the rotated lower prefix when patterns diverge.
++                    // Compact only the consumed upper prefix: the unread suffix
++                    // stays at its original indices until the merge reaches it.
++                    if upper_zero {
++                        for read in usize::from(has_diagonal)..i {
++                            if old[read].1 != 0. {
++                                old[write] = old[read];
++                                write += 1;
++                            }
++                        }
++                    } else {
++                        write = i;
++                    }
++                    lower_row.extend(
++                        row[row_start + 1..j]
++                            .iter()
++                            .copied()
++                            .filter(|&(_, value)| value != 0.),
++                    );
+                     // Compact existing columns in place until the first new interior
+                     // column. Writes never reach unread entries. Preserve ascending
+                     // arithmetic, including explicit zero operands and cancellations.

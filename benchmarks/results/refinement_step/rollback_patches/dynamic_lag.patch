@@ -1,0 +1,27 @@
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -192,6 +192,24 @@
+             last_time: None,
+             constant_cost: 0.0,
+         })
++    }
++    /// Current configured window duration, in the timestamp units.
++    pub fn lag(&self) -> f64 {
++        self.options.lag
++    }
++    /// Change the duration used by subsequent updates, without optimizing now.
++    ///
++    /// Only positive finite durations are accepted. Shortening the duration
++    /// removes older variables on the next successful update; increasing it does
++    /// not restore retired variables or replace carried marginal priors.
++    /// Estimates, factors and time are unchanged by this setter. If a later
++    /// update fails, its state rolls back but this configured duration remains.
++    pub fn set_lag(&mut self, lag: f64) -> Result<(), Error> {
++        if !lag.is_finite() || lag <= 0. {
++            return Err(Error::InvalidOptions);
++        }
++        self.options.lag = lag;
++        Ok(())
+     }
+     pub fn estimate(&self, key: Key) -> Option<&DVector<f64>> {
+         self.variables.get(&key).map(|v| &v.value)

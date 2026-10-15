@@ -1,0 +1,139 @@
+{
+  "scope": "derived archived wall times; different native/ropt policies; no causal attribution or new timing",
+  "primary": {
+    "groups": {
+      "no_recovery": {
+        "updates": 5490,
+        "update_share": 0.8764367816091954,
+        "wall_time_share": 0.44259503554273844,
+        "median_ms": 4.6197915
+      },
+      "recovery": {
+        "updates": 774,
+        "update_share": 0.1235632183908046,
+        "wall_time_share": 0.5574049644572616,
+        "median_ms": 55.096731
+      }
+    },
+    "largest_ropt_frame_medians": [
+      {
+        "frame": 1003,
+        "ropt_median_ms": 125.85118650000001,
+        "native_median_ms": 85.7801555
+      },
+      {
+        "frame": 1021,
+        "ropt_median_ms": 125.1551025,
+        "native_median_ms": 184.9046935
+      },
+      {
+        "frame": 1037,
+        "ropt_median_ms": 124.53599750000001,
+        "native_median_ms": 176.28682750000002
+      },
+      {
+        "frame": 1014,
+        "ropt_median_ms": 123.18756049999999,
+        "native_median_ms": 147.1836225
+      },
+      {
+        "frame": 1040,
+        "ropt_median_ms": 121.989585,
+        "native_median_ms": 171.316881
+      },
+      {
+        "frame": 1036,
+        "ropt_median_ms": 121.664446,
+        "native_median_ms": 270.59238700000003
+      },
+      {
+        "frame": 1018,
+        "ropt_median_ms": 121.5749285,
+        "native_median_ms": 146.458452
+      },
+      {
+        "frame": 1010,
+        "ropt_median_ms": 119.2834875,
+        "native_median_ms": 171.740121
+      },
+      {
+        "frame": 1013,
+        "ropt_median_ms": 117.188246,
+        "native_median_ms": 128.563224
+      },
+      {
+        "frame": 1012,
+        "ropt_median_ms": 116.64224949999999,
+        "native_median_ms": 129.3044525
+      }
+    ]
+  },
+  "confirmation": {
+    "groups": {
+      "no_recovery": {
+        "updates": 5490,
+        "update_share": 0.8764367816091954,
+        "wall_time_share": 0.37879706667238533,
+        "median_ms": 5.6951365
+      },
+      "recovery": {
+        "updates": 774,
+        "update_share": 0.1235632183908046,
+        "wall_time_share": 0.6212029333276147,
+        "median_ms": 64.927656
+      }
+    },
+    "largest_ropt_frame_medians": [
+      {
+        "frame": 1040,
+        "ropt_median_ms": 223.9874725,
+        "native_median_ms": 137.564995
+      },
+      {
+        "frame": 1014,
+        "ropt_median_ms": 189.620375,
+        "native_median_ms": 130.753693
+      },
+      {
+        "frame": 1016,
+        "ropt_median_ms": 176.8829485,
+        "native_median_ms": 127.1379985
+      },
+      {
+        "frame": 908,
+        "ropt_median_ms": 170.846164,
+        "native_median_ms": 129.7686845
+      },
+      {
+        "frame": 1031,
+        "ropt_median_ms": 163.8414485,
+        "native_median_ms": 140.311357
+      },
+      {
+        "frame": 1018,
+        "ropt_median_ms": 162.8582245,
+        "native_median_ms": 153.481719
+      },
+      {
+        "frame": 1037,
+        "ropt_median_ms": 161.586145,
+        "native_median_ms": 128.6419455
+      },
+      {
+        "frame": 1008,
+        "ropt_median_ms": 153.24846250000002,
+        "native_median_ms": 111.2198415
+      },
+      {
+        "frame": 1036,
+        "ropt_median_ms": 153.03715649999998,
+        "native_median_ms": 172.792259
+      },
+      {
+        "frame": 1003,
+        "ropt_median_ms": 149.595277,
+        "native_median_ms": 81.400447
+      }
+    ]
+  }
+}

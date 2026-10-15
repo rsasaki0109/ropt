@@ -1,0 +1,18 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -719,8 +719,14 @@
+                 j = trial_j;
+                 r = trial_r;
+                 gradient = trial_gradient;
+-                step = qr.solve_gradient(&gradient)?;
+                 refinement_steps += 1;
++                // Only prepare a step that can be consumed by another pass.
++                // The frozen model's observability was already checked above.
++                if refinement_steps < self.max_refinement_steps
++                    && previous_gradient_norm > batch_options.gradient_tolerance * 1e-2
++                {
++                    step = qr.solve_gradient(&gradient)?;
++                }
+             }
+             if stalled {
+                 let norm = final_gradient_norm;

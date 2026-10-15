@@ -1,0 +1,16 @@
+{
+  "name": "csail-full-pilot",
+  "policy": "full",
+  "selected_cap": 0,
+  "complete_arrivals": 1044,
+  "all_original_information_gates_pass": true,
+  "elapsed_seconds": 4.214401276,
+  "forced_recoveries": 0,
+  "requested_calls": 0,
+  "max_normalized_gradient": 2.44234378981837e-08,
+  "archived_native_agreement": {
+    "max_world_pose_norm": 3.7813986840670855e-07,
+    "max_cost_difference": 4.973799150320701e-13
+  },
+  "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+}

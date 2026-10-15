@@ -1,0 +1,40 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.38s
+     Running tests/inplace_pcg.rs (target/debug/deps/inplace_pcg-08df77eb6ade7e0c)
+
+running 4 tests
+test buffer_contract_failures_are_checked_after_overrides ... ok
+test pcg_uses_buffered_overrides_and_verifies_the_actual_linear_residual ... ok
+test legacy_implementations_keep_working_and_arithmetic_overflow_is_an_error ... ok
+test reusable_outputs_match_independent_dense_products_and_cholesky ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pcg_extreme_scale.rs (target/debug/deps/pcg_extreme_scale-c74da824c0e381e7)
+
+running 4 tests
+test inner_product_underflow_is_breakdown_instead_of_false_convergence ... ok
+test large_well_conditioned_system_does_not_overflow_its_norm ... ok
+test tiny_well_conditioned_system_does_not_converge_at_zero ... ok
+test accepted_initial_residual_is_reported_at_its_actual_scale ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sparse.rs (target/debug/deps/sparse-5953229859a6e0be)
+
+running 12 tests
+test csr_spd_operator_and_duplicate_cancellation ... ok
+test damping_overflow_is_an_error_for_dense_and_sparse ... ok
+test csr_combines_duplicates_and_matches_dense_products ... ok
+test matrix_free_damped_normal_operator_matches_dense ... ok
+test pcg_failure_modes_are_explicit ... ok
+test dense_schur_matches_full_system_and_rejects_invalid_input ... ok
+test pcg_matches_cholesky_and_verifies_true_residual ... ok
+test sparse_backend_does_not_silently_use_dense_or_gn ... ok
+test sparse_rejections_and_iteration_limit_propagation ... ok
+test robust_losses_and_schur_backend_match_dense_lm ... ok
+test graph_sparse_assembly_and_lm_match_dense ... ok
+test larger_sparse_chain_converges_with_linear_storage ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.36s
+

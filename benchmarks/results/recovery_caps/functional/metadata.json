@@ -1,0 +1,6 @@
+{
+  "source_sha256": "408cdc1c2b4394120a8172592e4a20fd74b61188a5496ee826af733f331ee413",
+  "executable_sha256": "a97b62f3cceb80cc6a4b6691a828f79413edf40765d2a83edca58b6cbd23c638",
+  "requested_cap": 0,
+  "scope": "cold functional policy experiment only; no comparative timing; automatic threshold passes still enabled"
+}

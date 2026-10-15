@@ -1,0 +1,8 @@
+{
+  "same_binary_policy_study": true,
+  "initial_campaigns": "Read-only stream-profile verification and functional-record compression overlapped portions of primary/confirmation.",
+  "additional_isolated_campaign": "No compilation, instrumentation, tests, verification or archival compression ran concurrently with isolated timing.",
+  "earlier_records_retained": true,
+  "library_defaults_changed": false,
+  "native_timing_measured": false
+}

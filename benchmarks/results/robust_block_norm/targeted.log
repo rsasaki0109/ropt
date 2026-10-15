@@ -1,0 +1,46 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.10s
+     Running tests/covariance.rs (target/debug/deps/covariance-f8fa5986a5c646ca)
+
+running 11 tests
+test invalid_selections_options_metadata_and_nonfinite_evaluations_are_errors ... ok
+test irls_scalar_fallback_only_affects_uncovered_rows ... ok
+test fixed_variables_are_conditioned_and_layout_changes_are_resolved_from_ids ... ok
+test rank_threshold_and_extreme_scale_do_not_produce_damped_or_pseudo_inverse_covariance ... ok
+test robust_covariance_requires_explicit_irls_and_uses_joint_weights_once ... ok
+test known_correlated_measurement_covariance_is_recovered_without_residual_scale_estimation ... ok
+test singularity_is_checked_in_the_full_problem_even_when_only_observable_columns_are_queried ... ok
+test standalone_euclidean_residual_covariance_matches_known_sigma_and_explicit_scalar_loss ... ok
+test svd_iteration_limits_fail_explicitly ... ok
+test selected_marginals_include_uncertain_nuisance_variables_and_preserve_order ... ok
+test gauge_freedom_fails_and_anchored_se3_covariance_uses_six_body_tangent_dimensions ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_robust_covariance.rs (target/debug/deps/fixed_lag_robust_covariance-55cb3adda4bd02cd)
+
+running 2 tests
+test inherited_robust_loss_requires_matching_explicit_covariance_model ... ok
+test successful_covariance_then_rejected_marginalization_rolls_back_everything ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/robust_block_norm.rs (target/debug/deps/robust_block_norm-8ce6232ece41c86c)
+
+running 4 tests
+test genuinely_unrepresentable_joint_norm_still_returns_nonfinite ... ok
+test large_joint_norms_have_representable_robust_costs ... ok
+test large_joint_norms_preserve_finite_frozen_covariance ... ok
+test tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stable_objective.rs (target/debug/deps/stable_objective-59ab08dfe80b9702)
+
+running 3 tests
+test gauss_newton_can_accept_a_decrease_hidden_by_a_constant_cost ... ok
+test increasing_true_loss_is_rejected_even_when_aggregate_cost_is_unchanged ... ok
+test constant_offsets_cannot_mask_scalar_or_joint_true_loss_improvements ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

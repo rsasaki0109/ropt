@@ -1,0 +1,96 @@
+{
+  "dataset": {
+    "dataset": "CSAIL recorded SE2 pose graph",
+    "variant": "csail-se-sync1045",
+    "source_url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+    "source_commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+    "source_sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6",
+    "total_source_poses": 1045,
+    "total_source_edges": 1172,
+    "used_arrivals": 1044,
+    "used_edges": 1172,
+    "complete_dataset": true,
+    "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+    "initialization": "original consecutive odometry measurements composed once from root (0,0,0); no loop constraints or optimizer used for seeds",
+    "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+    "stream_sha256": "fe3ffed0fdae1d69d0e374a915f3364860602a7fe1ad34d19d6de7571e98718a"
+  },
+  "source_sha256": "a4794dd43ee88f82c6155932cf56303cc41ff9048b760edbbd391dec67320080",
+  "executable_sha256": "892f609c4845794a68a0f60d0fb7bebff34284f7834932d8d6d4d1757bdcc04a",
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_ad_selective_se2_isam.rs": "d75c34cf7052bdf1995e6627c64c1917feacc08de05ee1c702bff9e7fafa274e",
+    "crates/ropt/examples/support/real_selective_se2.rs": "1a439c4c6ef28b96d8d203088530368118a2cd341d50f37520b33ba956bddd87",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "afe40c20ddb61f1c2c87e41c1da61b5b08fb5c7e86466dae49229ba5738f9eb2",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/paired_block_jacobian.py": "de36d046fa715933c745d601a787b0c580accbccc679ead250a8b5c71c4483eb",
+    "benchmarks/paired_stationarity_se2.py": "36e4bfe35eb96122e8c6350237e7f10df6001630945a19d7d5413dcbbabc620b",
+    "benchmarks/paired_isam2.py": "84f38629ca9287ccfa2c1078baf642b76830ea49ff9b2e19bfbf00bf00f48d75",
+    "benchmarks/real_se2_stream.py": "72f90518690429cf1070abd7c68ee95121b343a53173c881efa72b2677b99502",
+    "benchmarks/se2_stream.py": "a436a9e4a7dd98056ea448e922daec3d9a7f34d7405541f59c884354fcbf2849",
+    "benchmarks/information_precision.py": "40999a95f896eb45ced9cbad3e0525eff64c8151b649593debea4b8b4f437cf1"
+  },
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null
+    }
+  },
+  "variants": [
+    "before",
+    "after"
+  ],
+  "rounds": 6,
+  "cpu_affinity": [
+    0
+  ],
+  "selected_cap": 1,
+  "native_timing_measured": false,
+  "ad_chunk_size": 6,
+  "ad_edge_stride": 2,
+  "factors": 1172,
+  "ad_factors": 586,
+  "before_source_sha256": "af6a93f7252853127e972b3128d208ce0cb5798a59c46603565a346b6f96f1ad",
+  "before_executable_sha256": "d149e42aa7fbca11160cd0b1d5d4c01f85a29a90f005b2fcd63f8b680c1be8ec",
+  "before_driver_sha256": {
+    "crates/ropt/examples/benchmark_ad_selective_se2_isam.rs": "d75c34cf7052bdf1995e6627c64c1917feacc08de05ee1c702bff9e7fafa274e",
+    "crates/ropt/examples/support/real_selective_se2.rs": "1a439c4c6ef28b96d8d203088530368118a2cd341d50f37520b33ba956bddd87",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "afe40c20ddb61f1c2c87e41c1da61b5b08fb5c7e86466dae49229ba5738f9eb2",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45"
+  },
+  "native_reference_directory": "benchmarks/results/csail_real_isam2/primary",
+  "native_reference_sha256": {
+    "metadata.json": "9ec33f492c144e78e82704343cc984b156af4963ed21648e291baebc10c8a9d0",
+    "report.json": "38900dbde496260c63e2ec109f45850c05ac7f8e62d414ad57655b6ae2eccf18",
+    "quality.csv": "7d890e4bad50691da80b252803b96f4ac3b11118624ad82115938a5fdf1bbd03",
+    "native-poses.csv.gz": "0611193adebbd92e2c286cbcefb73ea3390c69da12abbaff447df61d4439b121"
+  },
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "world_pose_norm_difference": 2e-06,
+    "relative_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "fixed_root": "exact"
+  },
+  "warmup_streams_per_process": 1,
+  "timed_streams_per_process": 1,
+  "policy": "before/after: flat versus directly assembled block Jacobians in the same editable backend; new-factor update then at most selected_cap requested passes, explicit full recovery if target unmet; all use current nonlinear normalized gradient target 8e-8, keys above target/2; periodic refresh disabled",
+  "timed": "updates, explicit nonlinear probes, requested relinearization, failed attempts, full recovery and owned reports; parsing/factor recipes, external checking and serialization excluded",
+  "allocator_counting": false,
+  "memory_measured": false,
+  "scope": "complete mixed-AD real streams, flat versus directly assembled block Jacobians; archived precision-corrected GTSAM poses/costs check agreement only; no fresh native speed claim"
+}

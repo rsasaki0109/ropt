@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /tmp/ropt-native-precise-isam2-build
+Test project /tmp/ropt-native-precise-isam2-build
+    Start 1: precise_information
+1/1 Test #1: precise_information ..............   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.02 sec

@@ -1,0 +1,17 @@
+    Checking ropt v0.1.0 (/workspace/ropt/crates/ropt)
+error: items after a test module
+   --> crates/ropt/src/factor/autodiff.rs:17:1
+    |
+ 17 | mod tests {
+    | ^^^^^^^^^
+...
+151 | impl AutoDiffLayout {
+    | ^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#items_after_test_module
+    = note: `-D clippy::items-after-test-module` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::items_after_test_module)]`
+    = help: move the items to before the test module was defined
+
+error: could not compile `ropt` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

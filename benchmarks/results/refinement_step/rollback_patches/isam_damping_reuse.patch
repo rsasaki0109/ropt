@@ -1,0 +1,192 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -4,8 +4,8 @@
+ use crate::fixed_lag::{Key, SmootherFactor, SmootherUpdate, WindowVariable, build_graph};
+ use crate::incremental_qr::{IncrementalQr, IncrementalQrOptions};
+ use crate::{
+-    DVector, Error, LinearSolver, LocalProblem, Loss, Options, QrOptions, Termination,
+-    solver::solve_local_gaussian_model,
++    Algorithm, DVector, Error, LinearSolver, LocalProblem, Loss, Options, QrOptions, Termination,
++    solver::{GaussianSolution, solve_local_gaussian_model},
+ };
+ use std::collections::BTreeMap;
+ 
+@@ -54,6 +54,11 @@
+     pub stored_entries: usize,
+     pub linearized_cost: f64,
+     pub max_anchor_delta: f64,
++    /// LM/GN trials in a full batch refresh; zero on cached updates or initial convergence.
++    pub batch_trials: usize,
++    /// Effective initial/final LM damping; None on cached updates and Gauss-Newton.
++    pub batch_initial_damping: Option<f64>,
++    pub batch_final_damping: Option<f64>,
+ }
+ pub struct IsamSmoother {
+     options: IsamOptions,
+@@ -63,6 +68,7 @@
+     order: Vec<Key>,
+     qr: IncrementalQr,
+     updates: usize,
++    next_batch_damping: Option<f64>,
+ }
+ impl IsamSmoother {
+     pub fn new(options: IsamOptions) -> Result<Self, Error> {
+@@ -82,7 +88,30 @@
+             order: Vec::new(),
+             qr,
+             updates: 0,
++            next_batch_damping: None,
+         })
++    }
++    /// Opt into carrying adaptive LM damping between successful full refreshes.
++    /// The first refresh uses the configured initial value. Ordinary updates and
++    /// failed refreshes leave this state unchanged. The default restarts damping.
++    /// Rejections still adapt damping normally; no tolerance/backend fallback occurs.
++    pub fn with_batch_damping_reuse(mut self) -> Result<Self, Error> {
++        if !matches!(
++            self.options.batch_solver.algorithm,
++            Algorithm::LevenbergMarquardt
++        ) || !self.options.batch_solver.initial_damping.is_finite()
++            || self.options.batch_solver.initial_damping <= 0.
++        {
++            return Err(Error::InvalidOptions);
++        }
++        if self.next_batch_damping.is_none() {
++            self.next_batch_damping = Some(self.options.batch_solver.initial_damping);
++        }
++        Ok(self)
++    }
++    /// None means the default restart policy; Some is the next refresh's LM damping.
++    pub fn next_batch_damping(&self) -> Option<f64> {
++        self.next_batch_damping
+     }
+     pub fn estimate(&self, key: Key) -> Option<&DVector<f64>> {
+         self.variables.get(&key).map(|v| &v.value)
+@@ -168,6 +197,9 @@
+             }
+         }
+         let refresh = reason.is_some();
++        let mut next_batch_damping = self.next_batch_damping;
++        let (mut batch_trials, mut batch_initial_damping, mut batch_final_damping) =
++            (0, None, None);
+         if refresh {
+             // Keep the committed recipes untouched until success; ordinary
+             // updates never clone or register the old factor history.
+@@ -191,8 +223,16 @@
+                     "iSAM batch refresh matrix entry limit exceeded".into(),
+                 ));
+             }
+-            let (solved, r, j) =
+-                solve_local_gaussian_model(&graph, graph.initial(), &self.options.batch_solver)?;
++            let mut batch_options = self.options.batch_solver.clone();
++            if let Some(damping) = next_batch_damping {
++                batch_options.initial_damping = damping;
++            }
++            let GaussianSolution {
++                report: solved,
++                residual: r,
++                jacobian: j,
++                final_damping,
++            } = solve_local_gaussian_model(&graph, graph.initial(), &batch_options)?;
+             if matches!(
+                 solved.termination,
+                 Termination::NoProgress | Termination::MaxIterations
+@@ -204,6 +244,14 @@
+                     solved.cost,
+                     solved.iterations.last().map(|it| it.gradient_norm),
+                 )));
++            }
++            batch_trials = solved.iterations.len();
++            if matches!(batch_options.algorithm, Algorithm::LevenbergMarquardt) {
++                batch_initial_damping = Some(batch_options.initial_damping);
++                batch_final_damping = Some(final_damping);
++            }
++            if next_batch_damping.is_some() {
++                next_batch_damping = Some(final_damping);
+             }
+             for (&key, &id) in &ids {
+                 variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
+@@ -238,6 +286,7 @@
+         self.factors.extend(update.factors);
+         self.qr = qr;
+         self.updates = updates;
++        self.next_batch_damping = next_batch_damping;
+         Ok(IsamReport {
+             estimates,
+             kind: if refresh {
+@@ -254,6 +303,9 @@
+             stored_entries,
+             linearized_cost,
+             max_anchor_delta,
++            batch_trials,
++            batch_initial_damping,
++            batch_final_damping,
+         })
+     }
+ }
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -637,7 +637,13 @@
+     initial: DVector<f64>,
+     options: &Options,
+ ) -> Result<Report, Error> {
+-    solve_local_model(problem, initial, options).map(|(report, _)| report)
++    solve_local_model(problem, initial, options).map(|(report, _, _)| report)
++}
++pub(crate) struct GaussianSolution {
++    pub report: Report,
++    pub residual: DVector<f64>,
++    pub jacobian: CsrMatrix,
++    pub final_damping: f64,
+ }
+ /// Return the final accepted whitened Gaussian model for undamped square-root
+ /// rebuilds. General robust callers must not treat an IRLS model as Gaussian.
+@@ -645,7 +651,7 @@
+     problem: &impl LocalProblem,
+     initial: DVector<f64>,
+     options: &Options,
+-) -> Result<(Report, DVector<f64>, CsrMatrix), Error> {
++) -> Result<GaussianSolution, Error> {
+     if !matches!(options.loss, Loss::Squared)
+         || problem
+             .loss_blocks()
+@@ -654,15 +660,20 @@
+     {
+         return Err(Error::InvalidOptions);
+     }
+-    let (report, model) = solve_local_model(problem, initial, options)?;
++    let (report, model, final_damping) = solve_local_model(problem, initial, options)?;
+     let (r, j) = model.into_sparse()?;
+-    Ok((report, r, j))
++    Ok(GaussianSolution {
++        report,
++        residual: r,
++        jacobian: j,
++        final_damping,
++    })
+ }
+ fn solve_local_model(
+     problem: &impl LocalProblem,
+     initial: DVector<f64>,
+     options: &Options,
+-) -> Result<(Report, Linearization), Error> {
++) -> Result<(Report, Linearization, f64), Error> {
+     let (ambient, n, m) = problem.dimensions();
+     if ambient == 0 || m == 0 || initial.len() != ambient {
+         return Err(Error::InvalidDimensions);
+@@ -745,6 +756,7 @@
+                 iterations: Vec::new(),
+             },
+             model,
++            options.initial_damping,
+         ));
+     }
+     let mut damping = options.initial_damping;
+@@ -856,6 +868,7 @@
+             iterations: history,
+         },
+         model,
++        damping,
+     ))
+ }
+ 

@@ -1,0 +1,96 @@
+CMake Deprecation Warning at CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- GTSAM Version: 4.2.1
+-- GTSAM_POSE3_EXPMAP=ON, enabling GTSAM_ROT3_EXPMAP as well
+-- Found Eigen version: 3.3.7
+CMake Deprecation Warning at gtsam/3rdparty/metis/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+-- checking for thread-local storage - found
+-- Could NOT find MKL (missing: MKL_INCLUDE_DIR MKL_LIBRARIES) 
+-- Building 3rdparty
+-- Could NOT find GeographicLib (missing: GeographicLib_LIBRARY_DIRS GeographicLib_LIBRARIES GeographicLib_INCLUDE_DIRS) 
+-- Building base
+-- Building basis
+-- Building geometry
+-- Building inference
+-- Building symbolic
+-- Building discrete
+-- Building hybrid
+-- Building linear
+-- Building nonlinear
+-- Building sam
+-- Building sfm
+-- Building slam
+-- Building navigation
+-- GTSAM Version: 4.2.1
+-- Install prefix: /workspace/.ropt-native/reference-build-v2/prefix
+-- Building GTSAM - shared: ON
+-- Wrote /workspace/.ropt-native/reference-build-v2/gtsam-build/GTSAMConfig.cmake
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE) 
+-- ===============================================================
+-- ================  Configuration Options  ======================
+--  CMAKE_CXX_COMPILER_ID type                       : GNU
+--  CMAKE_CXX_COMPILER_VERSION                       : 14.2.0
+--  CMake version                                    : 3.31.6
+--  CMake generator                                  : Unix Makefiles
+--  CMake build tool                                 : /usr/bin/gmake
+-- Build flags                                               
+--  Build Tests                                      : Disabled
+--  Build examples with 'make all'                   : Disabled
+--  Build timing scripts with 'make all'             : Disabled
+--  Build shared GTSAM libraries                     : Enabled
+--  Put build type in library name                   : Enabled
+--  Build libgtsam_unstable                          : Disabled
+--  Build GTSAM unstable Python                      : Enabled
+--  Build MATLAB Toolbox for unstable                : Disabled
+--  Build for native architecture                    : Disabled
+--  Build type                                       : Release
+--  C compilation flags                              :  -O3 -DNDEBUG
+--  C++ compilation flags                            :  -O3 -DNDEBUG
+--  GTSAM_COMPILE_FEATURES_PUBLIC                    : cxx_std_11
+--  GTSAM_COMPILE_OPTIONS_PUBLIC                     : 
+--  GTSAM_COMPILE_DEFINITIONS_PUBLIC                 : 
+--  GTSAM_COMPILE_OPTIONS_PUBLIC_RELEASE             : 
+--  GTSAM_COMPILE_DEFINITIONS_PUBLIC_RELEASE         : 
+--  Use System Eigen                                 : OFF (Using version: 3.3.7)
+--  Use System Metis                                 : OFF
+--  Using Boost version                              : 108300
+--  Use Intel TBB                                    : TBB not found
+--  Eigen will use MKL                               : MKL not found
+--  Eigen will use MKL and OpenMP                    : OpenMP found but GTSAM_WITH_EIGEN_MKL is disabled
+--  Default allocator                                : STL
+--  Cheirality exceptions enabled                    : YES
+--  Build with ccache                                : No
+-- Packaging flags
+--  CPack Source Generator                           : TGZ
+--  CPack Generator                                  : TGZ
+-- GTSAM flags                                               
+--  Quaternions as default Rot3                      : Disabled
+--  Runtime consistency checking                     : Disabled
+--  Rot3 retract is full ExpMap                      : Enabled
+--  Pose3 retract is full ExpMap                     : Enabled
+--  Allow features deprecated in GTSAM 4.2           : Enabled
+--  Metis-based Nested Dissection                    : Enabled
+--  Use tangent-space preintegration                 : Enabled
+-- MATLAB toolbox flags
+--  Install MATLAB toolbox                           : Disabled
+-- Python toolbox flags                                      
+--  Build Python module with pybind                  : Disabled
+-- ===============================================================
+-- Configuring done (0.7s)
+-- Generating done (1.1s)
+-- Build files have been written to: /workspace/.ropt-native/reference-build-v2/gtsam-build

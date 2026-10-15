@@ -1,0 +1,20 @@
+{
+  "scope": "instrumented diagnosis; every 17th factor; clock overhead and sampling bias; weighted phase proportions are estimates, not comparative latency",
+  "records": 1277,
+  "large_records": 730,
+  "weighted_estimated_phase_percent": {
+    "layout": 6.389783861312908,
+    "lookup": 7.251618877705696,
+    "callback": 62.04858087520712,
+    "validate_whiten": 9.473833472419992,
+    "cost": 2.1403761653848647,
+    "gradient": 9.169838558348987,
+    "finish": 3.5259681896204382
+  },
+  "metadata": {
+    "before_source_sha256": "41c27190a3d4eed0dcb9a00c48886cdd60222df5f20e33c0759dc119911d64f4",
+    "profile_source_sha256": "6f0c20f3f67debef045b861ec0a8b2c7ede0635961fe6651c2c585a4aedcb261",
+    "sample_every": 17,
+    "scope": "instrumented phase diagnosis only; clock overhead and sampling bias; not comparative latency"
+  }
+}

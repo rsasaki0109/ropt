@@ -1,0 +1,12 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 6.90s
+     Running tests/robust_block_norm.rs (target/release/deps/robust_block_norm-d07faa410ec545a5)
+
+running 4 tests
+test genuinely_unrepresentable_joint_norm_still_returns_nonfinite ... ok
+test tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights ... ok
+test large_joint_norms_have_representable_robust_costs ... ok
+test large_joint_norms_preserve_finite_frozen_covariance ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

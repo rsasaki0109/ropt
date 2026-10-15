@@ -1,0 +1,42 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.63s
+     Running tests/pcg_direction.rs (target/debug/deps/pcg_direction-222ad1b8819bd191)
+
+running 3 tests
+test finite_beta_with_overflowing_direction_does_not_reach_the_operator ... FAILED
+test invalid_initial_preconditioned_inner_products_stop_before_direction_evaluation ... FAILED
+test overflowing_beta_does_not_reach_the_operator ... FAILED
+
+failures:
+
+---- finite_beta_with_overflowing_direction_does_not_reach_the_operator stdout ----
+
+thread 'finite_beta_with_overflowing_direction_does_not_reach_the_operator' (161516) panicked at crates/ropt/tests/pcg_direction.rs:57:5:
+assertion `left == right` failed
+  left: Evaluation("operator received nonfinite direction")
+ right: NonFinite
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- invalid_initial_preconditioned_inner_products_stop_before_direction_evaluation stdout ----
+
+thread 'invalid_initial_preconditioned_inner_products_stop_before_direction_evaluation' (161517) panicked at crates/ropt/tests/pcg_direction.rs:79:9:
+assertion `left == right` failed
+  left: 2
+ right: 1
+
+---- overflowing_beta_does_not_reach_the_operator stdout ----
+
+thread 'overflowing_beta_does_not_reach_the_operator' (161518) panicked at crates/ropt/tests/pcg_direction.rs:40:5:
+assertion `left == right` failed
+  left: Evaluation("operator received nonfinite direction")
+ right: NonFinite
+
+
+failures:
+    finite_beta_with_overflowing_direction_does_not_reach_the_operator
+    invalid_initial_preconditioned_inner_products_stop_before_direction_evaluation
+    overflowing_beta_does_not_reach_the_operator
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test pcg_direction`

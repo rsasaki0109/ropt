@@ -1,0 +1,82 @@
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -624,6 +624,7 @@
+     }
+ 
+     fn retract(&self, x: &DVector<f64>, d: &DVector<f64>) -> Result<DVector<f64>, Error> {
++        let _phase = crate::profile::Phase::new("graph_retraction");
+         if x.len() != self.initial.len() || d.len() != self.tangent_size {
+             return Err(Error::InvalidDimensions);
+         }
+@@ -668,6 +669,7 @@
+         })
+     }
+     fn evaluate_sparse(&self, x: &DVector<f64>) -> Result<(DVector<f64>, CsrMatrix), Error> {
++        let _phase = crate::profile::Phase::new("graph_evaluation");
+         let mut residuals = DVector::zeros(self.residual_size);
+         let mut offsets = Vec::with_capacity(self.residual_size + 1);
+         offsets.push(0);
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -305,6 +305,7 @@
+     factors: &[SmootherFactor],
+     order: &[Key],
+ ) -> Result<(FactorGraph, BTreeMap<Key, VariableId>), Error> {
++        let _phase = crate::profile::Phase::new("graph_construction");
+     let mut graph = FactorGraph::new();
+     let mut ids = BTreeMap::new();
+     for key in order {
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -180,6 +180,7 @@
+         j: &CsrMatrix,
+         residual: &DVector<f64>,
+     ) -> Result<(), Error> {
++        let _phase = crate::profile::Phase::new("qr_rebuild");
+         // A complete new model can group rows by their first pivot, avoiding
+         // late rotations through already populated downstream rows. Preserve
+         // original order within each group. Incremental append stays in input
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -265,6 +265,7 @@
+         update: SmootherUpdate,
+         force_relinearize: bool,
+     ) -> Result<IsamReport, Error> {
++        let _phase = crate::profile::Phase::new("whole_update");
+         if !update.timestamps.is_empty() {
+             return Err(Error::InvalidOptions);
+         }
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -26,3 +26,5 @@
+ pub mod sparse_qr;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++mod profile;
+--- /dev/null
++++ b/crates/ropt/src/profile.rs
+@@ -0,0 +1,3 @@
++pub(crate) struct Phase { name: &'static str, start: std::time::Instant }
++impl Phase { pub(crate) fn new(name: &'static str)->Self {Self {name,start:std::time::Instant::now()}} }
++impl Drop for Phase {fn drop(&mut self){eprintln!("PHASE {} {}",self.name,self.start.elapsed().as_nanos());}}
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -797,6 +797,7 @@
+     options: &Options,
+     capture_ordering: bool,
+ ) -> Result<GaussianSolution, Error> {
++        let _phase = crate::profile::Phase::new("batch_solve");
+     if !matches!(options.loss, Loss::Squared)
+         || problem
+             .loss_blocks()
+--- a/crates/ropt/src/sparse_qr.rs
++++ b/crates/ropt/src/sparse_qr.rs
+@@ -79,6 +79,7 @@
+         r: &DVector<f64>,
+         damping: f64,
+     ) -> Result<DVector<f64>, Error> {
++        let _phase = crate::profile::Phase::new("sparse_qr_solve");
+         let (m, n) = j.shape();
+         if m == 0 || n == 0 || r.len() != m {
+             return Err(Error::InvalidDimensions);

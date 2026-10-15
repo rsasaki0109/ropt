@@ -1,0 +1,10 @@
+round 0 full: 4.041767s; all 1044 original-information prefixes and archived native agreement pass
+Traceback (most recent call last):
+  File "/workspace/ropt/benchmarks/paired_clique_csr.py", line 146, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/ropt/benchmarks/paired_clique_csr.py", line 93, in main
+    subprocess.run(['taskset','-c',str(args.cpu),str((args.before_binary if variant=='before' else args.binary).resolve()),str(out/'input.stream'),
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['taskset', '-c', '0', '/tmp/ropt-before-local-csr/benchmark_selective_se2_isam', '/tmp/ropt-local-csr-primary/input.stream', '/tmp/ropt-local-csr-primary/0-before', '1', '1', 'editable', '1']' returned non-zero exit status 126.

@@ -1,0 +1,4 @@
+{
+  "strided_write": "rejected: only 2/16 norm cases met the micro criterion; no full-stream measurement",
+  "inline_ad_inputs": "selected: 14/16 initial norm cases met the criterion; final candidate adds regression tests before formal probe/stream comparisons"
+}

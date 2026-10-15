@@ -1,0 +1,234 @@
+[
+  {
+    "flag": "--before-csr-dimensions",
+    "source_sha256": "4e13efdf86b61f8a5410cb9a92c9bf94072f587db182e9044261109ed4560937"
+  },
+  {
+    "flag": "--before-residual-count",
+    "source_sha256": "b37a271f9dabaf18f7de5f3e85d561cc8ceb8f434075209de216213b55b327c1"
+  },
+  {
+    "flag": "--before-empty-window",
+    "source_sha256": "6531c33f26a77ba2dea2fe180a44973fd832a8fef4123b58414ea90606d055fb"
+  },
+  {
+    "flag": "--before-retired-timestamps",
+    "source_sha256": "ee9385ac5faef90c00f825ced8a9de02872030a6a892dbdebbe8bcfb108e77a6"
+  },
+  {
+    "flag": "--before-covariance-preflight",
+    "source_sha256": "12ea8150c0eb9b88c91ef527eb9d77249ed0a45b68bd6f415ac779c619e2e288"
+  },
+  {
+    "flag": "--before-dynamic-lag",
+    "source_sha256": "a69446d49f6c0fd753336b1c44d5b6b3c37991fd84cfad9a72be3bf564f57ed9"
+  },
+  {
+    "flag": "--before-robust-covariance-model",
+    "source_sha256": "1d7164ae9fbf32131c836c889100459a8be62fc355805ba5e8a8cde753ddc4f5"
+  },
+  {
+    "flag": "--before-covariance-snapshot",
+    "source_sha256": "e51edd4cb5dcf76554e48c4aec98441d96cd44748f0bc01cfd198d0684043299"
+  },
+  {
+    "flag": "--before-expiry-estimates",
+    "source_sha256": "b46f8c21927edcadd7f032ebd15bd2b2c7a8047909386a1ee6e897cf75c87bfd"
+  },
+  {
+    "flag": "--before-tree-refinement",
+    "source_sha256": "64a5d3724d5877ecb4a1bfea3a2db6ebe0adb31db6709d330c69ddad2f849f9a"
+  },
+  {
+    "flag": "--before-tree-gradient",
+    "source_sha256": "10a41ce417d42667132cd2ceaab6c916a88855b8e83aaaf0920ce421141667e3"
+  },
+  {
+    "flag": "--before-cache-refresh",
+    "source_sha256": "8c04f9ad7802899dee48b1114765b34f3fb4a475202d5d9a5b6ebf1b2926caad"
+  },
+  {
+    "flag": "--before-factor-capture",
+    "source_sha256": "408cdc1c2b4394120a8172592e4a20fd74b61188a5496ee826af733f331ee413"
+  },
+  {
+    "flag": "--before-inline-ad-inputs",
+    "source_sha256": "a4794dd43ee88f82c6155932cf56303cc41ff9048b760edbbd391dec67320080"
+  },
+  {
+    "flag": "--before-block-jacobian",
+    "source_sha256": "af6a93f7252853127e972b3128d208ce0cb5798a59c46603565a346b6f96f1ad"
+  },
+  {
+    "flag": "--before-dense-probe",
+    "source_sha256": "41c27190a3d4eed0dcb9a00c48886cdd60222df5f20e33c0759dc119911d64f4"
+  },
+  {
+    "flag": "--before-probe-cost",
+    "source_sha256": "81722fe58b43addfedeae12d13a94c3062c5731627ff1b62285ffbeee305415d"
+  },
+  {
+    "flag": "--before-jet-negation",
+    "source_sha256": "5e03888fc601316ba2c877e98b0544c6e5daab767dad1b9540d93e29d4760b8c"
+  },
+  {
+    "flag": "--before-jet-loops",
+    "source_sha256": "0c171c75e64947bb8995b1b77be8d16fb7b9fb1eca3938c5c19f67906dc0c469"
+  },
+  {
+    "flag": "--before-jet-buffers",
+    "source_sha256": "5a2f130b59b3b3c8a45f97a825d3339c68f0611fa03c00b63c667246c1eef63e"
+  },
+  {
+    "flag": "--before-mixed-probe",
+    "source_sha256": "daa5994fbc2bfb6b539fd90b19170048b237df3b093a9d67192d4f50ce9a0fe8"
+  },
+  {
+    "flag": "--before-direct-probe",
+    "source_sha256": "c35917f74c8c8d32a434f5ee4f74b54eb9bca0ff2a461bfb37bd5d8afccce41b"
+  },
+  {
+    "flag": "--before-incidence-cache",
+    "source_sha256": "cdc6d2113705f42d7cf26e2379b4913507b53e4d4b5e6fe62843c84312bdb2f3"
+  },
+  {
+    "flag": "--before-editable-cow",
+    "source_sha256": "cae5cfa485723513f5799fb7722043b2d39c0299639535c1bd78775d424c9323"
+  },
+  {
+    "flag": "--before-local-clique-csr",
+    "source_sha256": "53671e84cba965edd4c45dc87a63570f86e0acdaf3da06d29111884cb36ebdaa"
+  },
+  {
+    "flag": "--before-stationarity-probes",
+    "source_sha256": "5ed015a439306d7e2527f5f226220a6324a418469d79798389a9d4298fdc4b38"
+  },
+  {
+    "flag": "--before-editable-bayes-tree",
+    "source_sha256": "7b04bda5bcfc14549c7fa0361da1994aece1c2091087118f2dfc09c927e3d669"
+  },
+  {
+    "flag": "--before-selective-relinearization",
+    "source_sha256": "31c01bc01ed53679b44fccb92bdaf46982010b8a2895b6bf926b84a42b350047"
+  },
+  {
+    "flag": "--before-cartesian-chart",
+    "source_sha256": "546535822f76c298b80619393d70455a1fbc7bc32b15a3bd869038e2b4bb1f2d"
+  },
+  {
+    "flag": "--before-qr-structure",
+    "source_sha256": "a5faa5c781b19faa6e1ef6a88c233e0751f1fcd7ae5c6db2d0dd8e8f4df6ecab"
+  },
+  {
+    "flag": "--before-bayes-tree",
+    "source_sha256": "c8ae1ce654073e8408f7e470c77415a1147e5d4f96ed5bf29e9182aae460c4e3"
+  },
+  {
+    "flag": "--before-information-precision",
+    "source_sha256": "678e5ab66a91392fb6b8849e155ceb6bcbc18ce44e892a7628a6b2202de06a6c"
+  },
+  {
+    "flag": "--before-sparse-qr",
+    "source_sha256": "6f3670ec8c608eb12bee16b2031aab5835a241e735285d6772adb0a172ba3c5c"
+  },
+  {
+    "flag": "--before-real-isam",
+    "source_sha256": "eb6a9a576b921200f82bb3e474382919c1427258a9e324c0ca0561072b2521b0"
+  },
+  {
+    "flag": "--before-qr-rebuild",
+    "source_sha256": "2438620bf9ad6c833f8c2084cdd7ecd205d5dc554d2bf86f1c01cebb17f6265e"
+  },
+  {
+    "flag": "--before-anchor-coordinates",
+    "source_sha256": "5d3a5de1a11c1aa1bdbbcf4c44859d54c7127d987cb24ac67d2e96ab6d16d289"
+  },
+  {
+    "flag": "--before-qr-columns",
+    "source_sha256": "ec5ec03056da4a4ef969234f64fdad01e68a620cb39754457c6242529b25f02b"
+  },
+  {
+    "flag": "--before-qr-reductions",
+    "source_sha256": "d3ad7e834bd2d23b830bf3172773bfa0a75eb6f879f0bb009368943ee32ccd73"
+  },
+  {
+    "flag": "--before-update-cursor",
+    "source_sha256": "ca68bf2894fb27e4c1498ed3fd7c71990fb62772b9fb153ceb5952f11bd689fd"
+  },
+  {
+    "flag": "--before-qr-norm",
+    "source_sha256": "4cdcea1a4e4476218884a61185aa986717589355fd133806c56d1d1591c9e1cc"
+  },
+  {
+    "flag": "--before-symbolic-merge",
+    "source_sha256": "63ad08ae135e85d51df51cb2fa13bb35d51371295b0c1c07b327af4557646ac5"
+  },
+  {
+    "flag": "--before-qr-aligned",
+    "source_sha256": "a0448407832c4c7f9f61ae02c52f86533f9b99d9dc52bdfddc3e91a36c099909"
+  },
+  {
+    "flag": "--before-normal-rebind",
+    "source_sha256": "4ac6c808eef27dd66f6b6461c9092cf07f1083f29e16853c62d05c88dd32d68f"
+  },
+  {
+    "flag": "--before-ordering-adjacency",
+    "source_sha256": "f9d5a34d25424400b89c31ec8726e8aec95e5cad37ed2a471679e63291ed5105"
+  },
+  {
+    "flag": "--before-whitening-buffers",
+    "source_sha256": "23ac190ae27e83972cf5e84c21ed948a42768210f00d95e75f9612b2582c72ef"
+  },
+  {
+    "flag": "--before-qr-inplace",
+    "source_sha256": "54aa16cb8687c670088e9513d422f081983f76d8446587ecbc52ba0d2b1d7c6b"
+  },
+  {
+    "flag": "--before-graph-retraction",
+    "source_sha256": "bbffa896b6c6edb2a49b1ad1a89d673e8ae407ad5757d26523accb30db96aa48"
+  },
+  {
+    "flag": "--before-canonical-csr",
+    "source_sha256": "3fa2c64823b6f2749c4211f6ecd883d9e8f1af8bca089d0e8ecf97b8b4d3b5dd"
+  },
+  {
+    "flag": "--before-qr-buffers",
+    "source_sha256": "591d0b1d9b0d392550cca9f1e8725c1b7711cc51b02a8ed8a8b164392d386a19"
+  },
+  {
+    "flag": "--before-symbolic-pattern",
+    "source_sha256": "e8735c009834aad576680b9a329be720f3ba3ceed7ed2475bd814debf5717c38"
+  },
+  {
+    "flag": "--before-refinement",
+    "source_sha256": "ae86a4746e860279c1ec5baf9483bb11b119595d560b2139e322372c1f5a9e4a"
+  },
+  {
+    "flag": "--before-objective",
+    "source_sha256": "6a77f7827cd50db5ddfce106bcb51ae0628f63bec9ada95dd28454cc69fd965d"
+  },
+  {
+    "flag": "--before-isam",
+    "source_sha256": "a0adf3e1b40b8c13d70f5eefd8a40960e3c8bf78701caf73e2ecdc5124d0ecac"
+  },
+  {
+    "flag": "--before-scheduled-refresh",
+    "source_sha256": "11d6160e152d661673d9fbeee35fafe8b8b58cd2d8025ff4beca6be4a9ffd729"
+  },
+  {
+    "flag": "--before-qr-merge",
+    "source_sha256": "688ae1c80275448108cbb771343f2b633affb7566e327718cda1f5b9667ea7ff"
+  },
+  {
+    "flag": "--before-model-reuse",
+    "source_sha256": "029ea57cb829ddba94a4d85f39051999a30e8bdda7267e941e5d8177cfd3aeab"
+  },
+  {
+    "flag": "--before-damping-reuse",
+    "source_sha256": "e6e08a58d37556e23efd146969b11f0edd746907c87e03e0e056454537cd5fd4"
+  },
+  {
+    "flag": "default",
+    "source_sha256": "808f8136a1567293d271c1269b5516148d1afed6963322acfcedb8e792f0c1f4"
+  }
+]

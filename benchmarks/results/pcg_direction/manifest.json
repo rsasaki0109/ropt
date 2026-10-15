@@ -1,0 +1,39 @@
+{
+  "before_source_sha256": "9b3768bf1d18495607056f8126d3fa79de391db2f23cecaa3597f88e0e5b6e90",
+  "source_sha256": "d6b30bf45f955d34f83e01f5519e73f4e32bd8ba70367ef83f891e5d02ee59a3",
+  "scope": "PCG rejects invalid preconditioned inner products and nonfinite recurrence directions before operator callbacks; finite-entry direction scan adds no vector buffer; no timing claim",
+  "validation": {
+    "rust_tests": 380,
+    "release_regressions_rechecked": 3,
+    "python_checks": 27,
+    "source_only_rollback_stages": 61,
+    "before_failures": 3,
+    "zero_fuzz_source_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "before.log": "db9e56beff7e5005d861edbd5828b3a2d59e003556a2e0d46ac767c1b9a526e6",
+    "benchmark-tests.log": "76157db76ac7d345491e0b66507c250b3267ba46d99f4bc9bfa7cc103f54f2b2",
+    "check_rollbacks.py": "3894e21d1eab18816740b0445635cfdc3e804c75c9544e48f9bb0d06e981e801",
+    "clippy.log": "deaa9e578744e677ee48c5cfd13ab4b7cbe047ef2c0f8149bf9683734aa32a71",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "csr_dimensions.patch": "eb94321c21905d2b1774c183b191798746e135509ed056cea9823b6f1376f2a4",
+    "empty_window.patch": "63eca993cb5228342b8781806f8d2710f6953ecbc1c915fb6f063d55a19b56fd",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "92150045e73bfca50b1f71cca111e00152dc50c9213835e7b9d9868c45e45dd9",
+    "pcg_direction.patch": "ea042a0ab4b0afadf1804d8aceaa786bacdab2abe0a1ed7206ebcf62e5dbfd91",
+    "pcg_direction.rs": "5f77207b2f8bb59c418efbfb1cbbaed086b5f2bf1a86f7f82772ad4a240cfcbc",
+    "pcg_iteration_limit.patch": "264158c70436f5e5c5041b3e8b8520b127042a8b5aba621bcd6f7ded07397f8d",
+    "pcg_residual_norm.patch": "8d3559672f88e8b49bca02d23cd50714ca5997458129255101a2b2bbd5c1ae74",
+    "python-tests.log": "3c9b5412f60535358de472e455d2ae16111104892b3c553c954f2f0a8ac8b334",
+    "release-tests.log": "0c504d9d58bd11d418c33072bbfb9e2a2e891b759284acce28af130897c75df8",
+    "residual_count.patch": "47c665d3e044c0ad4463a60bda21ab32009fe76ccab4791dc24aea96bad0df61",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "3a912b64677d989e5c9f45f137c2a269d76ee896102cd5912c2d4f64c4cdd8ac",
+    "rollback/report.json": "4b6cc242e3a0db217f80c0410537c756eef9e6112ae1eb7f1dd07552fab92687",
+    "sparse.rs": "d40436a24b3d5165dadac11f2a6b4129a73817e643d8eecf9b7a85138b186278",
+    "sparse.rs.before": "538a2fb1e88e330f0755276d4f5b087a8ccb6ca7a6c68adcf49673607ecf128d",
+    "targeted.log": "9db0eb6bf067848858f7e902da3568a81d11696104c3e178581d4b86971dc85a",
+    "workspace-tests.log": "5982f03028d1386c609b42042e89a44ed7cc50ebc424bde9554d765bccc69fc6"
+  }
+}

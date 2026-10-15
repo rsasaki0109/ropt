@@ -1,0 +1,16 @@
+{
+  "origin_retract_input": [
+    1.0,
+    2.0,
+    0.3
+  ],
+  "observed_output": [
+    1.0,
+    2.0,
+    0.3
+  ],
+  "passed": true,
+  "source_sha256": "4a042dec89f8a93b9b58ed43d1c7732c1bdf548537d918787350dab2204e69d7",
+  "exe_sha256": "429d64b04a10d6194cd91cec39eb9cec43b12dbaa64a2e1f12ff8556fbefc14d",
+  "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a"
+}

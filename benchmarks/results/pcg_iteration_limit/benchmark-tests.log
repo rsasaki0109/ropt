@@ -1,0 +1,19 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+warning: unused import: `allocation::Counter`
+ --> crates/ropt/examples/support/real_se2_benchmark.rs:4:9
+  |
+4 | pub use allocation::Counter;
+  |         ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `ropt` (example "benchmark_ad_selective_se2_isam" test) generated 1 warning (run `cargo fix --example "benchmark_ad_selective_se2_isam" -p ropt --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.53s
+     Running unittests examples/benchmark_ad_selective_se2_isam.rs (target/debug/examples/benchmark_ad_selective_se2_isam-4ac7ec910319c0b9)
+
+running 2 tests
+test tests::invalid_ad_selection_fails_before_loading_a_file ... ok
+test tests::parser_preserves_original_problem_across_explicit_ad_selections ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+

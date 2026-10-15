@@ -1,0 +1,89 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -105,6 +105,7 @@
+         let mut lower_row = Vec::new();
+         let mut row = Vec::new();
+         let max_entries = self.options.max_entries;
++        let mut counts=[0_u64;14];
+         for (r, &residual) in residual.iter().enumerate() {
+             row.clear();
+             row.extend(j.row(r)?);
+@@ -142,6 +143,35 @@
+                         .iter()
+                         .zip(&row[row_start + 1..])
+                         .all(|(upper, lower)| upper.0 == lower.0);
++                counts[0]+=1;
++                if has_diagonal && old.len()-1 == row.len()-row_start-1 {
++                    counts[1]+=1;
++                    let upper=&old[1..];let lower=&row[row_start+1..];let len=upper.len();
++                    for (a,b) in upper.iter().zip(lower) {counts[7]+=1;if a.0!=b.0 {break;}}
++                    let proposed=if len==0 {counts[13]+=1;true} else {
++                        counts[8]+=1;
++                        if upper[0].0!=lower[0].0 {counts[9]+=1;false}
++                        else if len==1 {counts[12]+=1;true}
++                        else {
++                            counts[8]+=1;
++                            if upper[len-1].0!=lower[len-1].0 {counts[10]+=1;false}
++                            else if upper[len-1].0-upper[0].0==len-1 {true}
++                            else {
++                                let mut matched=true;
++                                for (a,b) in upper[1..len-1].iter().zip(&lower[1..len-1]) {
++                                    counts[8]+=1;if a.0!=b.0 {counts[11]+=1;matched=false;break;}
++                                }
++                                matched
++                            }
++                        }
++                    };
++                    assert_eq!(proposed,aligned);
++                    if aligned {
++                        counts[2]+=1;counts[5]+=len as u64;
++                        if len>0 && upper[len-1].0-upper[0].0==len-1 {counts[3]+=1;counts[6]+=len as u64;}
++                        else if len>0 {counts[4]+=1;}
++                    }
++                }
+                 if aligned {
+                     // Independent column rotations share only reductions.
+                     // Delay the finite check until this suffix is complete; an
+@@ -317,6 +347,7 @@
+                 return Err(Error::NonFinite);
+             }
+         }
++        crate::qr_column_profile::record(counts);
+         Ok(())
+     }
+     /// Solve the full-column-rank cached model. No damping or pseudoinverse.
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,6 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++#[doc(hidden)]
++pub mod qr_column_profile;
+--- /dev/null
++++ b/crates/ropt/src/qr_column_profile.rs
+@@ -0,0 +1,5 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static COUNTS:[AtomicU64;14]=[const {AtomicU64::new(0)};14];
++pub fn record(values:[u64;14]) {for(c,v)in COUNTS.iter().zip(values){c.fetch_add(v,Ordering::Relaxed);}}
++pub fn reset(){for c in &COUNTS{c.store(0,Ordering::Relaxed);}}
++pub fn dump(){for(name,c)in ["rotations","equal_width","aligned","contiguous_aligned","gapped_aligned","aligned_entries","contiguous_entries","original_index_comparisons","proposed_index_comparisons","first_mismatch","last_mismatch","interior_mismatch","single_matches","empty_matches"].iter().zip(&COUNTS){eprintln!("{name},{}",c.load(Ordering::Relaxed));}}
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup {ropt::qr_column_profile::reset();}
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::qr_column_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;

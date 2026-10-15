@@ -1,0 +1,21 @@
+
+type:              ISAM2GaussNewtonParams
+wildfireThreshold: 0
+relinearizeThreshold:              0
+relinearizeSkip:                   1
+enableRelinearization:             1
+evaluateNonlinearError:            0
+factorization:                     QR
+cacheLinearizedFactors:            1
+enableDetailedResults:             0
+enablePartialRelinearizationCheck: 0
+findUnusedFactorSlots:             0
+exact_between=ON
+root eliminated with exact conditioned BetweenFactor
+gradient_metric=weighted-column-normalized
+additional empty updates until original gradient<=8e-8, maximum 200 calls
+version=4.2.1
+information_whitening=compensated_small_pivots
+precise_edges=0
+root_edges=1
+jacobian_probe=3.2719382758727988e-10

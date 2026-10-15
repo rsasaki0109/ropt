@@ -1,0 +1,60 @@
+cmake:
+  Installed: (none)
+  Candidate: 3.31.6-2
+  Version table:
+     3.31.6-2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-serialization-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-filesystem-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-system-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-thread-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-date-time-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-regex-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-timer-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages
+libboost-chrono-dev:
+  Installed: (none)
+  Candidate: 1.83.0.2+b2
+  Version table:
+     1.83.0.2+b2 500
+        500 https://deb.debian.org/debian trixie/main amd64 Packages

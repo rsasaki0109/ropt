@@ -1,0 +1,104 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -117,7 +117,7 @@
+             anchors.insert(v.key, v.clone());
+             variables.insert(v.key, v);
+         }
+-        let (new_graph, _) = build_graph(&anchors, &update.factors, &order)?;
++        let (new_graph, new_ids) = build_graph(&anchors, &update.factors, &order)?;
+         let (_, n, _) = new_graph.dimensions();
+         let mut qr = self.qr.clone();
+         qr.extend_columns(n)?;
+@@ -125,12 +125,11 @@
+         qr.append_in_place(&j, &r)?;
+         let delta = qr.solve()?;
+         let state = new_graph.retract(&new_graph.initial(), &delta)?;
+-        let mut factors = self.factors.clone();
+         let new_count = update.factors.len();
+-        factors.extend(update.factors);
+-        let (graph, ids) = build_graph(&anchors, &factors, &order)?;
+-        for (&key, &id) in &ids {
+-            variables.get_mut(&key).unwrap().value = graph.value(&state, id)?;
++        // Variable layout is determined solely by insertion order/kind/fixed
++        // status. The new-factor graph already has the complete variable layout.
++        for (&key, &id) in &new_ids {
++            variables.get_mut(&key).unwrap().value = new_graph.value(&state, id)?;
+         }
+         let raw_delta = new_graph
+             .tangent_blocks()?
+@@ -142,9 +141,21 @@
+             || updates.is_multiple_of(self.options.relinearization_interval)
+             || max_delta > self.options.relinearization_threshold;
+         if refresh {
++            // Keep the committed recipes untouched until success; ordinary
++            // updates never clone or register the old factor history.
++            let factors = self
++                .factors
++                .iter()
++                .chain(&update.factors)
++                .cloned()
++                .collect::<Vec<_>>();
+             let (graph, ids) = build_graph(&variables, &factors, &order)?;
+             let (_, n, m) = graph.dimensions();
+-            if m.checked_add(n)
++            if matches!(
++                self.options.batch_solver.linear_solver,
++                LinearSolver::Dense | LinearSolver::DenseQr(_) | LinearSolver::DenseSchur { .. }
++            ) && m
++                .checked_add(n)
+                 .and_then(|rows| rows.checked_mul(n))
+                 .is_none_or(|entries| entries > self.options.qr.max_entries)
+             {
+@@ -165,18 +176,18 @@
+                 variables.get_mut(&key).unwrap().value = graph.value(&solved.x, id)?;
+             }
+             anchors = variables.clone();
+-            let (graph, _) = build_graph(&anchors, &factors, &order)?;
+-            let (r, j) = graph.evaluate_sparse(&graph.initial())?;
++            // The optimized ambient vector uses the same layout as the new
++            // anchors, including fixed blocks and non-Euclidean tangent sizes.
++            let (r, j) = graph.evaluate_sparse(&solved.x)?;
+             qr = IncrementalQr::new(n, self.options.qr)?;
+             qr.append_in_place(&j, &r)?;
+             // Require an observable undamped model even when batch LM used damping.
+             qr.solve()?;
+         }
+         let max_anchor_delta = anchor_delta(&variables, &anchors)?;
+-        let (graph, ids) = build_graph(&anchors, &[], &order)?;
+         let mut delta = DVector::zeros(n);
+-        for (&key, &id) in &ids {
+-            if let Some(range) = graph.tangent_range(id)? {
++        for (&key, &id) in &new_ids {
++            if let Some(range) = new_graph.tangent_range(id)? {
+                 let v = &variables[&key];
+                 delta
+                     .rows_mut(range.start, range.len())
+@@ -192,7 +203,7 @@
+         self.variables = variables;
+         self.anchors = anchors;
+         self.order = order;
+-        self.factors = factors;
++        self.factors.extend(update.factors);
+         self.qr = qr;
+         self.updates = updates;
+         Ok(IsamReport {
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -247,10 +247,14 @@
+         if id.graph != self.identity {
+             return Err(Error::InvalidDimensions);
+         }
+-        self.variables
++        let variable = self
++            .variables
+             .get_mut(id.index)
+-            .ok_or(Error::InvalidDimensions)?
+-            .fixed = fixed;
++            .ok_or(Error::InvalidDimensions)?;
++        if variable.fixed == fixed {
++            return Ok(());
++        }
++        variable.fixed = fixed;
+         self.tangent_size = 0;
+         for v in &mut self.variables {
+             v.tangent = if v.fixed {

@@ -1,0 +1,33 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.83s
+     Running tests/fixed_lag_covariance_preflight.rs (target/debug/deps/fixed_lag_covariance_preflight-304678efe2e7fc9f)
+
+running 2 tests
+test invalid_covariance_options_never_evaluate_and_retry_keeps_expiry_schedule ... FAILED
+test invalid_covariance_keys_never_evaluate_old_or_proposed_factors ... FAILED
+
+failures:
+
+---- invalid_covariance_options_never_evaluate_and_retry_keeps_expiry_schedule stdout ----
+
+thread 'invalid_covariance_options_never_evaluate_and_retry_keeps_expiry_schedule' (66411) panicked at crates/ropt/tests/fixed_lag_covariance_preflight.rs:50:5:
+assertion `left == right` failed: invalid covariance request evaluated a factor
+  left: 15
+ right: 0
+
+---- invalid_covariance_keys_never_evaluate_old_or_proposed_factors stdout ----
+
+thread 'invalid_covariance_keys_never_evaluate_old_or_proposed_factors' (66410) panicked at crates/ropt/tests/fixed_lag_covariance_preflight.rs:50:5:
+assertion `left == right` failed: invalid covariance request evaluated a factor
+  left: 15
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    invalid_covariance_keys_never_evaluate_old_or_proposed_factors
+    invalid_covariance_options_never_evaluate_and_retry_keeps_expiry_schedule
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test fixed_lag_covariance_preflight`

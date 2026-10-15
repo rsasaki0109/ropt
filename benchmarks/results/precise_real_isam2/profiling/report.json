@@ -1,0 +1,36 @@
+{
+  "scope": "single isolated instrumented cold replay; nested timers overlap, not comparative primary timing",
+  "base_source_sha256": "546535822f76c298b80619393d70455a1fbc7bc32b15a3bd869038e2b4bb1f2d",
+  "executable_sha256": "9a04f498440cc5aa762d3b37be95a12a1f07727a6c4f974951993d899fc1a6ab",
+  "phases": {
+    "graph_construction": {
+      "calls": 2455,
+      "seconds": 0.309016609
+    },
+    "graph_evaluation": {
+      "calls": 4577,
+      "seconds": 1.820797239
+    },
+    "graph_retraction": {
+      "calls": 3350,
+      "seconds": 0.158870109
+    },
+    "whole_update": {
+      "calls": 1228,
+      "seconds": 11.048672029
+    },
+    "batch_solve": {
+      "calls": 1227,
+      "seconds": 7.438601821
+    },
+    "qr_rebuild": {
+      "calls": 3869,
+      "seconds": 6.372014715
+    },
+    "sparse_qr_solve": {
+      "calls": 2642,
+      "seconds": 5.122939195
+    }
+  },
+  "instrumentation_patch_sha256": "f0249153d8509e08dcfafbdaa9dd12256c628b37f17e0d6db8f2bd5abb2fefe9"
+}

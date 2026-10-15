@@ -1,0 +1,30 @@
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -335,6 +335,8 @@
+ }
+ /// Zero-initialized PCG with an explicit SPD preconditioner and checked true residual.
+ /// Does not certify global SPD; both operator and preconditioner must satisfy their contracts.
++/// The final allowed step always checks `b - A*x` before reporting the iteration
++/// limit. No preconditioner application is performed to prepare a further step.
+ pub fn conjugate_gradient_preconditioned(
+     operator: &impl LinearOperator,
+     preconditioner: &impl crate::preconditioner::Preconditioner,
+@@ -399,7 +401,7 @@
+         r.axpy(-alpha, &ap, 1.0);
+         finite_vector(&x)?;
+         finite_vector(&r)?;
+-        if cg_norm(&r)? <= threshold {
++        if iteration == options.max_iterations || cg_norm(&r)? <= threshold {
+             apply(&x, &mut true_r)?;
+             for k in 0..n {
+                 true_r[k] = b[k] - true_r[k];
+@@ -411,6 +413,9 @@
+                     iterations: iteration,
+                     residual_norm,
+                 });
++            }
++            if iteration == options.max_iterations {
++                break;
+             }
+             // Restart if rounding made the recursive residual too optimistic.
+             r.copy_from(&true_r);

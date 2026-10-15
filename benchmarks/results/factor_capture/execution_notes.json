@@ -1,0 +1,15 @@
+{
+  "execution": "Two sequential six-pair campaigns; no overlapping build, test, profiling, or separate archival/audit work by this agent. The runner validates/compresses between timed processes.",
+  "selected_cap": 0,
+  "policy_constant_across_kernels": true,
+  "primary_meets_speed_criterion": false,
+  "confirmation_meets_speed_criterion": true,
+  "repeatable_whole_stream_speedup_established": false,
+  "latency_quantiles": "Pooled arrivals per variant/campaign; nearest rank ceil(p*N). Observed distributions, not paired confidence estimates or real-time guarantees.",
+  "native_timing_measured": false,
+  "validation": "333 Rust library/integration/doc tests plus 2 replay-example tests, Python 23, all-target Clippy, fmt, Rustdoc, 46 zero-fuzz source-only rollback stages.",
+  "tools_sha256": {
+    "benchmarks/make_ldl_baseline.py": "2a3a6d907f627481ef5d8540a31005b4f25b23953399d732877455b35bc1394f",
+    "benchmarks/verify_factor_capture.py": "e97f9b99a84aa0ba202dd1e35ba56b874ff984a684eabb17c7c51250a05a4eb4"
+  }
+}

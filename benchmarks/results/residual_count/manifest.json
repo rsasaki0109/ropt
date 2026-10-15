@@ -1,0 +1,35 @@
+{
+  "before_source_sha256": "b37a271f9dabaf18f7de5f3e85d561cc8ceb8f434075209de216213b55b327c1",
+  "source_sha256": "4e13efdf86b61f8a5410cb9a92c9bf94072f587db182e9044261109ed4560937",
+  "scope": "checked factor residual-count and terminal CSR-offset arithmetic, transactional graph/fixed-lag/iSAM registration; no memory budget or timing claim",
+  "validation": {
+    "rust_tests": 365,
+    "release_regressions_rechecked": 3,
+    "python_checks": 27,
+    "source_only_rollback_stages": 57,
+    "before_failures": 3,
+    "zero_fuzz_source_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "before.log": "be3016bb5009a380f7fc17cac91576dbe4022c1dd24e6efb586fa243dea6aa82",
+    "benchmark-tests.log": "d704ca23f70ae2cda5cdfeaa47ab76643c23531dab15fe20b5df0f80884af9e2",
+    "check_rollbacks.py": "36f93c6eb5a2ed2cc1fe9c3eb21d323701f8a5aa4f57e1fb57785548cc40f7f9",
+    "clippy.log": "3357f0aa7cb265546a34219c8fda7a64ec612130a8a426969031de089cf1783b",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "empty_window.patch": "63eca993cb5228342b8781806f8d2710f6953ecbc1c915fb6f063d55a19b56fd",
+    "factor.rs": "2663dd64763fccc3d5a79af206cb090c0b739dd2f53df06b2b66d4da889297b3",
+    "factor.rs.before": "f04fec8c01c3a717d7f897169b2ba85806ce7a4f268bd845b38cc19da5729018",
+    "factor_residual_count.rs": "e7427f2be0f2181af208092fdab3572d6a3203e412b2756d191f1f01695503a9",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "66da269b935152b73a32750ba7ad755d8539b557e911db44de8770a459bfd550",
+    "python-tests.log": "facf4335405473449e9fbac9f89d3b49ce24516d1e988ad93fdfb5dc99d5b349",
+    "release-tests.log": "76a0e9591c03099f8db86bc276c1ec8791b39782d6a3c8554ce2750d4832934f",
+    "residual_count.patch": "47c665d3e044c0ad4463a60bda21ab32009fe76ccab4791dc24aea96bad0df61",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "c484b07e4776984b58b212b68d0696135d12128c5a89bd6577a5443c58a05016",
+    "rollback/report.json": "c837e3686106afcfe781cad64f6260ab2d39345b9ead40559ba1b410832cf76e",
+    "targeted.log": "a73b69271f2d945eef9700dfa656d548307992c65d4fb326f90aa31193dbc623",
+    "workspace-tests.log": "e2404a4159ffcf3b3471efd4bf7f9f4d553c472288c4b3b4c61b1d6f946d402e"
+  }
+}

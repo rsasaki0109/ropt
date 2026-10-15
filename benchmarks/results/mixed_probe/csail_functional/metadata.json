@@ -1,0 +1,24 @@
+{
+  "source_sha256": "5a2f130b59b3b3c8a45f97a825d3339c68f0611fa03c00b63c667246c1eef63e",
+  "binary_sha256": "12c8ba91b261efedf52d12621ab9e0db28223040bde3a29536673b9367a66c34",
+  "dataset": {
+    "name": "csail-se-sync1045",
+    "poses": 1045,
+    "edges": 1172,
+    "commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+    "url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+    "recording": "CSAIL recorded SE2 pose graph",
+    "seed_policy": "odometry-chain",
+    "sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6"
+  },
+  "reference_pose_sha256": "0f00b38a29262a7e4d3dbaebbc09286e66aab288078d3ca3f4ee58538903b193",
+  "exact_complete_pose_bytes": true,
+  "exact_non_timing_update_fields": true,
+  "scope": "functional only; cold noncomparative run",
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_selective_se2_isam.rs": "63e91ed31f932b856b1bd215a079eb476ba490dcb0e80c4a578e270711725d56",
+    "crates/ropt/examples/support/real_selective_se2.rs": "4871b7b84586c2d39df4015f326ae967203ffd7d5e933c8e2ac81360dfa60805",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "fc21309a7006d7452583c836deb6522f013b17912445e2c17e015801f7de6e8d",
+    "benchmarks/check_real_replay.py": "bee637ed54ac0a8a4b48c9e0bb13fd1dca4f5aa2d9977aa42bf774b6f3ef8abe"
+  }
+}

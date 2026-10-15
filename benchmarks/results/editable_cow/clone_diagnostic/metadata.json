@@ -1,0 +1,24 @@
+{
+  "scope": "clone-only successful allocation/reallocation traffic; no live/peak memory or latency measurement",
+  "columns": 2048,
+  "copies": 64,
+  "allocator_counting": true,
+  "before_source_sha256": "cae5cfa485723513f5799fb7722043b2d39c0299639535c1bd78775d424c9323",
+  "after_source_sha256": "cdc6d2113705f42d7cf26e2379b4913507b53e4d4b5e6fe62843c84312bdb2f3",
+  "files_sha256": {
+    "benchmarks/profile_editable_clone.rs": "1bacf945dd344182e8e16350414716fd3ce5c772b69eb001cbc357678b13b511",
+    "benchmarks/profile_editable_metadata.py": "1d21b167d89667f098b2c0d78beb082f4236bbe7a0968e828d77ec29b225f9b4",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "README.md": "7982ebc9cb074c66b9c1b7e3073411a413c6825b659aefb4f10d470757da65eb"
+  },
+  "variants": {
+    "before": {
+      "source_sha256": "cae5cfa485723513f5799fb7722043b2d39c0299639535c1bd78775d424c9323",
+      "binary_sha256": "4cf25aa71f910008d1326d1c0f4237c559eb8b22393b9f6aba0d5ab4c360a23c"
+    },
+    "after": {
+      "source_sha256": "cdc6d2113705f42d7cf26e2379b4913507b53e4d4b5e6fe62843c84312bdb2f3",
+      "binary_sha256": "f004a039dc67ff245b32b1d1acd8dbad261e5f16b6445f3c2f51bd0ce3bee585"
+    }
+  }
+}

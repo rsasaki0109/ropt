@@ -1,0 +1,50 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -101,6 +101,12 @@
+                     continue;
+                 }
+                 let old = &self.rows[k];
++                {let (mut a,mut b)=(usize::from(!old.is_empty()),1);
++                while a<old.len() && (b==row.len() || old[a].0<=row[b].0) {
++                    if b<row.len() && old[a].0==row[b].0 {b+=1;}
++                    a+=1;
++                }
++                crate::qr_profile::record(old.len().saturating_sub(1),a.saturating_sub(1),!old.is_empty() && a==old.len() && b==row.len());}
+                 let diagonal = old.first().map_or(0., |&(_, value)| value);
+                 let norm = diagonal.hypot(below);
+                 if !norm.is_finite() || norm == 0. {
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,5 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++pub mod qr_profile;
+--- a/crates/ropt/src/qr_profile.rs
++++ b/crates/ropt/src/qr_profile.rs
+@@ -0,0 +1,4 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static COUNTS:[AtomicU64;4]=[const{AtomicU64::new(0)};4];
++pub fn record(total:usize,prefix:usize,complete:bool){for (counter,value) in COUNTS.iter().zip([1,total as u64,prefix as u64,u64::from(complete)]){counter.fetch_add(value,Ordering::Relaxed);}}
++pub fn dump(){eprintln!("rotations,existing_tail_entries,prefix_entries,complete_existing_rotations");eprintln!("{},{},{},{}",COUNTS[0].load(Ordering::Relaxed),COUNTS[1].load(Ordering::Relaxed),COUNTS[2].load(Ordering::Relaxed),COUNTS[3].load(Ordering::Relaxed));}
+--- a/crates/ropt/examples/benchmark_warm_isam_se2.rs
++++ b/crates/ropt/examples/benchmark_warm_isam_se2.rs
+@@ -4,7 +4,7 @@
+ #[global_allocator]
+ static ALLOCATOR: benchmark::Counter = benchmark::Counter;
+ fn main() -> Result<(), Box<dyn std::error::Error>> {
+-    benchmark::run(
++    let result=benchmark::run(
+         "reuse",
+         |options| ropt::isam::IsamSmoother::new(options)?.with_batch_damping_reuse(),
+         |report| {
+@@ -13,5 +13,7 @@
+                 .zip(report.batch_final_damping)
+                 .map(|(a, b)| (report.batch_trials, a, b))
+         },
+-    )
++    );
++    ropt::qr_profile::dump();
++    result
+ }

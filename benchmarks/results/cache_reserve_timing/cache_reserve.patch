@@ -1,0 +1,98 @@
+--- a/crates/ropt/src/isam.rs
++++ b/crates/ropt/src/isam.rs
+@@ -458,13 +458,17 @@
+         };
+         // Forced/interval refreshes replace every factor block on success.
+         // Keep the committed cache intact, but do not clone its discarded rows.
+-        let mut selective_cache = self.selective_cache.as_ref().map(|cache| {
+-            if reason.is_some() {
+-                cache.empty_like()
+-            } else {
+-                cache.clone()
+-            }
+-        });
++        let mut selective_cache = self
++            .selective_cache
++            .as_ref()
++            .map(|cache| {
++                if reason.is_some() {
++                    Ok(cache.empty_like())
++                } else {
++                    cache.clone_for_append(new_count)
++                }
++            })
++            .transpose()?;
+         // A scheduled rebuild does not depend on observability or residual
+         // validity at obsolete anchors. Do not copy/solve the discarded cache.
+         let mut qr = if reason.is_some() {
+--- a/crates/ropt/src/isam/selective.rs
++++ b/crates/ropt/src/isam/selective.rs
+@@ -98,6 +98,22 @@
+     Ok(blocks)
+ }
+ impl FactorCache {
++    pub fn clone_for_append(&self, count: usize) -> Result<Self, Error> {
++        let capacity = self
++            .blocks
++            .len()
++            .checked_add(count)
++            .ok_or(Error::InvalidDimensions)?;
++        // Vec::clone retains the length, not spare capacity. Reserve incoming
++        // factors before copying references so append does not grow it again.
++        let mut blocks = Vec::with_capacity(capacity);
++        blocks.extend(self.blocks.iter().cloned());
++        Ok(Self {
++            blocks,
++            entries: self.entries,
++            max_passes: self.max_passes,
++        })
++    }
+     pub fn empty_like(&self) -> Self {
+         Self::new(self.max_passes)
+     }
+@@ -326,6 +342,45 @@
+ mod capture_tests {
+     use super::*;
+ 
++    #[test]
++    fn append_candidate_retains_policy_and_leaves_committed_rows_unchanged() {
++        let j = CsrMatrix::from_triplets(2, 2, vec![(0, 0, 1.), (1, 1, 2.)]).unwrap();
++        let r = DVector::from_vec(vec![1., -2.]);
++        let factors = recipes(&[1, 1]);
++        let mut original = FactorCache::new(3);
++        original.reset(&j, &r, &factors, 8).unwrap();
++        assert!(matches!(
++            original.clone_for_append(usize::MAX),
++            Err(Error::InvalidDimensions)
++        ));
++        for count in [0, 2, 5] {
++            let mut candidate = original.clone_for_append(count).unwrap();
++            assert_eq!(candidate.max_passes, 3);
++            assert!(matches!(
++                candidate.append(&j, &r, &factors, 7),
++                Err(Error::SparseFillLimit { limit: 7 })
++            ));
++            candidate.append(&j, &r, &factors, 8).unwrap();
++            let (residual, assembled) = candidate.assemble(2).unwrap();
++            assert_eq!(residual.as_slice(), &[1., -2., 1., -2.]);
++            assert_eq!(assembled.shape(), (4, 2));
++            assert_eq!(candidate.entries, 8);
++            assert_eq!(original.entries, 4);
++            assert_eq!(original.blocks.len(), 2);
++            assert!(
++                candidate
++                    .blocks
++                    .iter()
++                    .zip(&original.blocks)
++                    .all(|(a, b)| Arc::ptr_eq(a, b))
++            );
++            let (unchanged, matrix) = original.assemble(2).unwrap();
++            assert_eq!(unchanged, r);
++            assert_eq!(matrix.pattern(), j.pattern());
++            assert_eq!(matrix.values(), j.values());
++        }
++    }
++
+     fn recipes(rows: &[usize]) -> Vec<SmootherFactor> {
+         rows.iter()
+             .map(|&n| SmootherFactor::analytic(&[], n, Default::default(), |_| unreachable!()))

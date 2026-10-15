@@ -1,0 +1,28 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -269,6 +269,8 @@
+     }
+ }
+ /// Explicit robust loss on the joint squared norm of a disjoint, whitened residual block.
++/// The joint norm avoids intermediate squared-norm overflow and underflow when
++/// the norm is representable; loss costs and weights still follow f64 range limits.
+ #[derive(Debug, Clone)]
+ pub struct LossBlock {
+     pub rows: Range<usize>,
+@@ -687,7 +689,15 @@
+         for i in cursor..block.rows.start {
+             add(residual[i].abs(), fallback, i..i + 1)?;
+         }
+-        let norm = residual.rows(block.rows.start, block.rows.len()).norm();
++        let values = residual.rows(block.rows.start, block.rows.len());
++        let squared = values.norm_squared();
++        // Preserve the usual path, but avoid losing tiny block norms (and their
++        // robust weights) or overflowing when the norm itself is representable.
++        let norm = if squared.is_normal() {
++            squared.sqrt()
++        } else {
++            values.iter().fold(0_f64, |norm, value| norm.hypot(*value))
++        };
+         add(norm, block.loss, block.rows.clone())?;
+         cursor = block.rows.end;
+     }

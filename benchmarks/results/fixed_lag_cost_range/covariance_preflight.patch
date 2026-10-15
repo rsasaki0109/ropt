@@ -1,0 +1,95 @@
+--- a/crates/ropt/src/covariance.rs
++++ b/crates/ropt/src/covariance.rs
+@@ -46,7 +46,7 @@
+     }
+ }
+ impl CovarianceOptions {
+-    fn validate(&self) -> Result<(), Error> {
++    pub(crate) fn validate(&self) -> Result<(), Error> {
+         if self.svd_max_iterations == 0
+             || !self.relative_rank_tolerance.is_finite()
+             || self.relative_rank_tolerance <= 0.0
+--- a/crates/ropt/src/factor.rs
++++ b/crates/ropt/src/factor.rs
+@@ -502,17 +502,26 @@
+         ids: &[VariableId],
+         options: &crate::covariance::CovarianceOptions,
+     ) -> Result<crate::covariance::TangentCovariance, Error> {
++        let indices = self.covariance_indices(ids)?;
++        crate::covariance::marginal_covariance(self, x, &indices, options)
++    }
++    /// Validate query blocks without evaluating any factor callbacks.
++    pub(crate) fn covariance_indices(&self, ids: &[VariableId]) -> Result<Vec<usize>, Error> {
+         if ids.is_empty() {
+             return Err(Error::InvalidDimensions);
+         }
+         let mut indices = Vec::new();
++        let mut seen = std::collections::BTreeSet::new();
+         for &id in ids {
++            if !seen.insert(id.index) {
++                return Err(Error::InvalidDimensions);
++            }
+             let range = self.tangent_range(id)?.ok_or_else(|| {
+                 Error::Evaluation("fixed variables have no estimated covariance".into())
+             })?;
+             indices.extend(range);
+         }
+-        crate::covariance::marginal_covariance(self, x, &indices, options)
++        Ok(indices)
+     }
+     /// Validate an independent eliminated suffix and return (retained columns, block size).
+     /// Fixed IDs are excluded; active eliminated blocks must have equal tangent sizes.
+--- a/crates/ropt/src/fixed_lag.rs
++++ b/crates/ropt/src/fixed_lag.rs
+@@ -283,7 +283,9 @@
+     /// Keys may include variables that expire in this update. Matrix blocks follow
+     /// the requested key order in right-tangent coordinates; `indices` refer to
+     /// the pre-marginalization graph layout. Fixed, missing, duplicate or empty
+-    /// queries are errors. The full window Jacobian must be observable.
++    /// queries are errors, checked before optimization calls factor callbacks.
++    /// Invalid covariance options are also rejected before factor evaluation.
++    /// The full window Jacobian must be observable.
+     ///
+     /// This explicitly opts into the covariance backend's dense SVD and cost.
+     /// Covariance or marginalization failure leaves all owned state unchanged.
+@@ -371,10 +373,20 @@
+         let mut factors = self.factors.clone();
+         factors.extend(update.factors);
+         if let Some((_, options)) = covariance_query {
++            options.validate()?;
+             self.validate_covariance_model(&factors, options)?;
+         }
+         let order = variables.keys().copied().collect::<Vec<_>>();
+         let (graph, ids) = build_graph(&variables, &factors, &order)?;
++        let covariance_indices = covariance_query
++            .map(|(keys, _)| {
++                let query = keys
++                    .iter()
++                    .map(|key| ids.get(key).copied().ok_or(Error::InvalidDimensions))
++                    .collect::<Result<Vec<_>, _>>()?;
++                graph.covariance_indices(&query)
++            })
++            .transpose()?;
+         let (_, n, m) = graph.dimensions();
+         // Bound dense window/augmented-QR matrices too, before evaluating callbacks.
+         self.options
+@@ -391,12 +403,13 @@
+             )));
+         }
+         let covariance = covariance_query
+-            .map(|(keys, options)| {
+-                let query = keys
+-                    .iter()
+-                    .map(|key| ids.get(key).copied().ok_or(Error::InvalidDimensions))
+-                    .collect::<Result<Vec<_>, _>>()?;
+-                graph.marginal_covariance(&solved.x, &query, options)
++            .map(|(_, options)| {
++                crate::covariance::marginal_covariance(
++                    &graph,
++                    &solved.x,
++                    covariance_indices.as_ref().unwrap(),
++                    options,
++                )
+             })
+             .transpose()?;
+         for (&key, &id) in &ids {

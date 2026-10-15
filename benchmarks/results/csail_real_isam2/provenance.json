@@ -1,0 +1,20 @@
+{
+  "artifact": "SE-Sync data/CSAIL.g2o",
+  "source_commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+  "source_url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+  "artifact_sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6",
+  "poses": 1045,
+  "edges": 1172,
+  "provided_vertex_seeds": false,
+  "original_consecutive_odometry_constraints": 1044,
+  "initialization": "compose original consecutive odometry once from fixed identity root; loops excluded from initialization; all constraints retained for optimization",
+  "real_recording_evidence": {
+    "publication": "Rosen, Carlone, Bandeira and Leonard (2019), SE-Sync: A certifiably correct algorithm for synchronization over the special Euclidean group",
+    "section": "6.2, SLAM benchmark datasets",
+    "statement": "the remainder (the csail, intel, ais2klinik, garage, cubicle, and rim datasets) are real-world examples",
+    "source_pdf_url": "https://github.com/david-m-rosen/SE-Sync/blob/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/references/SE-Sync%20-%20A%20certifiably%20correct%20algorithm%20for%20synchronization%20over%20the%20special%20Euclidean%20group.pdf",
+    "source_pdf_sha256": "4596ed13959238c35bb51cac03c7127c61bb2662f3f52f71ef85bfdc4c02a9a3"
+  },
+  "independent_recording_from_intel": true,
+  "information_matrices_requiring_compensation": 0
+}

@@ -1,0 +1,11 @@
+{
+  "campaign_order": [
+    "primary",
+    "confirmation"
+  ],
+  "execution": "Both campaigns ran sequentially with no overlapping build, test, profiling, or separate archival/audit work by this agent. The runner performs its own serialization and checking between timed processes.",
+  "policy": "Same production binary, explicit requested cap 1 versus 0; implicit threshold-selected passes retained.",
+  "latency_quantiles": "Pooled timed arrivals within each variant/campaign; P95/P99 use nearest rank ceil(p*N); these are observations, not paired confidence estimates.",
+  "native_timing_measured": false,
+  "auditor_sha256": "8e8ddcca84cebe3446f7b32186e69438701a3ead14f2500f808c90c21c471aaf"
+}

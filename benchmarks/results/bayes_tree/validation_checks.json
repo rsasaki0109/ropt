@@ -1,0 +1,21 @@
+{
+  "source_sha256": "a5faa5c781b19faa6e1ef6a88c233e0751f1fcd7ae5c6db2d0dd8e8f4df6ecab",
+  "rust_unit_integration_tests": 260,
+  "rust_doctests": 18,
+  "python_tests": 18,
+  "formatting_passed": true,
+  "clippy_warnings_denied": true,
+  "rustdoc_warnings_denied": true,
+  "source_only_rollback_stages": 28,
+  "older_stage_builds_skipped": true,
+  "default_recorded_replay_exact_regressions": true,
+  "nonlinear_se2_arrivals": 300,
+  "gaussian_primary_pairs": 6,
+  "gaussian_confirmation_pairs": 6,
+  "all_gaussian_original_quality_and_paired_agreement_gates_pass": true,
+  "timing_campaigns_serial_after_build_and_tests": true,
+  "rollback_patch_sha256": "ff66c6b11bd28f109cf7258c12ee04b3f706fdadfc6b65a9b8b0a5537e577ae9",
+  "fixture_sha256": "3792d9d48af5d82989afab395d1c0f1fe16a1df46e715ed535b0234d76c2485e",
+  "validator_sha256": "39224b08bd554673247b6ead5a0f645108df10f69a52473a72d37efe86660cee",
+  "validator_executable_sha256": "7887f77fa258855ab980da87f1210359ecd3c08077ab096b8fee17d240b0d0ae"
+}

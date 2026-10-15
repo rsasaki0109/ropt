@@ -1,0 +1,59 @@
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  cmake-data libboost-atomic1.83-dev libboost-atomic1.83.0
+  libboost-chrono1.83-dev libboost-chrono1.83.0t64 libboost-filesystem1.83-dev
+  libboost-program-options1.83-dev libboost-serialization1.83-dev
+  libboost-serialization1.83.0 libboost-system1.83-dev libboost-system1.83.0
+  libboost-timer1.83-dev libboost-timer1.83.0 libboost1.83-dev librhash1
+  libuv1t64
+Suggested packages:
+  cmake-doc cmake-format elpa-cmake-mode ninja-build libboost1.83-doc
+  libboost-container1.83-dev libboost-context1.83-dev
+  libboost-contract1.83-dev libboost-coroutine1.83-dev
+  libboost-date-time1.83-dev libboost-exception1.83-dev libboost-fiber1.83-dev
+  libboost-graph-parallel1.83-dev libboost-graph1.83-dev
+  libboost-iostreams1.83-dev libboost-json1.83-dev libboost-locale1.83-dev
+  libboost-log1.83-dev libboost-math1.83-dev libboost-mpi-python1.83-dev
+  libboost-mpi1.83-dev libboost-nowide1.83-dev libboost-numpy1.83-dev
+  libboost-python1.83-dev libboost-random1.83-dev libboost-regex1.83-dev
+  libboost-stacktrace1.83-dev libboost-test1.83-dev libboost-thread1.83-dev
+  libboost-type-erasure1.83-dev libboost-url1.83-dev libboost-wave1.83-dev
+  libboost1.83-tools-dev libmpfrc++-dev libntl-dev
+The following NEW packages will be installed:
+  cmake cmake-data libboost-atomic1.83-dev libboost-atomic1.83.0
+  libboost-chrono-dev libboost-chrono1.83-dev libboost-chrono1.83.0t64
+  libboost-filesystem-dev libboost-filesystem1.83-dev
+  libboost-program-options-dev libboost-program-options1.83-dev
+  libboost-serialization-dev libboost-serialization1.83-dev
+  libboost-serialization1.83.0 libboost-system1.83-dev libboost-system1.83.0
+  libboost-timer-dev libboost-timer1.83-dev libboost-timer1.83.0
+  libboost1.83-dev librhash1 libuv1t64
+0 upgraded, 22 newly installed, 0 to remove and 7 not upgraded.
+Need to get 28.4 MB of archives.
+After this operation, 247 MB of additional disk space will be used.
+Get:1 https://deb.debian.org/debian trixie/main amd64 cmake-data all 3.31.6-2 [2268 kB]
+Get:2 https://deb.debian.org/debian trixie/main amd64 librhash1 amd64 1.4.5-1 [132 kB]
+Get:3 https://deb.debian.org/debian trixie/main amd64 libuv1t64 amd64 1.50.0-2 [154 kB]
+Get:4 https://deb.debian.org/debian trixie/main amd64 cmake amd64 3.31.6-2 [12.0 MB]
+Get:5 https://deb.debian.org/debian trixie/main amd64 libboost1.83-dev amd64 1.83.0-4.2 [10.6 MB]
+Get:6 https://deb.debian.org/debian trixie/main amd64 libboost-atomic1.83.0 amd64 1.83.0-4.2 [234 kB]
+Get:7 https://deb.debian.org/debian trixie/main amd64 libboost-atomic1.83-dev amd64 1.83.0-4.2 [236 kB]
+Get:8 https://deb.debian.org/debian trixie/main amd64 libboost-chrono1.83.0t64 amd64 1.83.0-4.2 [240 kB]
+Get:9 https://deb.debian.org/debian trixie/main amd64 libboost-chrono1.83-dev amd64 1.83.0-4.2 [246 kB]
+Get:10 https://deb.debian.org/debian trixie/main amd64 libboost-chrono-dev amd64 1.83.0.2+b2 [4224 B]
+Get:11 https://deb.debian.org/debian trixie/main amd64 libboost-system1.83.0 amd64 1.83.0-4.2 [231 kB]
+Get:12 https://deb.debian.org/debian trixie/main amd64 libboost-system1.83-dev amd64 1.83.0-4.2 [232 kB]
+Get:13 https://deb.debian.org/debian trixie/main amd64 libboost-filesystem1.83-dev amd64 1.83.0-4.2 [297 kB]
+Get:14 https://deb.debian.org/debian trixie/main amd64 libboost-filesystem-dev amd64 1.83.0.2+b2 [3628 B]
+Get:15 https://deb.debian.org/debian trixie/main amd64 libboost-program-options1.83-dev amd64 1.83.0-4.2 [375 kB]
+Get:16 https://deb.debian.org/debian trixie/main amd64 libboost-program-options-dev amd64 1.83.0.2+b2 [3612 B]
+Get:17 https://deb.debian.org/debian trixie/main amd64 libboost-serialization1.83.0 amd64 1.83.0-4.2 [333 kB]
+Get:18 https://deb.debian.org/debian trixie/main amd64 libboost-serialization1.83-dev amd64 1.83.0-4.2 [373 kB]
+Get:19 https://deb.debian.org/debian trixie/main amd64 libboost-serialization-dev amd64 1.83.0.2+b2 [3832 B]
+Get:20 https://deb.debian.org/debian trixie/main amd64 libboost-timer1.83.0 amd64 1.83.0-4.2 [235 kB]
+Get:21 https://deb.debian.org/debian trixie/main amd64 libboost-timer1.83-dev amd64 1.83.0-4.2 [237 kB]
+Get:22 https://deb.debian.org/debian trixie/main amd64 libboost-timer-dev amd64 1.83.0.2+b2 [3716 B]
+Fetched 28.4 MB in 2s (15.7 MB/s)
+Download complete and in download only mode

@@ -1,0 +1,38 @@
+{
+  "before_source_sha256": "90844782cbca4435e8c308610de836b4975b5ad9af3841139f592baa9192585a",
+  "source_sha256": "9b3768bf1d18495607056f8126d3fa79de391db2f23cecaa3597f88e0e5b6e90",
+  "scope": "PCG checks the true residual on the final allowed step and skips unused next-step preconditioning; final probe errors propagate; no timing claim",
+  "validation": {
+    "rust_tests": 377,
+    "release_regressions_rechecked": 3,
+    "python_checks": 27,
+    "source_only_rollback_stages": 60,
+    "before_failures": 3,
+    "zero_fuzz_source_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "before.log": "a8a72f871b19aee8cc5e3437b2bd53c97d0ca7114b7520185cd742eb38252cf7",
+    "benchmark-tests.log": "482912b166fd60f6029517d9e3d9c25ebc56f03655fd957df842d49af981185c",
+    "check_rollbacks.py": "836720c7cd75724f9c96861feb7bf0603c61d2b8218b07d683ae0b5d505c9851",
+    "clippy.log": "c2dd3e68ca7f7dc433d9be0bf5a0e06f8b6494a8aa2b377d7315f1b4ffbaf3db",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "csr_dimensions.patch": "eb94321c21905d2b1774c183b191798746e135509ed056cea9823b6f1376f2a4",
+    "empty_window.patch": "63eca993cb5228342b8781806f8d2710f6953ecbc1c915fb6f063d55a19b56fd",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "639bbc3341883fa6997dbd0372bde0d5ed84e152e63b8a2d1bc12c07efd1a000",
+    "pcg_iteration_limit.patch": "264158c70436f5e5c5041b3e8b8520b127042a8b5aba621bcd6f7ded07397f8d",
+    "pcg_iteration_limit.rs": "bf65bfd8edfa21124e8b3a0114373fbd93e89d6acdd460b4ad9813756bcbb266",
+    "pcg_residual_norm.patch": "8d3559672f88e8b49bca02d23cd50714ca5997458129255101a2b2bbd5c1ae74",
+    "python-tests.log": "6d48b13a55bd736bfb5199ff308ce2c4a32ad7ee40fe3013bdfed575a26889bf",
+    "release-tests.log": "bd9cefb346b54d1baf521da34671e671f28dc5006dd25d02eeca2b3fa846df11",
+    "residual_count.patch": "47c665d3e044c0ad4463a60bda21ab32009fe76ccab4791dc24aea96bad0df61",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "a3bc8b2dae4def42b03d4b6e11cada0450d75cec2d216bd19663271e11c3f90b",
+    "rollback/report.json": "1a4233ceac04b505bbe579bbaf7655a166a268acdc4f75e91ea0fe77aa3fb6d0",
+    "sparse.rs": "538a2fb1e88e330f0755276d4f5b087a8ccb6ca7a6c68adcf49673607ecf128d",
+    "sparse.rs.before": "104a329364afbf8b286424e3e49154380148d5b0d9867f586aff957b45c059e1",
+    "targeted.log": "f5d7f544c291d08aedee77cfe19083b9b4571808213899891f70893302097746",
+    "workspace-tests.log": "a3fd47d3375f53afddbd7e18f83069ed2752aeccf03ca472b05bbf88de69d976"
+  }
+}

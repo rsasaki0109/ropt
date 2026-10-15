@@ -1,0 +1,85 @@
+{
+  "source_sha256": "53671e84cba965edd4c45dc87a63570f86e0acdaf3da06d29111884cb36ebdaa",
+  "native_timing_measured": false,
+  "scope": "current ropt policy timing; archived native correctness reference only",
+  "campaigns": {
+    "primary": {
+      "artifacts_verified": 30,
+      "timed_updates": 18792,
+      "quality_records_unique": true,
+      "all_original_gradient_gates_pass": true,
+      "metadata_source_driver_binary_native_hashes_match": true,
+      "full_pose_export_byte_identical_to_previous_kernel": true,
+      "global_faster_pairs": 6,
+      "editable_faster_pairs": 0,
+      "global_speedup": 1.1236787054853725,
+      "editable_negative_result_preserved": true
+    },
+    "confirmation": {
+      "artifacts_verified": 30,
+      "timed_updates": 18792,
+      "quality_records_unique": true,
+      "all_original_gradient_gates_pass": true,
+      "metadata_source_driver_binary_native_hashes_match": true,
+      "full_pose_export_byte_identical_to_previous_kernel": true,
+      "global_faster_pairs": 6,
+      "editable_faster_pairs": 0,
+      "global_speedup": 1.1124290897681763,
+      "editable_negative_result_preserved": true
+    }
+  },
+  "all_checks_pass": true,
+  "timed_updates": 37584,
+  "global_faster_pairs": 12,
+  "rollback": {
+    "source_only": true,
+    "older_builds_skipped": true,
+    "exact_archived_fingerprints": 33
+  },
+  "tests": {
+    "rust_unit_integration": 294,
+    "rust_doctests": 18,
+    "python": 23,
+    "clippy_warnings_denied": true,
+    "rustdoc_warnings_denied": true,
+    "formatting_check_pass": true,
+    "scoped_whitespace_check_pass": true,
+    "release_build_pass": true
+  },
+  "symbolic_regression": {
+    "csail": {
+      "complete_arrivals": 1044,
+      "means_byte_identical": true,
+      "non_timing_update_fields_identical": true,
+      "cold_tuning_excluded_from_speed_claims": true
+    },
+    "mit": {
+      "complete_arrivals": 1227,
+      "means_byte_identical": true,
+      "non_timing_update_fields_identical": true,
+      "cold_tuning_excluded_from_speed_claims": true
+    }
+  },
+  "cold_functional_pilots": {
+    "all_gates_pass": true,
+    "cases": 10,
+    "official_timing_excluded": true
+  },
+  "historical_assets_preserved_sha256": {
+    "ropt-hero.gif": "1c557d47471691f90722bcc75ad4675ad99b4549e7db07a1ace2003efde091eb",
+    "ropt-hero.png": "839804b582f7cefb89f1533c2020100d6c70c7de825a03d3f6ee15fcbd95b841",
+    "ba-convergence.gif": "e6b05f11db4be29ffcdc1ce2bc349d447342c4a030ef00b98c021d761aedb12b",
+    "isam2-comparison.png": "b2896f82536882b491f0b62e461cb41cd78eb28c734391642c991fbfe70a8db1",
+    "intel943-trajectory.png": "8230cab8a5d970e5662ab13d0c1dec68021170d727d05be010bf4ec93bcdc28a",
+    "csail-comparison.png": "060b83ad95bb42f83d88434444d01a0195048b35ac787d51b834b99d1b197265"
+  },
+  "final_files_sha256": {
+    "crates/ropt/src/isam.rs": "f124f176d8ba1a53e6bf004bb869f23d31d5006fea31cdeb4a6612197266d86d",
+    "crates/ropt/src/bayes_tree/editable.rs": "92125053f60f88cf312a4d60cac18e181acc29f6a8594ea48cf3d77ad5f64909",
+    "crates/ropt/tests/isam_probes.rs": "4bd095cda69effcf276720038e72c066c52e7806dc85068b17012b70be53d920",
+    "benchmarks/test_stationarity_reference.py": "260cb4c577ef4ade03f435d1c6843085b6503f416dc1d0a8b2c910e386183946",
+    "benchmarks/make_ldl_baseline.py": "4202ab5506bc77d8d1e6fb6dccd67b129e8404e458de16d5c3101c49b1373243",
+    "benchmarks/stationarity_probes.patch": "238b5be7e81699d252456ecc603619e8bd6ba9918c7a02e3e0e9a2df0d39af36",
+    "benchmarks/STATIONARITY_CONTROL.md": "5d281e68c2fbae260311aa4ef8aea9f9d362bea77d8367e0fe86719fb1cc2351"
+  }
+}

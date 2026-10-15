@@ -1,0 +1,107 @@
+{
+  "dataset": {
+    "dataset": "Intel Research Lab recorded SE2 pose graph",
+    "variant": "intel-mit1228",
+    "source_url": "https://raw.githubusercontent.com/JeffLIrion/python-graphslam/68a0d2419028d598f823c2b35f53b38eacfd0ca1/data/input_INTEL.g2o",
+    "source_commit": "68a0d2419028d598f823c2b35f53b38eacfd0ca1",
+    "source_sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be",
+    "total_source_poses": 1228,
+    "total_source_edges": 1483,
+    "used_arrivals": 1227,
+    "used_edges": 1483,
+    "complete_dataset": true,
+    "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+    "initialization": "provided original vertex values; angles normalized; no optimized/truth seeds",
+    "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+    "stream_sha256": "41bd2e1b0c6eb5df4dfc23fa469df39799e91b7f6acbad8c4d87c176eb611ca9"
+  },
+  "rounds": 6,
+  "cpu_affinity": [
+    0
+  ],
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "native_manifest": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "executable_sha256": "c2a4ea30311048a149de038f722a7efa64c46cb30a0d590295389ae24610ffb8",
+    "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "CMakeLists.txt": "dd9d782f3b905bbc2c8ed80258a31aa32f13ce04038bdb00488b7d505875a321",
+      "benchmark.cpp": "cbb6762f3c9f3ffb6d99fce3d697863c8349a08be263c47b1e706813c737c543",
+      "factors.hpp": "4f14cbdd0c5624307cf228a3e621fad7fd424101dcd6c37f43e1c63e0b3ccad3",
+      "precision.hpp": "47dc3ded9146f6dc59484b9f81a7e471c8a0a5ad13c6f37586ce4d3523180294",
+      "test_precision.cpp": "bec65331d99ee7038cbe85bb390af7d01b3e42159d9f75268d45db253d7659ac"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "reference_cache_sha256": "558a6fe6a6d2fac2cf1c1f07744a5c6e2d62360c70273484ac67dfe70b496a2f",
+    "runtime_library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "reference_source_directory": "benchmarks/gtsam_precise_isam2",
+    "information_whitening": "same two-component compensated arithmetic as ropt on squared relative Cholesky pivots below 2^-26; original information unchanged",
+    "root_conditioning": "exact BetweenFactor residual and Jacobian with fixed root; no approximate PriorFactor identity Jacobian",
+    "stationarity_arithmetic": "direct original information products and column energies use compensated arithmetic for the same small-pivot edges",
+    "precision_tests": "known scaled eigenpair and 200-digit original quadratic, analytic right-chart Jacobians, conditioned root and clone preservation, invalid pivots and overflow"
+  },
+  "source_sha256": "546535822f76c298b80619393d70455a1fbc7bc32b15a3bd869038e2b4bb1f2d",
+  "executable_sha256": {
+    "ropt": "6000745dc3a7d9dc0ed574c2407d31f5341aedf7e615efe87570a27192f4984c",
+    "native": "c2a4ea30311048a149de038f722a7efa64c46cb30a0d590295389ae24610ffb8"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_sparse_qr_isam_se2.rs": "f7b93f1dc0e857aa04b6d4f24f634bf91daecb30c90c7c25bde79866cfb1382a",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "801034479b8b8f294d0d0453c718b348b8662308fa947f5962b02cffef8d0139",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/real_se2_stream.py": "9a507c96004dd8c99e5cf4990f0acd0a05b2ee85bcb40825fd26fc78be2e9145",
+    "benchmarks/se2_stream.py": "a436a9e4a7dd98056ea448e922daec3d9a7f34d7405541f59c884354fcbf2849",
+    "benchmarks/information_precision.py": "40999a95f896eb45ced9cbad3e0525eff64c8151b649593debea4b8b4f437cf1",
+    "benchmarks/paired_isam2.py": "84f38629ca9287ccfa2c1078baf642b76830ea49ff9b2e19bfbf00bf00f48d75",
+    "benchmarks/paired_real_isam2.py": "aec43f77fe2b2013ea7295d66992e9c02d5cc8e53d05041d4ef9732f18cbab86"
+  },
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "world_pose_norm_difference": 2e-06,
+    "relative_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "fixed_root": "exact"
+  },
+  "warmup_streams_per_process": 1,
+  "timed_streams_per_process": 1,
+  "policy": "both solvers force full relinearization every arrival; normalized internal gradient target 8e-8; ropt explicit sparse QR/nonmonotonic GN, batch ordering reuse, at most four frozen-QR refinements; native full-relin iSAM2 QR/GN with timed empty updates to stationarity",
+  "ropt_policy": "sparse-qr-gn",
+  "timed": "complete update including full owned means and cost/report; native stationarity probes included; parsing, factor construction, external validation, serialization and report destruction excluded",
+  "allocator_counting": false,
+  "memory_measured": false,
+  "scope": "recorded measurements; pose-ID arrival inferred without sensor timestamps; this accuracy-target policy is not either library default"
+}

@@ -1,0 +1,13 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 6.92s
+     Running tests/marginalization_column_scales.rs (target/release/deps/marginalization_column_scales-dbc69516f8626a85)
+
+running 5 tests
+test compression_still_rejects_an_unrepresentable_output ... ok
+test compression_keeps_independently_scaled_columns_and_constant_residual ... ok
+test rotated_elimination_preserves_dependent_retained_information ... ok
+test fixed_lag_keeps_tiny_separator_information_beside_a_large_constant ... ok
+test marginalization_failure_rolls_back_and_a_retry_preserves_information ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

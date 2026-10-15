@@ -1,0 +1,63 @@
+--- a/crates/ropt/examples/support/se2_benchmark.rs
++++ b/crates/ropt/examples/support/se2_benchmark.rs
+@@ -167,6 +167,7 @@
+     )?;
+     writeln!(poses, "frame,key,x,y,angle")?;
+     for round in 0..warmup + repeats {
++        if round==warmup { ropt::normal_profile::reset(); }
+         let mut isam = constructor(options.clone())?;
+         isam.update(
+             SmootherUpdate {
+@@ -229,6 +230,7 @@
+             )?;
+         }
+     }
++    ropt::normal_profile::dump();
+     samples.flush()?;
+     updates.flush()?;
+     poses.flush()?;
+--- a/crates/ropt/src/lib.rs
++++ b/crates/ropt/src/lib.rs
+@@ -24,3 +24,5 @@
+ pub mod sparse_direct;
+ pub use nalgebra::{DMatrix, DVector};
+ pub use solver::*;
++
++pub mod normal_profile;
+--- a/crates/ropt/src/normal_profile.rs
++++ b/crates/ropt/src/normal_profile.rs
+@@ -0,0 +1,5 @@
++use std::sync::atomic::{AtomicU64,Ordering};
++static COUNTS:[AtomicU64;3]=[const{AtomicU64::new(0)};3];
++pub fn record(previous:Option<bool>){COUNTS[match previous {None=>0,Some(true)=>1,Some(false)=>2}].fetch_add(1,Ordering::Relaxed);}
++pub fn reset(){for c in &COUNTS{c.store(0,Ordering::Relaxed);}}
++pub fn dump(){eprintln!("first_analysis,same_normal_pattern,changed_normal_pattern");eprintln!("{},{},{}",COUNTS[0].load(Ordering::Relaxed),COUNTS[1].load(Ordering::Relaxed),COUNTS[2].load(Ordering::Relaxed));}
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -618,6 +618,7 @@
+     residual: DVector<f64>,
+     analyses: usize,
+     ready: bool,
++    profile_normal: Option<Vec<Vec<usize>>>,
+ }
+ impl SparseLdlWorkspace {
+     pub fn new(options: SparseLdlOptions) -> Result<Self, Error> {
+@@ -631,6 +632,7 @@
+             residual: DVector::zeros(0),
+             analyses: 0,
+             ready: false,
++            profile_normal: None,
+         })
+     }
+     pub fn analyses(&self) -> usize {
+@@ -647,6 +649,10 @@
+             return Err(Error::InvalidOptions);
+         }
+         if self.symbolic.as_ref().is_none_or(|s| !s.matches_pattern(j)) {
++            let (normal, _) = assemble_pattern(j, self.options.max_entries)?;
++            let normal = normal.into_iter().map(PatternColumn::into_rows).collect::<Vec<_>>();
++            crate::normal_profile::record(self.profile_normal.as_ref().map(|old| old==&normal));
++            self.profile_normal=Some(normal);
+             let symbolic = SparseLdlSymbolic::analyze(j, &self.options)?;
+             self.values.resize(symbolic.factor_entries(), 0.0);
+             self.column_scratch.resize(symbolic.max_off_diagonal, 0.0);

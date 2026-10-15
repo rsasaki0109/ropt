@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "/workspace/ropt/benchmarks/paired_refinement_step.py", line 145, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/ropt/benchmarks/paired_refinement_step.py", line 54, in main
+    'files_sha256':{name:digest(ROOT/name) for name in files},'environment':environment(),
+                                                                            ^^^^^^^^^^^^^
+  File "/workspace/ropt/benchmarks/pose_graph.py", line 114, in environment
+    "python": platform.python_version(), "rustc": command_output("rustc", "-Vv"),
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ropt/benchmarks/pose_graph.py", line 83, in command_output
+    return subprocess.check_output(args, cwd=ROOT, text=True).strip()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'rustc'

@@ -1,0 +1,50 @@
+{
+  "dataset": {
+    "name": "intel-mit1228",
+    "poses": 1228,
+    "edges": 1483,
+    "commit": "68a0d2419028d598f823c2b35f53b38eacfd0ca1",
+    "url": "https://raw.githubusercontent.com/JeffLIrion/python-graphslam/68a0d2419028d598f823c2b35f53b38eacfd0ca1/data/input_INTEL.g2o",
+    "sha256": "e648e42b1f24ab01cce76f56c8d8dad0b606f712afe2b92356bf26f195c602be"
+  },
+  "candidate": {
+    "complete_replay": true,
+    "arrivals": 1227,
+    "eligible_quality": true,
+    "failed_arrivals": {
+      "root_exact": [],
+      "gradient_pass": [],
+      "reported_cost_pass": []
+    },
+    "max_normalized_gradient": 7.793438497199398e-08,
+    "max_raw_gradient": 0.12790520846974165,
+    "max_reported_cost_difference": 4.362732397567015e-12,
+    "timing_scope": "single diagnostic replay; no comparative speed claim"
+  },
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "reported_cost_relative": 1e-10,
+    "fixed_root": "exact",
+    "world_pose_norm_difference": 2e-06,
+    "original_cost_relative": 1e-09
+  },
+  "reference": {
+    "complete_replay": true,
+    "arrivals": 1227,
+    "eligible_quality": true,
+    "failed_arrivals": {
+      "root_exact": [],
+      "gradient_pass": [],
+      "reported_cost_pass": []
+    },
+    "max_normalized_gradient": 7.793438497199398e-08,
+    "max_raw_gradient": 0.12790520846974165,
+    "max_reported_cost_difference": 4.362732397567015e-12,
+    "timing_scope": "single diagnostic replay; no comparative speed claim"
+  },
+  "agreement": {
+    "all_prefixes_pass": true,
+    "max_world_pose_norm": 0.0,
+    "max_original_cost_difference": 0.0
+  }
+}

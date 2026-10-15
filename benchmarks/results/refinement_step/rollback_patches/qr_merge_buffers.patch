@@ -1,0 +1,111 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -89,8 +89,11 @@
+         // or temporary set union. Keep ascending traversal and exact-zero policy.
+         let mut upper_row = Vec::new();
+         let mut lower_row = Vec::new();
++        let mut row = Vec::new();
++        let max_entries = self.options.max_entries;
+         for (r, &residual) in residual.iter().enumerate() {
+-            let mut row = j.row(r)?.collect::<Vec<_>>();
++            row.clear();
++            row.extend(j.row(r)?);
+             let mut b = -residual;
+             while let Some(&(k, below)) = row.first() {
+                 if below == 0. {
+@@ -109,25 +112,7 @@
+                 upper_row.push((k, norm));
+                 let (mut i, mut j) = (usize::from(!old.is_empty()), 1);
+                 let mut entries = self.entries;
+-                while i < old.len() || j < row.len() {
+-                    let col = old
+-                        .get(i)
+-                        .map_or(usize::MAX, |&(col, _)| col)
+-                        .min(row.get(j).map_or(usize::MAX, |&(col, _)| col));
+-                    let upper = if old.get(i).is_some_and(|&(c, _)| c == col) {
+-                        let value = old[i].1;
+-                        i += 1;
+-                        value
+-                    } else {
+-                        0.
+-                    };
+-                    let lower = if row.get(j).is_some_and(|&(c, _)| c == col) {
+-                        let value = row[j].1;
+-                        j += 1;
+-                        value
+-                    } else {
+-                        0.
+-                    };
++                let mut rotate_entry = |col: usize, upper: f64, lower: f64| -> Result<(), Error> {
+                     let a = c * upper + s * lower;
+                     let v = -s * upper + c * lower;
+                     if !a.is_finite() || !v.is_finite() {
+@@ -139,10 +124,8 @@
+                         entries -= 1;
+                     }
+                     if a != 0. && upper == 0. {
+-                        if entries >= self.options.max_entries {
+-                            return Err(Error::SparseFillLimit {
+-                                limit: self.options.max_entries,
+-                            });
++                        if entries >= max_entries {
++                            return Err(Error::SparseFillLimit { limit: max_entries });
+                         }
+                         entries += 1;
+                     }
+@@ -152,6 +135,34 @@
+                     if v != 0. {
+                         lower_row.push((col, v));
+                     }
++                    Ok(())
++                };
++                while i < old.len() && j < row.len() {
++                    let (upper_col, upper) = old[i];
++                    let (lower_col, lower) = row[j];
++                    match upper_col.cmp(&lower_col) {
++                        std::cmp::Ordering::Less => {
++                            rotate_entry(upper_col, upper, 0.)?;
++                            i += 1;
++                        }
++                        std::cmp::Ordering::Greater => {
++                            rotate_entry(lower_col, 0., lower)?;
++                            j += 1;
++                        }
++                        std::cmp::Ordering::Equal => {
++                            rotate_entry(upper_col, upper, lower)?;
++                            i += 1;
++                            j += 1;
++                        }
++                    }
++                }
++                // Tails remain in the same ascending union order, using the
++                // same arithmetic and transient entry checks as paired columns.
++                for &(col, upper) in &old[i..] {
++                    rotate_entry(col, upper, 0.)?;
++                }
++                for &(col, lower) in &row[j..] {
++                    rotate_entry(col, 0., lower)?;
+                 }
+                 if diagonal == 0. {
+                     if entries >= self.options.max_entries {
+@@ -210,6 +221,20 @@
+         }
+         finite_vector(x)?;
+         let mut cost = self.constant_cost;
++        // The finite R entries contribute only signed zeros at the exact origin.
++        // Keep row-order accumulation and overflow checks, without traversing R.
++        // Test components exactly: a nonzero vector's norm can underflow to zero.
++        if x.iter().all(|&value| value == 0.) {
++            for &rhs in self.rhs.iter() {
++                let residual = -rhs;
++                cost += 0.5 * residual * residual;
++            }
++            return if cost.is_finite() {
++                Ok(cost)
++            } else {
++                Err(Error::NonFinite)
++            };
++        }
+         for (k, row) in self.rows.iter().enumerate() {
+             let residual = row.iter().fold(-self.rhs[k], |r, &(col, a)| r + a * x[col]);
+             cost += 0.5 * residual * residual;

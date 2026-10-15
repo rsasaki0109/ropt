@@ -1,0 +1,48 @@
+{
+  "primary": {
+    "ropt": {
+      "stream_median_ms": 13738.5077185,
+      "arrival_median_ms": 5.2650555,
+      "arrival_p95_ms": 68.562155,
+      "arrival_p99_ms": 131.751557,
+      "arrival_max_ms": 2614.807228
+    },
+    "native": {
+      "stream_median_ms": 25608.6818915,
+      "arrival_median_ms": 11.4195625,
+      "arrival_p95_ms": 102.291715,
+      "arrival_p99_ms": 264.449456,
+      "arrival_max_ms": 2220.548777
+    },
+    "native_median_over_ropt_median": 1.8640075338761766,
+    "ropt_faster_pairs": 6,
+    "timed_arrivals": 12528,
+    "agreement": {
+      "max_world_pose_norm": 3.772476536257072e-07,
+      "max_cost_difference": 3.9968028886505635e-13
+    }
+  },
+  "confirmation": {
+    "ropt": {
+      "stream_median_ms": 16864.8249425,
+      "arrival_median_ms": 6.297981999999999,
+      "arrival_p95_ms": 84.291062,
+      "arrival_p99_ms": 209.909898,
+      "arrival_max_ms": 1519.521526
+    },
+    "native": {
+      "stream_median_ms": 26878.333804,
+      "arrival_median_ms": 13.853755,
+      "arrival_p95_ms": 105.142541,
+      "arrival_p99_ms": 179.719341,
+      "arrival_max_ms": 1269.113385
+    },
+    "native_median_over_ropt_median": 1.5937511296820863,
+    "ropt_faster_pairs": 5,
+    "timed_arrivals": 12528,
+    "agreement": {
+      "max_world_pose_norm": 3.772476536257072e-07,
+      "max_cost_difference": 3.9968028886505635e-13
+    }
+  }
+}

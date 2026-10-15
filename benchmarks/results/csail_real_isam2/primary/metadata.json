@@ -1,0 +1,112 @@
+{
+  "dataset": {
+    "dataset": "CSAIL recorded SE2 pose graph",
+    "variant": "csail-se-sync1045",
+    "source_url": "https://raw.githubusercontent.com/david-m-rosen/SE-Sync/9b631b6b82d8aa7d32ab846412ae1c070412b7b6/data/CSAIL.g2o",
+    "source_commit": "9b631b6b82d8aa7d32ab846412ae1c070412b7b6",
+    "source_sha256": "66d99ac857a9849d814d214a9ebd0d4876d5d40f0a37be9330c1ff6e6e9daaa6",
+    "total_source_poses": 1045,
+    "total_source_edges": 1172,
+    "used_arrivals": 1044,
+    "used_edges": 1172,
+    "complete_dataset": true,
+    "arrival_policy": "ascending original pose IDs; each directed edge at its later endpoint; stable original file order within arrival; inferred without timestamps",
+    "initialization": "original consecutive odometry measurements composed once from root (0,0,0); no loop constraints or optimizer used for seeds",
+    "measurement_information_policy": "all original selected constraints unchanged; no generated false loops or pruning",
+    "stream_sha256": "fe3ffed0fdae1d69d0e374a915f3364860602a7fe1ad34d19d6de7571e98718a"
+  },
+  "rounds": 6,
+  "cpu_affinity": [
+    0
+  ],
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "cpu_affinity": [
+      0
+    ],
+    "cgroup_cpu_max": "400000 100000",
+    "python": "3.12.14",
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)\nbinary: rustc\ncommit-hash: b940084d7eb6a299eb4bfeb8e34901bc051e7ac4\ncommit-date: 2026-09-28\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0\nLLVM version: 23.1.1",
+    "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+    "thread_variables": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1"
+    }
+  },
+  "native_manifest": {
+    "archive_source": "https://codeload.github.com/borglab/gtsam/tar.gz/refs/tags/4.2.1",
+    "archive_sha256": "96ea77d620fc8c2e9ed79af1b4abfdc3e73d96ee7a581a2bc326963c43dd92c2",
+    "exact_between": true,
+    "library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "executable_sha256": "c2a4ea30311048a149de038f722a7efa64c46cb30a0d590295389ae24610ffb8",
+    "cmake_cache_sha256": "2b80cbb11cf4396695d7c2150301b1c7173ea6202bcdef4b74998850c2639cc4",
+    "options": {
+      "CMAKE_BUILD_TYPE": "Release",
+      "CMAKE_CXX_COMPILER": "/usr/bin/c++",
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG",
+      "GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR": "ON",
+      "GTSAM_BUILD_WITH_MARCH_NATIVE": "OFF",
+      "GTSAM_WITH_TBB": "OFF",
+      "GTSAM_WITH_EIGEN_MKL": "OFF",
+      "GTSAM_USE_SYSTEM_EIGEN": "OFF",
+      "GTSAM_DEFAULT_ALLOCATOR": "STL",
+      "Boost_INCLUDE_DIR": "/tmp/ropt-benchmark-sysroot/usr/include",
+      "GTSAM_BUILD_TESTS": "OFF",
+      "GTSAM_BUILD_UNSTABLE": "OFF"
+    },
+    "reference_sources_sha256": {
+      "benchmark.cpp": "cbb6762f3c9f3ffb6d99fce3d697863c8349a08be263c47b1e706813c737c543",
+      "CMakeLists.txt": "dd9d782f3b905bbc2c8ed80258a31aa32f13ce04038bdb00488b7d505875a321",
+      "precision.hpp": "47dc3ded9146f6dc59484b9f81a7e471c8a0a5ad13c6f37586ce4d3523180294",
+      "factors.hpp": "4f14cbdd0c5624307cf228a3e621fad7fd424101dcd6c37f43e1c63e0b3ccad3",
+      "test_precision.cpp": "bec65331d99ee7038cbe85bb390af7d01b3e42159d9f75268d45db253d7659ac"
+    },
+    "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+    "reference_cache_sha256": "558a6fe6a6d2fac2cf1c1f07744a5c6e2d62360c70273484ac67dfe70b496a2f",
+    "runtime_library_sha256": "ed95b882497e1eebc3ceaf2cb6bbd56b3ca72d09c92acc38875535af30595e7a",
+    "reference_source_directory": "benchmarks/gtsam_precise_isam2",
+    "reference_generator_sha256": "991d600843b7a1adef1ba7cfea9180113b49c7cd53ad063649824e95aaa0b566",
+    "reference_compiler": "/usr/bin/c++",
+    "reference_flags": {
+      "CMAKE_CXX_FLAGS": "",
+      "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG"
+    },
+    "information_whitening": "same two-component arithmetic as ropt for squared relative pivots below 2^-26; original information unchanged",
+    "root_conditioning": "exact conditioned BetweenFactor residual and chart Jacobian",
+    "stationarity_arithmetic": "direct original-information compensated products and column energies for small pivots"
+  },
+  "source_sha256": "31c01bc01ed53679b44fccb92bdaf46982010b8a2895b6bf926b84a42b350047",
+  "executable_sha256": {
+    "ropt": "6837c0683a53b296db5b02620619ccf562dec129db8bc2a1a4e7f37b9919bb1e",
+    "native": "c2a4ea30311048a149de038f722a7efa64c46cb30a0d590295389ae24610ffb8"
+  },
+  "files_sha256": {
+    "crates/ropt/examples/benchmark_cartesian_se2_isam.rs": "f3724cbdb996aa0409318b41a81027f8453d68af914a5ff6741bce1f018b405d",
+    "crates/ropt/examples/support/real_se2_benchmark.rs": "50b6ad7c274909f82b23be6e48a6a501e08f22e070269aa3b87ff7d525d8e958",
+    "crates/ropt/examples/support/allocation_counter.rs": "d2aff3aa3684b04a48531643d94f79e305d638bcd08517f2ce09a6b7537fcd45",
+    "benchmarks/real_se2_stream.py": "72f90518690429cf1070abd7c68ee95121b343a53173c881efa72b2677b99502",
+    "benchmarks/se2_stream.py": "a436a9e4a7dd98056ea448e922daec3d9a7f34d7405541f59c884354fcbf2849",
+    "benchmarks/information_precision.py": "40999a95f896eb45ced9cbad3e0525eff64c8151b649593debea4b8b4f437cf1",
+    "benchmarks/paired_isam2.py": "84f38629ca9287ccfa2c1078baf642b76830ea49ff9b2e19bfbf00bf00f48d75",
+    "benchmarks/paired_real_isam2.py": "cb42dfcb4858e8e3003fc7841477f74eb5adb7566840976495678c1485fafe9c"
+  },
+  "gates": {
+    "original_column_normalized_gradient_inf": 1e-07,
+    "world_pose_norm_difference": 2e-06,
+    "relative_cost_difference": 1e-09,
+    "relative_reported_cost_difference": 1e-10,
+    "fixed_root": "exact"
+  },
+  "warmup_streams_per_process": 1,
+  "timed_streams_per_process": 1,
+  "policy": "both solvers force full relinearization every arrival; normalized internal gradient target 8e-8; ropt explicit sparse QR/nonmonotonic GN with Cartesian SE2 right chart and ambient evaluation, batch ordering reuse, at most four frozen-QR refinements; native full-relin iSAM2 QR/GN with timed empty updates to stationarity",
+  "ropt_policy": "sparse-qr-gn-cartesian",
+  "timed": "complete update including full owned means and cost/report; native stationarity probes included; parsing, factor construction, external validation, serialization and report destruction excluded",
+  "allocator_counting": false,
+  "memory_measured": false,
+  "scope": "recorded measurements; pose-ID arrival inferred without sensor timestamps; this accuracy-target policy is not either library default"
+}

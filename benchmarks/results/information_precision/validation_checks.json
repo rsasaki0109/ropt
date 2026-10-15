@@ -1,0 +1,16 @@
+{
+  "source_sha256": "c8ae1ce654073e8408f7e470c77415a1147e5d4f96ed5bf29e9182aae460c4e3",
+  "rust_unit_integration_tests": 251,
+  "rust_doctests": 18,
+  "python_tests": 18,
+  "clippy_warnings_denied": true,
+  "rustdoc_warnings_denied": true,
+  "formatting_passed": true,
+  "source_rollback_stages": 27,
+  "old_builds_skipped": true,
+  "default943_complete_means_and_non_timing_reports_exact": true,
+  "mit1228_all_ropt_quality_gates_pass": true,
+  "mit1228_all_native_pose_and_original_cost_agreement_gates_pass": true,
+  "native_reported_cost_ineligible": true,
+  "rollback_patch_sha256": "dcdcdc5d342e779f27a0eb2a1186830bbf715b93644d950d54bcb6179701790a"
+}

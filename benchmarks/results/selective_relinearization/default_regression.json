@@ -1,0 +1,18 @@
+{
+  "CSAIL": {
+    "complete_poses_identical": true,
+    "non_timing_update_fields_identical": true,
+    "arrivals": 1044,
+    "means_sha256": "3e1bee23a914559d43f357c0ce1ef21b82bda755b4d1805ed86e5007909db362",
+    "reference_directory": "benchmarks/results/csail_real_isam2/primary",
+    "scope": "cold functional regression only; no timing claim"
+  },
+  "MIT1228": {
+    "complete_poses_identical": true,
+    "non_timing_update_fields_identical": true,
+    "arrivals": 1227,
+    "means_sha256": "adc8eb1cf903a8b93f2b1e3fe5b81431e8e47003cccb7a9f33370e25bed5e9f1",
+    "reference_directory": "benchmarks/results/precise_real_isam2/primary",
+    "scope": "cold functional regression only; no timing claim"
+  }
+}

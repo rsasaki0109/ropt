@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /workspace/.ropt-native/reference-build-v2/adapter-build
+Test project /workspace/.ropt-native/reference-build-v2/adapter-build
+    Start 1: precise_information
+1/1 Test #1: precise_information ..............   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.03 sec

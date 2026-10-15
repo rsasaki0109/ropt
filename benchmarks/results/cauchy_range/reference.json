@@ -1,0 +1,93 @@
+{
+  "decimal_precision": 1100,
+  "cases": [
+    {
+      "before": 1e+155,
+      "after": 5e+154,
+      "scale": 1.0,
+      "exact_binary64_inputs": [
+        "0x1.dd55745cbb7edp+514",
+        "0x1.dd55745cbb7edp+513",
+        "0x1.0000000000000p+0"
+      ],
+      "reduction_rounded_to_binary64": 0.6931471805599453
+    },
+    {
+      "before": 1e+300,
+      "after": 0.0,
+      "scale": 1e-100,
+      "exact_binary64_inputs": [
+        "0x1.7e43c8800759cp+996",
+        "0x0.0p+0",
+        "0x1.bff2ee48e0530p-333"
+      ],
+      "reduction_rounded_to_binary64": 9.210340371976183e-198
+    },
+    {
+      "before": 1.0,
+      "after": 0.0,
+      "scale": 1e+200,
+      "exact_binary64_inputs": [
+        "0x1.0000000000000p+0",
+        "0x0.0p+0",
+        "0x1.4e718d7d7625ap+664"
+      ],
+      "reduction_rounded_to_binary64": 0.5
+    },
+    {
+      "before": 2e+154,
+      "after": 1e+154,
+      "scale": 2e+154,
+      "exact_binary64_inputs": [
+        "0x1.7dddf6b095ff1p+512",
+        "0x1.7dddf6b095ff1p+511",
+        "0x1.7dddf6b095ff1p+512"
+      ],
+      "reduction_rounded_to_binary64": 9.400072584914712e+307
+    },
+    {
+      "before": 2e+154,
+      "after": 0.0,
+      "scale": 2e+154,
+      "exact_binary64_inputs": [
+        "0x1.7dddf6b095ff1p+512",
+        "0x0.0p+0",
+        "0x1.7dddf6b095ff1p+512"
+      ],
+      "reduction_rounded_to_binary64": 1.3862943611198907e+308
+    },
+    {
+      "before": 1.0,
+      "after": 0.0,
+      "scale": 1e-162,
+      "exact_binary64_inputs": [
+        "0x1.0000000000000p+0",
+        "0x0.0p+0",
+        "0x1.ccb0536608d61p-539"
+      ],
+      "reduction_rounded_to_binary64": 3.7e-322
+    },
+    {
+      "before": 1e+155,
+      "after": 9.99999999999e+154,
+      "scale": 1.0,
+      "exact_binary64_inputs": [
+        "0x1.dd55745cbb7edp+514",
+        "0x1.dd55745cb9720p+514",
+        "0x1.0000000000000p+0"
+      ],
+      "reduction_rounded_to_binary64": 9.99958899574909e-13
+    },
+    {
+      "before": 1e+154,
+      "after": 9.99999999999e+153,
+      "scale": 1e+200,
+      "exact_binary64_inputs": [
+        "0x1.7dddf6b095ff1p+511",
+        "0x1.7dddf6b0945b3p+511",
+        "0x1.4e718d7d7625ap+664"
+      ],
+      "reduction_rounded_to_binary64": 1.0000184422022033e+296
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "before_source_sha256": "4e13efdf86b61f8a5410cb9a92c9bf94072f587db182e9044261109ed4560937",
+  "source_sha256": "d959c9b657a6dc91b67049dfb597913e1116046df1fa4702619c3561919a192c",
+  "scope": "checked CSR row-offset count and allocation layout representability; empty shapes and wide sparse metadata preserved; no memory budget or timing claim",
+  "validation": {
+    "rust_tests": 367,
+    "release_regressions_rechecked": 2,
+    "python_checks": 27,
+    "source_only_rollback_stages": 58,
+    "before_failures": 1,
+    "zero_fuzz_source_reconstruction": true
+  },
+  "base_full_source_manifest_sha256": "25d8b67bb005a35b17170018cad13deea790b8d630aff80e3a4d8f7b4fea6224",
+  "files_sha256": {
+    "before.log": "ef740d7f75572eb4caf11228751728f9848e1e5ae10142d03a14c31906b8dc34",
+    "benchmark-tests.log": "a7659751ec89c2e1cdf649067e35498ea07ab3068177f3b576b2fbe3affdae9d",
+    "check_rollbacks.py": "4dd64b3870d8b6d1685d679b5c14ab16a80bb3bfc2a36ea938f7b4ae58afe3d1",
+    "clippy.log": "c3ffe2d23f423223dfe110f630ba23235324cc42d108a0de84a31c4d826c50bd",
+    "covariance_preflight.patch": "f9df5be7127a42c76969209ccfefbe67440f6a426f9f3a3733ed6f9b7341aaf0",
+    "csr_dimensions.patch": "eb94321c21905d2b1774c183b191798746e135509ed056cea9823b6f1376f2a4",
+    "csr_dimensions.rs": "c5befb00a20635ab28b8b91b76e66c3d2cd79751a91e470af6e16fc14a790a87",
+    "empty_window.patch": "63eca993cb5228342b8781806f8d2710f6953ecbc1c915fb6f063d55a19b56fd",
+    "fmt.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "make_ldl_baseline.py": "6eb7d49cfedaff48ca56fec4d6ae3e4cab42a439a65affeb07c932db48323f99",
+    "python-tests.log": "5917c79c45b80d5e4bbe45991622ca46508859344fb0f5154ad0f0c6f14b159e",
+    "release-tests.log": "38b8172d37460c87d380f55e195d0bb52ee63281eca47f4fc81dcd3cbe98fe7d",
+    "residual_count.patch": "47c665d3e044c0ad4463a60bda21ab32009fe76ccab4791dc24aea96bad0df61",
+    "retired_timestamps.patch": "8ccb60b93779304e122330fb0d2a69871cbbe4434a20a7f1306356ee9116e300",
+    "rollback/checks.log": "4d2acd29ee887995130d16ffa7906c80e420138cb59e4081b81a83dc154cec35",
+    "rollback/report.json": "e09693bb015461cbf0e5404b4c2c3aee7eaf6da5efa99688ca339f529a9edd52",
+    "sparse.rs": "c4e9bea2b0fa41c5a721d12850bf079b2d247a9988786e3a78659cc4cef4bef5",
+    "sparse.rs.before": "16314e138d349f1d7ccf308c7eb502eaed550fabf98a8490194ee2d86d08f82e",
+    "targeted.log": "baa66b4d10d6d627f7fd05638d6768d3a13e4391715aef7b4761b3a0bc4a9bd6",
+    "workspace-tests.log": "92b163efe6d0afe8493c477efd78e4187886027106bff3ec1b1634f0bebda5b7"
+  }
+}

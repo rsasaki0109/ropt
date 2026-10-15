@@ -1,0 +1,44 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.73s
+     Running tests/central_difference_guards.rs (target/debug/deps/central_difference_guards-9c7bebd385c59d76)
+
+running 4 tests
+test invalid_perturbations_are_rejected_before_callbacks_or_output_changes ... ok
+test nonfinite_callback_values_and_derivative_overflow_are_errors ... ok
+test too_small_a_step_cannot_falsely_establish_solver_convergence ... ok
+test representable_subnormal_step_and_normal_solve_remain_valid ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/dynamic_autodiff.rs (target/debug/deps/dynamic_autodiff-00188e7ac15fef04)
+
+running 8 tests
+test constant_broadcast_scalar_operators_and_error_carrying_are_explicit ... ok
+test autodiff_factor_rejects_invalid_chunks_and_preserves_registration_state ... ok
+test changing_values_dimensions_domains_and_callback_errors_are_rejected ... ok
+test fixed_and_dynamic_edge_formulas_are_finite_or_report_domain_errors ... ok
+test bounded_seed_chunks_cover_a_runtime_parameter_count ... ok
+test runtime_chunks_match_fixed_jets_analytic_formula_and_central_differences ... ok
+test euclidean_autodiff_factors_support_whitening_joint_losses_and_backends ... ok
+test runtime_rosenbrock_solves_with_each_chunk_size ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/optimization.rs (target/debug/deps/optimization-ff2b03572d56ef83)
+
+running 12 tests
+test elementary_jet_functions_match_difference ... ok
+test derivatives_match_analytic_and_central_difference ... ok
+test evaluation_errors_propagate ... ok
+test cauchy_loss_and_underconstrained_gn ... ok
+test analytic_residual_and_termination_reasons ... ok
+test iteration_limit_is_reported ... ok
+test invalid_inputs_and_rank_deficiency_are_errors ... ok
+test gn_solves_linear_problem ... ok
+test parameter_blocks_are_stable_ranges ... ok
+test rejected_trials_preserve_the_previous_state ... ok
+test robust_loss_reduces_outlier_bias ... ok
+test lm_rosenbrock_converges_with_rejections ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

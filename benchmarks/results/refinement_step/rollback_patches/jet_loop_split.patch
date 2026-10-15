@@ -1,0 +1,74 @@
+--- a/crates/ropt/src/dynamic_autodiff.rs
++++ b/crates/ropt/src/dynamic_autodiff.rs
+@@ -3,6 +3,7 @@
+ //! errors are carried to the adapter rather than panicking or truncating vectors.
+ use crate::{DMatrix, DVector, Error, Residual};
+ use std::ops::{Add, Div, Mul, Neg, Sub};
++const INDEXED_WIDTH_LIMIT: usize = 16;
+ #[derive(Debug, Clone, Copy, PartialEq)]
+ enum Failure {
+     Dimension,
+@@ -120,8 +121,22 @@
+             Err(failure) => return Self::invalid(failure),
+         };
+         self.derivative.resize(width, 0.);
+-        for (i, d) in self.derivative.iter_mut().enumerate() {
+-            *d = *d * left + b.derivative.get(i).copied().unwrap_or(0.) * right;
++        // Short vectors keep the compact indexed loop; wide vectors avoid checks
++        // per element. Both paths reuse the same owned buffer at every width.
++        // Width validation guarantees either a broadcast constant or equal lengths.
++        // Keep zero products explicit: they still detect nonfinite slopes.
++        if width <= INDEXED_WIDTH_LIMIT {
++            for (i, d) in self.derivative.iter_mut().enumerate() {
++                *d = *d * left + b.derivative.get(i).copied().unwrap_or(0.) * right;
++            }
++        } else if b.derivative.is_empty() {
++            for d in &mut self.derivative {
++                *d = *d * left + 0. * right;
++            }
++        } else {
++            for (d, rhs) in self.derivative.iter_mut().zip(&b.derivative) {
++                *d = *d * left + rhs * right;
++            }
+         }
+         Self::from_parts(value, self.derivative)
+     }
+@@ -132,8 +147,18 @@
+             Err(failure) => return Self::invalid(failure),
+         };
+         b.derivative.resize(width, 0.);
+-        for (i, d) in b.derivative.iter_mut().enumerate() {
+-            *d = self.derivative.get(i).copied().unwrap_or(0.) * left + *d * right;
++        if width <= INDEXED_WIDTH_LIMIT {
++            for (i, d) in b.derivative.iter_mut().enumerate() {
++                *d = self.derivative.get(i).copied().unwrap_or(0.) * left + *d * right;
++            }
++        } else if self.derivative.is_empty() {
++            for d in &mut b.derivative {
++                *d = 0. * left + *d * right;
++            }
++        } else {
++            for (lhs, d) in self.derivative.iter().zip(&mut b.derivative) {
++                *d = lhs * left + *d * right;
++            }
+         }
+         Self::from_parts(value, b.derivative)
+     }
+@@ -388,7 +413,7 @@
+ 
+     #[test]
+     fn owned_forms_match_allocating_reference_bits_errors_and_borrowed_inputs() {
+-        for a_len in [0, 1, 2, 6, 7, 12, 13, 32, 65] {
++        for a_len in [0, 1, 2, 6, 7, 12, 13, 16, 17, 32, 65] {
+             for b_len in [0, a_len, 3, 7] {
+                 for (a_value, b_value) in [(0.7, 1.2), (-0., 0.), (1e308, 1e308), (f64::NAN, 1.)] {
+                     let a = DynamicJet::from_parts(
+@@ -430,7 +455,7 @@
+ 
+     #[test]
+     fn consumed_active_buffer_is_reused_for_either_operand_and_negation() {
+-        for width in [1, 2, 6, 7, 12, 32, 65] {
++        for width in [1, 2, 6, 7, 12, 16, 17, 32, 65] {
+             let a = DynamicJet::variable(2., width - 1, width).unwrap();
+             let pointer = a.derivative.as_ptr();
+             let result = a + 3.;

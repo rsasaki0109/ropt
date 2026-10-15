@@ -1,0 +1,17 @@
+{
+  "all_existing_quality_gates_pass": true,
+  "full_means_identical_to_archived_primary": true,
+  "full_means_sha256": "e6c1e5681f5f876bdb8e821395ff39ef44cbd73a54a64be7e4fe4988867bf252",
+  "all_non_timing_report_fields_identical": [
+    "cost",
+    "entries",
+    "batch_trials",
+    "initial_damping",
+    "final_damping",
+    "refinement_steps",
+    "iterations"
+  ],
+  "source_sha256": "678e5ab66a91392fb6b8849e155ceb6bcbc18ce44e892a7628a6b2202de06a6c",
+  "scope": "functional regression only; no new primary timing campaign",
+  "executable_sha256": "80567e1e0f990ffcf1ee059243c4b0f06413717d90b1abe55b8d44b8792c820d"
+}

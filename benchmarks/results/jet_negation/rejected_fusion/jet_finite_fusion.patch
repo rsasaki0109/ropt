@@ -1,0 +1,50 @@
+--- a/crates/ropt/src/dynamic_autodiff.rs
++++ b/crates/ropt/src/dynamic_autodiff.rs
+@@ -126,9 +126,14 @@
+         // Width validation guarantees either a broadcast constant or equal lengths.
+         // Keep zero products explicit: they still detect nonfinite slopes.
+         if width <= INDEXED_WIDTH_LIMIT {
++            let mut finite = value.is_finite();
+             for (i, d) in self.derivative.iter_mut().enumerate() {
+                 *d = *d * left + b.derivative.get(i).copied().unwrap_or(0.) * right;
+-            }
++                finite &= d.is_finite();
++            }
++            self.value = value;
++            self.failure = (!finite).then_some(Failure::NonFinite);
++            return self;
+         } else if b.derivative.is_empty() {
+             for d in &mut self.derivative {
+                 *d = *d * left + 0. * right;
+@@ -148,9 +153,14 @@
+         };
+         b.derivative.resize(width, 0.);
+         if width <= INDEXED_WIDTH_LIMIT {
++            let mut finite = value.is_finite();
+             for (i, d) in b.derivative.iter_mut().enumerate() {
+                 *d = self.derivative.get(i).copied().unwrap_or(0.) * left + *d * right;
+-            }
++                finite &= d.is_finite();
++            }
++            b.value = value;
++            b.failure = (!finite).then_some(Failure::NonFinite);
++            return b;
+         } else if self.derivative.is_empty() {
+             for d in &mut b.derivative {
+                 *d = 0. * left + *d * right;
+@@ -415,7 +425,14 @@
+     fn owned_forms_match_allocating_reference_bits_errors_and_borrowed_inputs() {
+         for a_len in [0, 1, 2, 6, 7, 12, 13, 16, 17, 32, 65] {
+             for b_len in [0, a_len, 3, 7] {
+-                for (a_value, b_value) in [(0.7, 1.2), (-0., 0.), (1e308, 1e308), (f64::NAN, 1.)] {
++                for (a_value, b_value) in [
++                    (0.7, 1.2),
++                    (-0., 0.),
++                    (1e308, 1e308),
++                    (1e308, 1.),
++                    (1e-308, 1e-308),
++                    (f64::NAN, 1.),
++                ] {
+                     let a = DynamicJet::from_parts(
+                         a_value,
+                         (0..a_len)

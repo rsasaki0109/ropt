@@ -1,0 +1,16 @@
+{
+  "name": "csail-editable-optimized-cap1",
+  "policy": "editable",
+  "selected_cap": 1,
+  "complete_arrivals": 1044,
+  "all_original_information_gates_pass": true,
+  "elapsed_seconds": 4.935666298,
+  "forced_recoveries": 103,
+  "requested_calls": 130,
+  "max_normalized_gradient": 5.636754354038671e-08,
+  "archived_native_agreement": {
+    "max_world_pose_norm": 3.772476220690747e-07,
+    "max_cost_difference": 3.7836400679225335e-13
+  },
+  "timing_scope": "uncontrolled cold functional/tuning replay; excluded from official speed claims"
+}

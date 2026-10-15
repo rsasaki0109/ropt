@@ -1,0 +1,10 @@
+{
+  "comparative_timing_measured": false,
+  "native_timing_measured": false,
+  "scope": "Public-API allocation traffic of one added factor; complete cold MIT functional regression. No speed or peak-memory claim.",
+  "files_sha256": {
+    "benchmarks/verify_cache_reserve.py": "7f4a07fbca8264be70f535212e13170804bda82dc34bbd7597f3433b9130641b",
+    "benchmarks/make_ldl_baseline.py": "46306abed630b8b9676b3e978eca4f6a89b26abddd08539ef7aba947ea8d3641",
+    "crates/ropt/examples/benchmark_cache_append.rs": "597c98d840e5312274c5e31a8facfd86170404a7d0095871c4e20e8a184e3112"
+  }
+}

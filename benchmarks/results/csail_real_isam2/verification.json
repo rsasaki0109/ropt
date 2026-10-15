@@ -1,0 +1,23 @@
+{
+  "solver_source_sha256": "31c01bc01ed53679b44fccb92bdaf46982010b8a2895b6bf926b84a42b350047",
+  "production_solver_changed_for_csail": false,
+  "rust_native_binaries_identical_to_verified_mit1228_campaign": true,
+  "python_tests_passed": 20,
+  "official_campaigns": 2,
+  "pairs_per_campaign": 6,
+  "all_common_accuracy_gates_pass": true,
+  "timed_arrivals_across_both_campaigns": 25056,
+  "discarded_warmup_streams": 24,
+  "ropt_faster_pairs_total": 12,
+  "intel_stream_hashes_unchanged": {
+    "intel-vertigo943": "97dbe661d59fb0f864a544b1d8f955512a2c47b87cb3975abf6280f34a937496",
+    "intel-mit1228": "41bd2e1b0c6eb5df4dfc23fa469df39799e91b7f6acbad8c4d87c176eb611ca9"
+  },
+  "initial_setup_attempt": "rustc absent from shell PATH; stopped before either solver launch; no timing samples included",
+  "builds_and_numerical_tests_completed_before_official_timing": true,
+  "historical_visuals_not_regenerated": true,
+  "artifact_checksums_verified": true,
+  "renderer_input_output_checksums_verified": true,
+  "historical_visuals_verified_identical_to_published_head": 5,
+  "whitespace_check_passed": true
+}

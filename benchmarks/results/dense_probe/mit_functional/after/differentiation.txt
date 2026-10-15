@@ -1,0 +1,1 @@
+runtime_ad=true; chunk_size=6; edge_stride=2; factors=1483; ad_factors=742; analytic_factors=741; original_edges_and_information_unchanged=true

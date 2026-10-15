@@ -1,0 +1,37 @@
+--- a/crates/ropt/src/incremental_qr.rs
++++ b/crates/ropt/src/incremental_qr.rs
+@@ -143,22 +143,25 @@
+                         .zip(&row[row_start + 1..])
+                         .all(|(upper, lower)| upper.0 == lower.0);
+                 if aligned {
+-                    let (mut upper_zero, mut lower_zero) = (false, false);
++                    // Independent column rotations share only reductions.
++                    // Delay the finite check until this suffix is complete; an
++                    // invalid private candidate is discarded before compaction
++                    // or any further rotation/RHS update can expose its values.
++                    let (mut removed, mut lower_zero, mut finite) = (0_usize, false, true);
+                     for (upper, lower) in old[1..].iter_mut().zip(&mut row[row_start + 1..]) {
+                         let a = c * upper.1 + s * lower.1;
+                         let v = -s * upper.1 + c * lower.1;
+-                        if !a.is_finite() || !v.is_finite() {
+-                            return Err(Error::NonFinite);
+-                        }
+-                        if a == 0. {
+-                            entries -= 1;
+-                            upper_zero = true;
+-                        }
++                        finite &= a.is_finite() & v.is_finite();
++                        removed += usize::from(a == 0.);
+                         lower_zero |= v == 0.;
+                         upper.1 = a;
+                         lower.1 = v;
+                     }
+-                    if upper_zero {
++                    if !finite {
++                        return Err(Error::NonFinite);
++                    }
++                    entries -= removed;
++                    if removed != 0 {
+                         old.retain(|&(_, value)| value != 0.);
+                     }
+                     // Consume the diagonal by advancing a cursor rather than

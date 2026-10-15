@@ -1,0 +1,55 @@
+{
+  "source_sha256": "a5faa5c781b19faa6e1ef6a88c233e0751f1fcd7ae5c6db2d0dd8e8f4df6ecab",
+  "unchanged_checker_sha256": {
+    "benchmarks/check_real_replay.py": "bee637ed54ac0a8a4b48c9e0bb13fd1dca4f5aa2d9977aa42bf774b6f3ef8abe",
+    "benchmarks/real_se2_stream.py": "9a507c96004dd8c99e5cf4990f0acd0a05b2ee85bcb40825fd26fc78be2e9145",
+    "benchmarks/se2_stream.py": "a436a9e4a7dd98056ea448e922daec3d9a7f34d7405541f59c884354fcbf2849",
+    "benchmarks/information_precision.py": "40999a95f896eb45ced9cbad3e0525eff64c8151b649593debea4b8b4f437cf1"
+  },
+  "replays": [
+    {
+      "dataset": "intel943",
+      "arrivals": 942,
+      "full_means_exact": true,
+      "means_sha256": "e6c1e5681f5f876bdb8e821395ff39ef44cbd73a54a64be7e4fe4988867bf252",
+      "all_non_timing_report_fields_exact": [
+        "sample",
+        "frame",
+        "iterations",
+        "cost",
+        "entries",
+        "allocations",
+        "requested_bytes",
+        "batch_trials",
+        "initial_damping",
+        "final_damping",
+        "refinement_steps"
+      ],
+      "exe_sha256": "86b283700a61a0e8e8e454a14fde81e8cd1b85f7cffad3d0a0b8c15d56a84afb",
+      "original_quality_gates": "inherited from identical predecessor means/reported costs and unchanged original-information checker",
+      "scope": "one cold functional regression, no new recorded-data timing campaign"
+    },
+    {
+      "dataset": "mit1228",
+      "arrivals": 1227,
+      "full_means_exact": true,
+      "means_sha256": "1c0eda3bb0e9077e485dbd44f7f6b48dac72f79f06e0e016dfc5400a561b39c3",
+      "all_non_timing_report_fields_exact": [
+        "sample",
+        "frame",
+        "iterations",
+        "cost",
+        "entries",
+        "allocations",
+        "requested_bytes",
+        "batch_trials",
+        "initial_damping",
+        "final_damping",
+        "refinement_steps"
+      ],
+      "exe_sha256": "7fd04e8291e76f0a74949908ae0b1d4f68dc768a834992216f03497e979750bb",
+      "original_quality_gates": "inherited from identical predecessor means/reported costs and unchanged original-information checker",
+      "scope": "one cold functional regression, no new recorded-data timing campaign"
+    }
+  ]
+}

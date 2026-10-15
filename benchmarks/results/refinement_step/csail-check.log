@@ -1,0 +1,11 @@
+{
+  "scope": "functional replay only; no new comparative timing",
+  "arrivals": 1044,
+  "poses_and_non_timing_work_exactly_equal": true,
+  "max_original_normalized_gradient": 2.516765743356827e-08,
+  "native_agreement": {
+    "max_world_pose_norm": 3.772476536257072e-07,
+    "max_cost_difference": 3.9968028886505635e-13
+  },
+  "poses_sha256": "ef8f09adf133765bbcf5f152ac1ebf45c775a0e992eb362fb18a571ed812c443"
+}
