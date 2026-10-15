@@ -1,5 +1,5 @@
 //! Sparse symmetric LDL^T of damped normal equations. No pivoting, inverse or jitter.
-use crate::sparse::{CsrMatrix, LinearOperator, NormalOperator, finite_vector};
+use crate::sparse::{CsrMatrix, LinearOperator, NormalOperator, checked_norm, finite_vector};
 use crate::{DVector, Error};
 use std::cmp::Reverse;
 use std::collections::{BTreeSet, BinaryHeap};
@@ -904,10 +904,7 @@ impl SparseLdlWorkspace {
         self.refactor(j, damping)?;
         self.solve_factored_into(rhs, x)?;
         let operator = NormalOperator::new(j, damping)?;
-        let rhs_norm = rhs.norm();
-        if !rhs_norm.is_finite() {
-            return Err(Error::NonFinite);
-        }
+        let rhs_norm = checked_norm(rhs)?;
         let tolerance = self
             .options
             .absolute_tolerance
@@ -921,10 +918,7 @@ impl SparseLdlWorkspace {
             for k in 0..rhs.len() {
                 self.residual[k] = rhs[k] - self.residual[k];
             }
-            let residual_norm = self.residual.norm();
-            if !residual_norm.is_finite() {
-                return Err(Error::NonFinite);
-            }
+            let residual_norm = checked_norm(&self.residual)?;
             if residual_norm <= tolerance {
                 return Ok(SparseLdlStats {
                     residual_norm,

@@ -1,0 +1,24 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 7.04s
+     Running tests/predicted_reduction_range.rs (target/release/deps/predicted_reduction_range-fe075a2f3d28c4c9)
+
+running 7 tests
+test a_genuinely_unrepresentable_objective_still_returns_nonfinite ... ok
+test a_finite_worsening_trial_is_rejected_after_prediction_overflow ... ok
+test an_unrepresentable_ldl_rhs_norm_still_returns_nonfinite ... ok
+test gauss_newton_uses_a_finite_model_prediction_at_large_scales ... ok
+test lm_accepts_finite_gaussian_improvement_after_intermediate_overflow ... ok
+test sparse_ldl_checks_large_and_tiny_rhs_and_true_residual_norms ... ok
+test robust_gain_ratios_use_the_weighted_quadratic_prediction ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `release` profile [optimized] target(s) in 8.72s
+     Running unittests src/lib.rs (target/release/deps/ropt-ef45815f04454503)
+
+running 1 test
+test solver::stable_loss_tests::predicted_reduction_rejects_unrepresentable_linear_models ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.00s
+

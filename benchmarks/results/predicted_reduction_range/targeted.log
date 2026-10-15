@@ -1,0 +1,88 @@
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.82s
+     Running unittests src/lib.rs (target/debug/deps/ropt-337b91254b11f4f4)
+
+running 1 test
+test solver::stable_loss_tests::predicted_reduction_rejects_unrepresentable_linear_models ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 0.00s
+
+   Compiling ropt v0.1.0 (/workspace/ropt/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.28s
+     Running tests/cauchy_range.rs (target/debug/deps/cauchy_range-2f2bfa6dd0de6a30)
+
+running 6 tests
+test gauss_newton_accepts_cauchy_reduction_across_scale_boundary ... ok
+test representable_cauchy_costs_survive_extreme_intermediates ... ok
+test lm_accepts_finite_cauchy_reduction_between_large_residuals ... ok
+test increasing_extreme_cauchy_trial_is_rejected ... ok
+test unrepresentable_cauchy_cost_is_still_rejected ... ok
+test subnormal_cauchy_weight_preserves_frozen_information ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/fixed_lag_cost_range.rs (target/debug/deps/fixed_lag_cost_range-1b835a2e74479c6c)
+
+running 5 tests
+test carried_cost_overflow_rolls_back_new_variables_and_allows_a_valid_retry ... ok
+test finite_large_gaussian_cost_survives_full_retirement_and_idle_updates ... ok
+test frozen_robust_offsets_preserve_finite_costs_beyond_squared_norm_range ... ok
+test unrepresentable_objective_is_rejected_before_marginalization ... ok
+test carried_prior_keeps_updates_covariance_and_cost_through_repeated_retirement ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pcg_extreme_scale.rs (target/debug/deps/pcg_extreme_scale-c74da824c0e381e7)
+
+running 4 tests
+test accepted_initial_residual_is_reported_at_its_actual_scale ... ok
+test inner_product_underflow_is_breakdown_instead_of_false_convergence ... ok
+test large_well_conditioned_system_does_not_overflow_its_norm ... ok
+test tiny_well_conditioned_system_does_not_converge_at_zero ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/predicted_reduction_range.rs (target/debug/deps/predicted_reduction_range-a5bfd61c45c2deff)
+
+running 7 tests
+test an_unrepresentable_ldl_rhs_norm_still_returns_nonfinite ... ok
+test a_genuinely_unrepresentable_objective_still_returns_nonfinite ... ok
+test gauss_newton_uses_a_finite_model_prediction_at_large_scales ... ok
+test a_finite_worsening_trial_is_rejected_after_prediction_overflow ... ok
+test sparse_ldl_checks_large_and_tiny_rhs_and_true_residual_norms ... ok
+test lm_accepts_finite_gaussian_improvement_after_intermediate_overflow ... ok
+test robust_gain_ratios_use_the_weighted_quadratic_prediction ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/robust_block_norm.rs (target/debug/deps/robust_block_norm-8ce6232ece41c86c)
+
+running 4 tests
+test genuinely_unrepresentable_joint_norm_still_returns_nonfinite ... ok
+test large_joint_norms_have_representable_robust_costs ... ok
+test large_joint_norms_preserve_finite_frozen_covariance ... ok
+test tiny_joint_norms_preserve_huber_and_cauchy_frozen_weights ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/robust_root_weights.rs (target/debug/deps/robust_root_weights-969c80cdd2cd63d8)
+
+running 6 tests
+test huber_lm_moves_when_only_the_square_root_weight_is_representable ... ok
+test cauchy_lm_moves_when_only_the_square_root_weight_is_representable ... ok
+test unrepresentable_square_root_weight_still_has_zero_frozen_rank ... ok
+test increasing_trials_with_tiny_weights_leave_the_accepted_state_intact ... ok
+test tiny_robust_weights_keep_representable_frozen_information ... ok
+test fixed_lag_freezes_tiny_weights_without_losing_separator_information ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stable_objective.rs (target/debug/deps/stable_objective-59ab08dfe80b9702)
+
+running 3 tests
+test gauss_newton_can_accept_a_decrease_hidden_by_a_constant_cost ... ok
+test increasing_true_loss_is_rejected_even_when_aggregate_cost_is_unchanged ... ok
+test constant_offsets_cannot_mask_scalar_or_joint_true_loss_improvements ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

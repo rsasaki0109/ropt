@@ -1,0 +1,134 @@
+--- a/crates/ropt/src/solver.rs
++++ b/crates/ropt/src/solver.rs
+@@ -568,10 +568,17 @@
+             Jacobian::Sparse(j) => j.multiply(step)?,
+         };
+         let value = -g.dot(step) - 0.5 * js.norm_squared();
+-        if !value.is_finite() {
+-            return Err(Error::NonFinite);
+-        }
+-        Ok(value)
++        if value.is_finite() {
++            return Ok(value);
++        }
++        // Equivalent weighted quadratic reduction, summed by residual. Avoid
++        // separately overflowing g^T*step and ||J*step||^2 when their difference
++        // is representable. Preserve the ordinary arithmetic above otherwise.
++        let mut reduction = CompensatedSum::default();
++        for (&residual, &change) in self.residual.iter().zip(js.iter()) {
++            reduction.add(-change * (residual + 0.5 * change))?;
++        }
++        reduction.total()
+     }
+     fn step(
+         &self,
+@@ -1208,6 +1215,32 @@
+         }
+     }
+     #[test]
++    fn predicted_reduction_rejects_unrepresentable_linear_models() {
++        let model = Linearization {
++            cost: 5e307,
++            objective_norms: vec![1e154],
++            residual: DVector::from_element(1, 1e154),
++            jacobian: Jacobian::Dense(DMatrix::identity(1, 1)),
++        };
++        assert_eq!(
++            model.predicted(
++                &DVector::from_element(1, 1e154),
++                &DVector::from_element(1, 1e155)
++            ),
++            Err(Error::NonFinite)
++        );
++        let model = Linearization {
++            cost: 0.,
++            objective_norms: vec![0.],
++            residual: DVector::zeros(1),
++            jacobian: Jacobian::Dense(DMatrix::from_element(1, 1, f64::MAX)),
++        };
++        assert_eq!(
++            model.predicted(&DVector::zeros(1), &DVector::from_element(1, f64::MAX)),
++            Err(Error::NonFinite)
++        );
++    }
++    #[test]
+     fn normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients() {
+         for coefficients in [
+             vec![3., 4.],
+--- a/crates/ropt/src/sparse.rs
++++ b/crates/ropt/src/sparse.rs
+@@ -294,7 +294,7 @@
+ }
+ // Preserve the usual dot/sqrt path, but avoid squaring away tiny residuals or
+ // overflowing on large vectors whose Euclidean norm is still representable.
+-fn cg_norm(vector: &DVector<f64>) -> Result<f64, Error> {
++pub(crate) fn checked_norm(vector: &DVector<f64>) -> Result<f64, Error> {
+     let squared = vector.norm_squared();
+     let norm = if squared.is_normal() {
+         squared.sqrt()
+@@ -358,7 +358,7 @@
+         }
+         finite_vector(z)
+     };
+-    let norm = cg_norm(b)?;
++    let norm = checked_norm(b)?;
+     let threshold = options
+         .absolute_tolerance
+         .max(options.relative_tolerance * norm);
+@@ -376,7 +376,7 @@
+     let mut ap = DVector::zeros(n);
+     apply(&x, &mut ap)?;
+     let mut r = b - &ap;
+-    let residual_norm = cg_norm(&r)?;
++    let residual_norm = checked_norm(&r)?;
+     if residual_norm <= threshold {
+         return Ok(CgReport {
+             x,
+@@ -409,12 +409,12 @@
+         r.axpy(-alpha, &ap, 1.0);
+         finite_vector(&x)?;
+         finite_vector(&r)?;
+-        if iteration == options.max_iterations || cg_norm(&r)? <= threshold {
++        if iteration == options.max_iterations || checked_norm(&r)? <= threshold {
+             apply(&x, &mut true_r)?;
+             for k in 0..n {
+                 true_r[k] = b[k] - true_r[k];
+             }
+-            let residual_norm = cg_norm(&true_r)?;
++            let residual_norm = checked_norm(&true_r)?;
+             if residual_norm <= threshold {
+                 return Ok(CgReport {
+                     x,
+--- a/crates/ropt/src/sparse_direct.rs
++++ b/crates/ropt/src/sparse_direct.rs
+@@ -1,5 +1,5 @@
+ //! Sparse symmetric LDL^T of damped normal equations. No pivoting, inverse or jitter.
+-use crate::sparse::{CsrMatrix, LinearOperator, NormalOperator, finite_vector};
++use crate::sparse::{CsrMatrix, LinearOperator, NormalOperator, checked_norm, finite_vector};
+ use crate::{DVector, Error};
+ use std::cmp::Reverse;
+ use std::collections::{BTreeSet, BinaryHeap};
+@@ -904,10 +904,7 @@
+         self.refactor(j, damping)?;
+         self.solve_factored_into(rhs, x)?;
+         let operator = NormalOperator::new(j, damping)?;
+-        let rhs_norm = rhs.norm();
+-        if !rhs_norm.is_finite() {
+-            return Err(Error::NonFinite);
+-        }
++        let rhs_norm = checked_norm(rhs)?;
+         let tolerance = self
+             .options
+             .absolute_tolerance
+@@ -921,10 +918,7 @@
+             for k in 0..rhs.len() {
+                 self.residual[k] = rhs[k] - self.residual[k];
+             }
+-            let residual_norm = self.residual.norm();
+-            if !residual_norm.is_finite() {
+-                return Err(Error::NonFinite);
+-            }
++            let residual_norm = checked_norm(&self.residual)?;
+             if residual_norm <= tolerance {
+                 return Ok(SparseLdlStats {
+                     residual_norm,

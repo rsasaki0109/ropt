@@ -294,7 +294,7 @@ pub struct CgReport {
 }
 // Preserve the usual dot/sqrt path, but avoid squaring away tiny residuals or
 // overflowing on large vectors whose Euclidean norm is still representable.
-fn cg_norm(vector: &DVector<f64>) -> Result<f64, Error> {
+pub(crate) fn checked_norm(vector: &DVector<f64>) -> Result<f64, Error> {
     let squared = vector.norm_squared();
     let norm = if squared.is_normal() {
         squared.sqrt()
@@ -358,7 +358,7 @@ pub fn conjugate_gradient_preconditioned(
         }
         finite_vector(z)
     };
-    let norm = cg_norm(b)?;
+    let norm = checked_norm(b)?;
     let threshold = options
         .absolute_tolerance
         .max(options.relative_tolerance * norm);
@@ -376,7 +376,7 @@ pub fn conjugate_gradient_preconditioned(
     let mut ap = DVector::zeros(n);
     apply(&x, &mut ap)?;
     let mut r = b - &ap;
-    let residual_norm = cg_norm(&r)?;
+    let residual_norm = checked_norm(&r)?;
     if residual_norm <= threshold {
         return Ok(CgReport {
             x,
@@ -409,12 +409,12 @@ pub fn conjugate_gradient_preconditioned(
         r.axpy(-alpha, &ap, 1.0);
         finite_vector(&x)?;
         finite_vector(&r)?;
-        if iteration == options.max_iterations || cg_norm(&r)? <= threshold {
+        if iteration == options.max_iterations || checked_norm(&r)? <= threshold {
             apply(&x, &mut true_r)?;
             for k in 0..n {
                 true_r[k] = b[k] - true_r[k];
             }
-            let residual_norm = cg_norm(&true_r)?;
+            let residual_norm = checked_norm(&true_r)?;
             if residual_norm <= threshold {
                 return Ok(CgReport {
                     x,

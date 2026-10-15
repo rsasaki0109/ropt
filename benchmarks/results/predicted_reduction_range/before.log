@@ -1,0 +1,52 @@
+   Compiling ropt v0.1.0 (/workspace/.ropt-predicted-range/before-source/crates/ropt)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.69s
+     Running tests/predicted_reduction_range.rs (/workspace/.ropt-predicted-range/before-target/debug/deps/predicted_reduction_range-a5bfd61c45c2deff)
+
+running 7 tests
+test an_unrepresentable_ldl_rhs_norm_still_returns_nonfinite ... ok
+test a_genuinely_unrepresentable_objective_still_returns_nonfinite ... ok
+test gauss_newton_uses_a_finite_model_prediction_at_large_scales ... FAILED
+test a_finite_worsening_trial_is_rejected_after_prediction_overflow ... FAILED
+test lm_accepts_finite_gaussian_improvement_after_intermediate_overflow ... FAILED
+test robust_gain_ratios_use_the_weighted_quadratic_prediction ... FAILED
+test sparse_ldl_checks_large_and_tiny_rhs_and_true_residual_norms ... FAILED
+
+failures:
+
+---- gauss_newton_uses_a_finite_model_prediction_at_large_scales stdout ----
+
+thread 'gauss_newton_uses_a_finite_model_prediction_at_large_scales' (150302) panicked at crates/ropt/tests/predicted_reduction_range.rs:94:14:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- a_finite_worsening_trial_is_rejected_after_prediction_overflow stdout ----
+
+thread 'a_finite_worsening_trial_is_rejected_after_prediction_overflow' (150299) panicked at crates/ropt/tests/predicted_reduction_range.rs:164:14:
+called `Result::unwrap()` on an `Err` value: NonFinite
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- lm_accepts_finite_gaussian_improvement_after_intermediate_overflow stdout ----
+
+thread 'lm_accepts_finite_gaussian_improvement_after_intermediate_overflow' (150303) panicked at crates/ropt/tests/predicted_reduction_range.rs:61:37:
+Dense: NonFinite
+
+---- robust_gain_ratios_use_the_weighted_quadratic_prediction stdout ----
+
+thread 'robust_gain_ratios_use_the_weighted_quadratic_prediction' (150304) panicked at crates/ropt/tests/predicted_reduction_range.rs:132:18:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+---- sparse_ldl_checks_large_and_tiny_rhs_and_true_residual_norms stdout ----
+
+thread 'sparse_ldl_checks_large_and_tiny_rhs_and_true_residual_norms' (150305) panicked at crates/ropt/tests/predicted_reduction_range.rs:205:41:
+called `Result::unwrap()` on an `Err` value: NonFinite
+
+
+failures:
+    a_finite_worsening_trial_is_rejected_after_prediction_overflow
+    gauss_newton_uses_a_finite_model_prediction_at_large_scales
+    lm_accepts_finite_gaussian_improvement_after_intermediate_overflow
+    robust_gain_ratios_use_the_weighted_quadratic_prediction
+    sparse_ldl_checks_large_and_tiny_rhs_and_true_residual_norms
+
+test result: FAILED. 2 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test predicted_reduction_range`

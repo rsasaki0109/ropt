@@ -568,10 +568,17 @@ impl Linearization {
             Jacobian::Sparse(j) => j.multiply(step)?,
         };
         let value = -g.dot(step) - 0.5 * js.norm_squared();
-        if !value.is_finite() {
-            return Err(Error::NonFinite);
+        if value.is_finite() {
+            return Ok(value);
         }
-        Ok(value)
+        // Equivalent weighted quadratic reduction, summed by residual. Avoid
+        // separately overflowing g^T*step and ||J*step||^2 when their difference
+        // is representable. Preserve the ordinary arithmetic above otherwise.
+        let mut reduction = CompensatedSum::default();
+        for (&residual, &change) in self.residual.iter().zip(js.iter()) {
+            reduction.add(-change * (residual + 0.5 * change))?;
+        }
+        reduction.total()
     }
     fn step(
         &self,
@@ -1206,6 +1213,32 @@ mod stable_loss_tests {
                 assert_eq!(cost.finish().map(f64::to_bits), expected);
             }
         }
+    }
+    #[test]
+    fn predicted_reduction_rejects_unrepresentable_linear_models() {
+        let model = Linearization {
+            cost: 5e307,
+            objective_norms: vec![1e154],
+            residual: DVector::from_element(1, 1e154),
+            jacobian: Jacobian::Dense(DMatrix::identity(1, 1)),
+        };
+        assert_eq!(
+            model.predicted(
+                &DVector::from_element(1, 1e154),
+                &DVector::from_element(1, 1e155)
+            ),
+            Err(Error::NonFinite)
+        );
+        let model = Linearization {
+            cost: 0.,
+            objective_norms: vec![0.],
+            residual: DVector::zeros(1),
+            jacobian: Jacobian::Dense(DMatrix::from_element(1, 1, f64::MAX)),
+        };
+        assert_eq!(
+            model.predicted(&DVector::zeros(1), &DVector::from_element(1, f64::MAX)),
+            Err(Error::NonFinite)
+        );
     }
     #[test]
     fn normalized_columns_handle_zero_tiny_huge_and_mixed_coefficients() {

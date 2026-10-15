@@ -77,6 +77,8 @@ gates. Every timing line is an archived pair; black bars mark campaign medians.
 - Dense Gauss–Newton using SVD or column-pivoted QR with explicit rank failure.
 - Levenberg–Marquardt with scaled damping, predicted/actual improvement ratio,
   accepted/rejected trials, adaptive damping, and iteration records.
+  Model predictions [use a per-residual fallback](benchmarks/PREDICTED_REDUCTION_RANGE.md)
+  when intermediate inner products overflow but the improvement is representable.
 - Optional dense QR LM solves augmented least squares without forming `JᵀJ`.
 - Optional ordered sparse Givens QR for GN and augmented LM, without a numeric
   normal matrix. GN can explicitly permit finite uphill trials; this is disabled

@@ -17,6 +17,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True, help="new directory outside checkout")
     stage = parser.add_mutually_exclusive_group()
+    stage.add_argument("--before-predicted-range", action="store_true",
+                       help="restore model predictions and LDL norms before extreme-range fallback")
     stage.add_argument("--before-lag-cost-range", action="store_true",
                        help="restore fixed-lag costs before finite half-square accumulation")
     stage.add_argument("--before-projection-range", action="store_true",
@@ -196,10 +198,11 @@ def main():
         shutil.copyfile(ROOT / "crates/ropt/examples/profile_dynamic_negation.rs", crate / "examples/profile_dynamic_negation.rs")
     if args.before_cache_refresh or args.before_factor_capture:
         shutil.copyfile(ROOT / "crates/ropt/examples/benchmark_factor_cache.rs", crate / "examples/benchmark_factor_cache.rs")
-    if args.before_lag_cost_range or args.before_projection_range or args.before_prior_column_scaling or args.before_root_weights or args.before_cauchy_range or args.before_robust_block_norm or args.before_numeric_factor_steps or args.before_numeric_factor_errors or args.before_central_difference or args.before_block_layout or args.before_pcg_direction or args.before_pcg_limit or args.before_pcg_norm or args.before_csr_dimensions or args.before_residual_count or args.before_empty_window or args.before_retired_timestamps or args.before_covariance_preflight or args.before_dynamic_lag or args.before_robust_covariance_model or args.before_covariance_snapshot or args.before_expiry_estimates or args.before_tree_refinement or args.before_tree_gradient:
+    if args.before_predicted_range or args.before_lag_cost_range or args.before_projection_range or args.before_prior_column_scaling or args.before_root_weights or args.before_cauchy_range or args.before_robust_block_norm or args.before_numeric_factor_steps or args.before_numeric_factor_errors or args.before_central_difference or args.before_block_layout or args.before_pcg_direction or args.before_pcg_limit or args.before_pcg_norm or args.before_csr_dimensions or args.before_residual_count or args.before_empty_window or args.before_retired_timestamps or args.before_covariance_preflight or args.before_dynamic_lag or args.before_robust_covariance_model or args.before_covariance_snapshot or args.before_expiry_estimates or args.before_tree_refinement or args.before_tree_gradient:
         shutil.copytree(ROOT / "crates/ropt/examples", crate / "examples", dirs_exist_ok=True)
     names = []
     for name, stop_here in (
+        ("predicted_reduction_range.patch", args.before_predicted_range),
         ("fixed_lag_cost_range.patch", args.before_lag_cost_range),
         ("prior_projection_range.patch", args.before_projection_range),
         ("prior_column_scaling.patch", args.before_prior_column_scaling),
@@ -280,7 +283,8 @@ def main():
         subprocess.run(["patch", "--batch", "--fuzz=0", "-p1", "-R", "-d", str(out), "-i", str(patch)], check=True)
     metadata = {"patches_sha256": {name: hashlib.sha256((ROOT / "benchmarks" / name).read_bytes()).hexdigest()
                                    for name in names},
-                "purpose": ("restored fixed-lag costs before finite half-square accumulation" if args.before_lag_cost_range else
+                "purpose": ("restored model predictions and LDL norms before extreme-range fallback" if args.before_predicted_range else
+                            "restored fixed-lag costs before finite half-square accumulation" if args.before_lag_cost_range else
                             "restored prior elimination before bounded extreme projections" if args.before_projection_range else
                             "restored prior compression before extreme column-scale fallback" if args.before_prior_column_scaling else
                             "restored robust models before direct extreme square-root weights" if args.before_root_weights else
@@ -372,7 +376,7 @@ def main():
         command += ["--example", "profile_dynamic_negation"]
     if args.before_cache_refresh or args.before_factor_capture:
         command += ["--example", "benchmark_factor_cache"]
-    if args.before_lag_cost_range or args.before_projection_range or args.before_prior_column_scaling or args.before_root_weights or args.before_cauchy_range or args.before_robust_block_norm or args.before_numeric_factor_steps or args.before_numeric_factor_errors or args.before_central_difference or args.before_block_layout or args.before_pcg_direction or args.before_pcg_limit or args.before_pcg_norm or args.before_csr_dimensions or args.before_residual_count or args.before_empty_window or args.before_retired_timestamps or args.before_covariance_preflight or args.before_dynamic_lag or args.before_robust_covariance_model or args.before_covariance_snapshot or args.before_expiry_estimates or args.before_tree_refinement or args.before_tree_gradient:
+    if args.before_predicted_range or args.before_lag_cost_range or args.before_projection_range or args.before_prior_column_scaling or args.before_root_weights or args.before_cauchy_range or args.before_robust_block_norm or args.before_numeric_factor_steps or args.before_numeric_factor_errors or args.before_central_difference or args.before_block_layout or args.before_pcg_direction or args.before_pcg_limit or args.before_pcg_norm or args.before_csr_dimensions or args.before_residual_count or args.before_empty_window or args.before_retired_timestamps or args.before_covariance_preflight or args.before_dynamic_lag or args.before_robust_covariance_model or args.before_covariance_snapshot or args.before_expiry_estimates or args.before_tree_refinement or args.before_tree_gradient:
         command += ["--example", "benchmark_ad_selective_se2_isam"]
     if not args.source_only:
         subprocess.run(command + ["--release", "--locked", "--offline"], check=True)
